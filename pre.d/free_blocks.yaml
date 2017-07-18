@@ -1,0 +1,82 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str free_blocks
+path: !!str
+version: !!str 1.0
+title: !!str Check block utilization
+helptext: !!str |
+  Identifies block usage on all mounted block devices with a filesystem
+placement: !!str prediagnostic
+language: !!str bash
+content: !!str |
+  #!/bin/bash
+  error_trap()
+  {
+      printf "%0.s=" {1..80}
+      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      exit 0
+  }
+  trap error_trap ERR
+
+  # read-in shared function
+  source functions.bash
+
+  echo module-function has argv:  $0 "${@}"
+  echo -e "Checking for block usage on all mounted filesystems\n\n"
+
+  FAIL=0
+  WARN=0
+  SUCCESS=0
+
+  case $distro in
+      *)
+      for BLKDEV in $(mount | grep ^/dev | awk '{print $1}')
+      do
+          B_USED=$(df -m ${BLKDEV} | grep ^/ | awk '{print $5}' | tr -d '%')
+          if [ ${B_USED} -ge 99 ]; then
+              echo -e "*FAILURE* blocks exhausted for ${BLKDEV}: ${B_USED}%"
+              FAIL=1
+          elif [[ "${B_USED}" -lt 98 && "${B_USED}" -gt 89 ]]; then
+              echo -e "*WARN* block usage is over 90% for {$BLKDEV}"
+              WARN=1
+          else
+              echo -e "*SUCCESS* block usage for ${BLKDEV} is OK - ${B_USED}%."
+              SUCCESS=1
+          fi
+      done
+
+      if [ ${FAIL} -eq 1 ]; then
+        echo -e "[FAILURE] One or more block devices over 99% utilized"
+      elif [ ${WARN} -eq 1 ]; then
+        echo -e "[WARN] One or more block devices over 90% utilized"
+      elif [ ${SUCCESS} -eq 1 ]; then
+        echo -e "[SUCCESS] All block devices have free space."
+      fi
+      ;;
+
+  esac
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str
+  optional: !!str
+  software: !!str df
+  sudo: !!str False
+  perfimpact: !!str False
+  parallelexclusive: !!str

@@ -1,0 +1,12 @@
+# Requirements for unit tests
+#
+####### requirements_test.txt #######
+# Reference: https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format
+#
+###### Requirements without Version Specifiers ######
+
+
+#
+###### Requirements with Version Specifiers ######
+#   See https://www.python.org/dev/peps/pep-0440/#version-specifiers
+PyInstaller >= 3.2.1

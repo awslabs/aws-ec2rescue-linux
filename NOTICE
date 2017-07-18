@@ -1,0 +1,17 @@
+EC2 Rescue for Linux
+Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+
+**********************
+THIRD PARTY COMPONENTS
+**********************
+This software includes third party software subject to the following copyrights:
+
+-shutil from Python 3.5.2 Standard Library - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+                                             2011, 2012, 2013, 2014, 2015 Python Software Foundation.
+                                             All rights reserved.
+-menu_textpad_mod from Python 3.4.3 Library - Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+                                              2011, 2012, 2013, 2014, 2015 Python Software Foundation.
+                                              All rights reserved.
+
+The licenses for these third party components are included in LICENSE

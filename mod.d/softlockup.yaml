@@ -1,0 +1,85 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str softlockup
+path: !!str
+version: !!str 1.0
+title: !!str Detects CPU soft lockups
+helptext: !!str |
+  Detects CPU soft lockups that have occurred and gathers output
+placement: !!str run
+package: 
+  - !!str
+language: !!str bash
+content: !!str |
+  #!/bin/bash
+  error_trap()
+  {
+      printf "%0.s=" {1..80}
+      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      exit 0
+  }
+  trap error_trap ERR
+
+  # read-in shared function
+  source functions.bash
+
+  echo -e "Checking for CPU soft lockup messages\n\n"
+
+  #set defaults, override by distro
+  SOFTLOCKUP_LOGLOCATIONS="/var/log/messages* /var/log/syslog*"
+  SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+
+  case $EC2RL_DISTRO in
+      alami)
+          SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+          SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+      ;;
+      ubuntu)
+          SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+          SOFTLOCKUP_LOGLOCATIONS="/var/log/syslog*"
+      ;;
+      rhel)
+          SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+          SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+      ;;
+      suse)
+          SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+          SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+      ;;
+  esac
+
+  logsearch_result=$(logsearch "$SOFTLOCKUP_LOGLOCATIONS" "$SOFTLOCKUP_MESSAGE" "-A60")
+  if [[ -z $logsearch_result ]]; then
+      echo "[SUCCESS] No CPU soft lockup ocurrences found"
+  else
+      echo "[FAILURE] CPU Soft Lockup found"
+      echo "-- This indicates potentially being CPU bound in your application usage or applications not relinquishing spinlocks."
+      echo "$logsearch_result"
+      echo -e "-------------------------------------------------\n"
+  fi
+  echo "Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/softlockup.md for further details"
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

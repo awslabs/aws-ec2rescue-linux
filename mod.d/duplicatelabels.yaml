@@ -1,0 +1,82 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str duplicatelabels
+path: !!str
+version: !!str 1.0
+title: !!str Search for duplicate filesystem labels.
+helptext: !!str |
+  Identifies which file systems have duplicate labels
+  Requires blkid, commonly provided by util-linux package
+placement: !!str run
+package: 
+  - !!str
+language: !!str python
+content: !!str |
+  from __future__ import print_function
+  import os
+  import re
+  import subprocess
+  import sys
+
+  try:
+      inside_quotes = re.compile('"[^"]*"')
+
+      labels_dict = {}
+      for line in subprocess.check_output(["blkid", "-s", "LABEL"],
+                                          stderr=subprocess.STDOUT).decode("utf-8").strip().split("\n"):
+          # Example line: /dev/xvda1: LABEL="/"
+          tokens = line.split(":")
+          device_file = os.path.realpath(tokens[0])
+          label = ""
+          for token in tokens[1:]:
+              token = token.strip()
+              arg, value = token.split("=")
+              if arg == "LABEL" and inside_quotes.findall(value):
+                  label = value[1:-1]
+                  break
+          if label not in labels_dict.keys():
+              labels_dict[label] = []
+          if label and device_file not in labels_dict[label]:
+              labels_dict[label].append(device_file)
+
+      label_success = True
+      for label in labels_dict.keys():
+          if len(labels_dict[label]) > 1:
+              label_success = False
+              label_devs_str = ", ".join(labels_dict[label])
+              print(
+                  "[FAILURE] Duplicate label, {}, found on the following filesystems: {}".format(label, label_devs_str))
+      if label_success:
+          print("[SUCCESS] No duplicate filesystem labels found.")
+      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/duplicatelabels.md"
+            "for further details")
+  except Exception as ex:
+      print(ex)
+      print("[WARN] module generated an exception and exited abnormally. "
+            "Review the logs to determine the cause of the issue.")
+      sys.exit(0)
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str
+  optional: !!str
+  software: !!str blkid
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

@@ -1,0 +1,203 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+help_header: "ec2rl:  A framework for executing diagnostic and troubleshooting\n
+\       modules for analyzing issues on Linux instances on AWS.\n
+
+  USAGE:\n
+\   ec2rl \x1B[3mSUBCOMMAND\x1B[0m [parameters]\n
+
+  COMMANDS:\n
+\ The following are the accepted subcommands:\n
+\   menu-config    - use a text-based menu system to create a configuration file, configuration.cfg\n
+\   save-config    - use the provided arguments to create a configuration file, configuration.cfg\n
+\   run            - executes modules\n
+\   list           - list available modules for platform\n
+\   upload         - upload a tarball of a directory to S3 using either a presigned URL or an AWS-support provided URL\n
+\   help           - print long help\n
+\   version        - print version and license information\n
+\   version-check  - check program version against the latest upstream version\n
+\   software-check - check for software required by modules that is not installed on the system and give install details\n
+\   bug-report     - print version information relevant for inclusion in a bug report\n\n"
+
+help_footer:  !!str |
+  SPECIAL:
+      The following options have special meaning to the ec2rl framework and are not passed to modules.
+
+      OPTIONS:
+          --config-file=filename     - loads a configuration file containing module-specific and global-module options
+                                       this option is usable with the 'run' subcommand
+          --pdb                      - run framework inside the Python Debugger
+          --not-an-instance          - skip instance-specific items in order to run ec2rl on bare hardware
+          --debug                    - enables debug level logging
+
+help_help:  !!str |+
+  help:
+      SYNOPSIS:
+          ec2rl help [MODULEa ... MODULEx] [SUBCOMMANDa ... SUBCOMMANDx]
+          ec2rl help [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]
+
+      DESCRIPTION:
+          Provides help details on the specified module(s) and/or subcommand(s).
+
+      OPTIONS:
+          Key/Value Parameters:
+              --only-modules=module1,module2 - only provides help for modules in the
+              specified comma delimited list
+              --only-domains=domain1,domain22 - only provides help for domains in the
+              specified comma delimited list
+
+run_help:  !!str |+
+  run:
+      SYNOPSIS:
+          ec2rl run [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]
+          ec2rl run [--abc=param] [--no=abc] [--perfimpact=true]
+          ec2rl run [--concurrency=N] [--backup=ami | allvolumes]
+
+      DESCRIPTION:
+          The run command executes any ec2rl modules specified,
+          or attempts all if no restrictions are set.
+          Only modules who have their necessary parameters will actually be run.
+
+          There are three classes of module. Diagnostic which is a success/fail/warn
+          on specific conditions in the module. Gather creates copies of files on the
+          system for inspection. Collect captures the output of specific commands.
+
+          Domains are not limited to existing and are meant to capture the general
+          area of investigation, e.g. performance for system performance, net for
+          network troubleshooting, etc.
+
+      OPTIONS:
+          Switch Parameters:
+              --abc       - pass "abc" variables to modules, set to true
+                            enable modules with name or parameter of "abc"
+              --no=abc    - pass "abc" variable to modules, set to false
+                            disable modules with name or parameter of "abc"
+              --perfimpact=true - enable the running of performance impacting
+                                  modules
+              --backup=ami | allvolumes - creates a backup of the instance via
+                                  creating an AMI or snapshotting all volumes
+                                  if valid permissions are available. Select one
+                                  of ami or allvolumes
+          Key/Value Parameters:
+              --abc=xyz   - pass variable "abc" to modules, set to "xyz"
+                            to satisfy module constraints
+              --only-modules=module1,module2 - only run modules in the
+                            specified comma delimited list
+              --only-domains=domain1,domain2 - only run the domains in the
+                            specified comma delimited list
+              --only-classes=class1,class2 - only run the classes in the
+                            specified comma delimited list
+              --backup=vol1,vol2 - backup the volumes specified by volume id
+                                   (e.g. vol-xxxxx) in a comma delimited list
+              --concurrency=N - Integer value representing how many modules
+                                to run in parallel. The default is 10.
+
+save_config_help:  !!str |+
+  save-config:
+      SYNOPSIS:
+          ec2rl save-config
+
+      DESCRIPTION:
+          The save-config command generates a configuration file, configuration.cfg, in the log output directory.
+          This configuration file will contain a Global section with any parsed command-line arguments that
+          were given to the program and a stub section for each module.
+          The configuration file can be loaded using the --config-file=filename argument.
+
+menu_config_help:  !!str |+
+  menu-config:
+      SYNOPSIS:
+          ec2rl menu-config
+
+      DESCRIPTION:
+          The menu-config command presents the user with a menu system for configuring module options. The menu
+          supports configuration of the required module constraints. Once done, it generates a configuration file,
+          configuration.cfg, in the log output directory in the same manner as the saveconfig subcommand.
+          This configuration file will contain a Global section with any parsed arguments and a section for each module.
+          The module sections will contain comments referencing the required and optional constraints as well as any
+          required constraints specified in the menu system..
+          The configuration file can be loaded using the --config-file=filename argument.
+
+list_help:  !!str |+
+  list:
+      SYNOPSIS:
+          ec2rl list
+
+      DESCRIPTION:
+          The list command provides a full list of the available modules that can be ran.
+
+      OPTIONS:
+          Key/Value Parameters:
+              --only-domains=domain1,domain2 - only run the domains in the
+                            specified comma delimited list
+              --only-classes=class1,class2 - only run the classes in the
+                            specified comma delimited list
+
+upload_help:  !!str |+
+  upload:
+      SYNOPSIS:
+          ec2rl upload --upload-directory=path --support-url=url
+          ec2rl upload --upload-directory=path --presigned-url=url
+
+      DESCRIPTION:
+          The upload command creates a tarball of the provided directory path and uploads it to the provided S3 endpoint
+          URL.  This is accomplished by a PUT request.
+
+          Please note that this is an automatic process, and that depending modules run and system or application
+          configuration, sensitive information could be contained in the output that will be uploaded. Please review
+          before sending this to any third party, including AWS Support.
+
+          Either --support-url or --presigned-url is required and --support-url will take precedence if both are provided.
+          The URL must be enclosed in double quotes.
+
+          Creating a presigned URL requires utilizing an AWS SDK. Please see the following URL for additional details:
+          http://docs.aws.amazon.com/AmazonS3/latest/dev/PresignedUrlUploadObject.html
+
+      OPTIONS:
+          Key/Value Parameters:
+              --support-url=url        - used to specify the S3 uploader URL.
+              --presigned-url=url      - used to specify the presigned URL.
+              --upload-directory=path  - used to specify the directory to be uploaded.
+
+version_help:  !!str |+
+  version:
+      SYNOPSIS:
+          ec2rl version
+
+      DESCRIPTION:
+          The version command outputs version number and license information and exits.
+
+software_check_help:  !!str |+
+  software-check:
+      SYNOPSIS:
+          ec2rl software-check
+
+      DESCRIPTION:
+          Checks for software modules use and provides information on how to obtain it if it is not installed.
+
+version_check_help:  !!str |+
+  version-check:
+      SYNOPSIS:
+          ec2rl version-check
+
+      DESCRIPTION:
+          The version command outputs program version and the upstream version then informs the user whether an
+          update is available.
+
+bug_report_help:  !!str |+
+  bug-report:
+      SYNOPSIS:
+          ec2rl bug-report
+
+      DESCRIPTION:
+          The bug-report command outputs version information relevant for inclusion in a bug report and exits.

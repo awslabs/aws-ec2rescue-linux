@@ -1,0 +1,159 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str sshpermissions
+path: !!str
+version: !!str 1.2
+title: !!str Verify SSH filesystem permissions that could prevent remote access
+helptext: !!str |
+  Runs filesystem permissions checks against all AuthorizedKeysFile in /home
+placement: !!str run
+package: 
+  - !!str
+language: !!str python
+content: !!str |
+  from __future__ import print_function
+  import glob
+  import os
+  import pwd
+  import sys
+  try:
+      FAILURE = False
+      WARN = False
+      # This mask may be more recognizable as 0o00022 where 2 is the write permission bit
+      # Verification will be done via bitwise AND-ing the mode and bitmask to check if the write bit is set
+      g_o_write_bitmask = 0b0000000000010010
+
+      # Defaults
+      AUTH_KEYS = ".ssh/authorized_keys"
+      AUTH_KEYS_PARENT = ".ssh"
+
+      print("Verify the permissions of /home/<user>/.ssh/authorized_keys for each user who has a directory in /home.")
+      print("Permissions that are too open can lead to inaccessiblity and security compromises.")
+
+      # Check authorized_keys location
+      with open("/etc/ssh/sshd_config", "r") as config_file:
+          AUTH_KEYS_FOUND = False
+          for line in config_file:
+              if line.startswith("AuthorizedKeysFile ") and not AUTH_KEYS_FOUND:
+                  AUTH_KEYS_FOUND = True
+                  AUTH_KEYS = line.strip().split(" ")[1]
+                  AUTH_KEYS_PARENT = AUTH_KEYS.split("/")[0]
+              elif line.startswith("AuthorizedKeysFile "):
+                  print("[FAILURE] Multiple AuthorizedKeysFile entries detected in sshd_config.")
+                  print("Public key file will not be validated.")
+                  sys.exit(0)
+
+      # Check each user that has a directory in /home
+      for file in glob.glob("/home/*"):
+          full_path = ""
+          if os.path.isdir(os.path.realpath(file)):
+              print("Verifying user '{}'".format(os.path.basename(file)))
+              full_path = os.path.realpath(file)
+          else:
+              continue
+          try:
+              pwd.getpwnam(os.path.basename(file))
+          except KeyError:
+              # pwd.getpwnam raises KeyError when the arg does not match a user in the password database
+              print("Found user directory {}, but no matching user account. Skipping.".format(full_path))
+              continue
+          # Check /home/<user>
+          if os.stat(full_path).st_mode & g_o_write_bitmask != 0b0:
+              FAILURE = True
+              print("  {} permission mode {} is incorrect.".format(full_path,
+                                                                   oct(os.stat(full_path).st_mode)[-3:]))
+              print("    *FAILURE*: Permissions of {} for {} cannot have writes for groups or other users or SSH will "
+                    "fail.".format(oct(os.stat(full_path).st_mode)[-3:], full_path,))
+              print("    Adjust permissions with: sudo chmod 700 {}".format(full_path))
+          else:
+              print("  {} permission mode {} is correct.".format(full_path,
+                                                                 oct(os.stat(full_path).st_mode)[-3:]))
+
+          # Check that /home/<user>/.ssh exists (and is a directory)
+          full_path_auth_keys_parent = os.sep.join((full_path, AUTH_KEYS_PARENT))
+          if not os.path.isdir(full_path_auth_keys_parent):
+              WARN = True
+              print("  *WARN*: {} missing - public key permissions can't be "
+                    "validated.".format(full_path_auth_keys_parent))
+              print("  Key-based SSH authentication will not be available the user.".format(full_path_auth_keys_parent))
+              continue
+          else:
+              print("  {} is present.".format(full_path_auth_keys_parent))
+
+          # Check /home/<user>/.ssh
+          if os.stat(full_path_auth_keys_parent).st_mode & g_o_write_bitmask != 0b0:
+              FAILURE = True
+              print("  {} permission mode {} is incorrect.".format(full_path_auth_keys_parent,
+                                                                   oct(os.stat(full_path_auth_keys_parent).st_mode)[-3:]))
+              print("    *FAILURE*: Permissions for {} cannot have writes for groups or other users or SSH will "
+                    "fail.".format(full_path_auth_keys_parent))
+              print("    Adjust permissions with: sudo chmod 700 {}".format(full_path_auth_keys_parent))
+          else:
+              print("  {} permission mode {} is correct.".format(full_path_auth_keys_parent,
+                                                                 oct(os.stat(full_path_auth_keys_parent).st_mode)[-3:]))
+
+          # Check that /home/<user>/.ssh/authorized_keys exists (and is a file)
+          full_path_auth_keys = os.sep.join((full_path, AUTH_KEYS))
+          if not os.path.isfile(full_path_auth_keys):
+              WARN = True
+              print("  *WARN*: {} missing - public key permissions can't be validated.".format(full_path_auth_keys))
+              print("  Key-based SSH authentication will not be available the user.".format(full_path_auth_keys))
+              continue
+          else:
+              print("  {} is present.".format(full_path_auth_keys))
+
+          if os.stat(full_path_auth_keys).st_mode & g_o_write_bitmask != 0b0:
+              FAILURE = True
+              print("  {} permission mode {} is incorrect.".format(full_path_auth_keys,
+                                                                   oct(os.stat(full_path_auth_keys).st_mode)[-3:]))
+              print("    *FAILURE*: {} permission mode {} is too permissive and SSH will deny access to "
+                    "user {}".format(full_path_auth_keys,
+                                     oct(os.stat(full_path_auth_keys).st_mode)[-3:],
+                                     os.path.basename(file)))
+              print("    Adjust permissions with: sudo chmod 600 {}".format(full_path_auth_keys))
+          else:
+              print("  {} permission mode {} is correct.".format(full_path_auth_keys,
+                                                                 oct(os.stat(full_path_auth_keys).st_mode)[-3:]))
+
+      if FAILURE:
+          print("[FAILURE] Permissions for authorized_keys or a parent directory for one or more of the tested users "
+                "are too permissive.")
+          print("SSH will deny access to users with these improper permissions.")
+          print("Please view the mod_out/run/sshpermissions.log for more details.")
+      elif WARN:
+          print("[WARN] one or more of the tested users missing /home/<user>/.ssh/authorized_keys")
+          print("Public key permissions couldn't be fully validated.")
+          print("Please view the mod_out/run/sshpermissions.log for more details.")
+      else:
+          print("[SUCCESS] Permissions are valid for SSH.")
+      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/sshpermissions.md for further details")
+  except Exception as ex:
+      print(ex)
+      print("[WARN] module generated an exception and exited abnormally.")
+      print("Review the logs to determine the cause of the issue.")
+      sys.exit(0)
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse centos
+  required: !!str
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

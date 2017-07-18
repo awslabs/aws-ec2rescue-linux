@@ -1,0 +1,59 @@
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"). You
+// may not use this file except in compliance with the License. A copy of
+// the License is located at
+//
+//     http://aws.amazon.com/apache2.0/
+//
+//
+// or in the "license" file accompanying this file. This file is
+// distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+// ANY KIND, either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
+
+//Copy and paste below this line into the document in the AWS console for use.
+
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"). You
+// may not use this file except in compliance with the License. A copy of
+// the License is located at
+//
+//     http://aws.amazon.com/apache2.0/
+//
+//
+// or in the "license" file accompanying this file. This file is
+// distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+// ANY KIND, either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
+
+//Copy and paste below this line into the document in the AWS console for use.
+{
+  "schemaVersion": "2.2",
+  "description": "Run EC2 Rescue for Linux with manual configuration via CLI parameters.",
+  "parameters": {
+    "workingDirectory": {
+      "type": "String",
+      "description": "(Required) Working directory to run from. Defaults to /home/ec2-user , but could differ based on distro (Ubuntu would be /home/ubuntu for example)",
+      "default": "/home/ec2-user"
+    },
+    "cliParameters": {
+      "type": "String",
+      "description": "(Required) Default configuration package to run."
+    }
+  },
+  "mainSteps": [{
+    "action": "aws:runShellScript",
+    "name": "runShellScript",
+    "inputs": {
+      "runCommand": [
+        "#!/bin/bash",
+        "curl https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz | tar xz",
+        "cd ec2rl",
+        "sudo ./ec2rl {{ cliParameters }}"
+      ],
+      "workingDirectory": "{{ workingDirectory }}"
+    }
+  }]
+}

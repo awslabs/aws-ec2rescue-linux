@@ -1,0 +1,13 @@
+#
+####### requirements.txt #######
+# Reference: https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format
+#
+###### Requirements without Version Specifiers ######
+# These modules are now vendored inside the lib directory
+# requests >= 1.2.3
+# PyYAML >= 3.10
+# six >= 1.5.0
+
+#
+###### Refer to other requirements files ######
+#-r requirements_test.txt

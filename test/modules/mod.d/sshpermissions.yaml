@@ -1,0 +1,117 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str sshpermissions
+path: !!str
+version: !!str 1.0
+title: !!str Verify SSH filesystem permissions that could prevent remote access
+helptext: !!str |
+  Runs filesystem permissions checks against all AuthorizedKeysFile in /home
+placement: !!str run
+package: 
+  - !!str
+language: !!str bash
+content: !!str |
+  #!/bin/bash
+  error_trap()
+  {
+      printf "%0.s=" {1..80}
+      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      exit 0
+  }
+  trap error_trap ERR
+
+  # read-in shared functionls
+  source functions.bash
+
+  echo module-function has argv:  $0 "${@}"
+  echo -e "Verify appropriate permissions against SSH (based on public keys for users in /home). Permissions that are too open can lead to inaccessiblity or potential security compromises."
+
+
+  case $distro in
+      *)
+          # Check authorized_keys location
+          if [[ "$(grep '^AuthorizedKeysFile' /etc/ssh/sshd_config | uniq -c | awk '{sum+=$1} END {print sum}')" -gt 1 ]]
+              then
+                 echo "[FAILURE] Multiple AuthorizedKeysFile entries detected in sshd_config - public keys will not be validated"
+                 exit 0
+          fi
+
+          AUTH_KEYS=$(grep '^AuthorizedKeysFile' /etc/ssh/sshd_config | awk '{print $2}')
+          AUTH_KEYS_PARENT=$(grep '^AuthorizedKeysFile' /etc/ssh/sshd_config | awk '{print $2}' | awk -F\/ '{print $1}')
+
+          if [[ -z "${AUTH_KEYS_PARENT}" ]]
+              then
+                  AUTH_KEYS=".ssh/authorized_keys"
+                  AUTH_KEYS_PARENT=".ssh"
+          fi
+
+           # SSH checks
+           for DIR in $(ls -d -1 /home/*)
+              do
+                  if [[ -d "${DIR}/${AUTH_KEYS_PARENT}" ]]
+                      then
+                          if [[ -f "${DIR}/${AUTH_KEYS}" ]]
+                              then
+                                  read PERM USER <<<$(stat -c "%a %n" ${DIR}/${AUTH_KEYS_PARENT})
+                              else
+                                  echo "[WARNING] ${DIR} does not contain ${AUTH_KEYS} - public key permissions can't be validated."
+                                  continue
+                              fi
+
+                          if [[ "${PERM}" -eq 700 ]] || [[ "${PERM}" -eq 750 ]] || [[ "${PERM}" -eq 755 ]]
+                              then
+                              # check public key file permissions
+                              if [[ -z ${DIR}/${AUTH_KEYS} ]]; then
+                                  echo "[FAILURE] ${DIR}/${AUTH_KEYS} does not exist for this user - SSH will not be available the user."
+                                  break
+                               else
+                                  AUTH_PERMISSIONS=$(stat -c "%a" ${DIR}/${AUTH_KEYS})
+                              fi
+                          unset CHECK_FAIL
+                              for WRITEBIT in 2 3 6 7
+                                  do
+                                      if [[ ${AUTH_PERMISSIONS:1:1} -eq ${WRITEBIT} ]]; then
+                                          echo "[FAILURE] ${DIR}/${AUTH_KEYS} permissions are too permissive and remote SSH access will be blocked for this username. Adjust permissions with: sudo chmod 600 ${DIR}/${AUTH_KEYS}"
+                                          CHECK_FAIL=1
+                                      elif [[ ${AUTH_PERMISSIONS:2:2} -eq ${WRITEBIT} ]]; then
+                                          echo "[FAILURE] ${DIR}/${AUTH_KEYS} permissions are too permissive and remote SSH access will be blocked for this username. Adjust permissions with: sudo chmod 600 ${DIR}/${AUTH_KEYS}"
+                                          CHECK_FAIL=1
+                                      fi
+                                  done
+                          if [[ -z ${CHECK_FAIL} ]]; then
+                              echo "[SUCCESS] ${DIR}/${AUTH_KEYS} permissions are valid for SSH."
+                          fi
+                      else
+                          echo "[FAILURE] ${DIR}/${AUTH_KEYS} permissions are either too permissive or incorrect and will prevent remote SSH access for this user."
+                      fi
+                      else
+                          echo "[WARNING] ${DIR}/${AUTH_KEYS_PARENT} does not exist - public key permissions can't be validated."
+                      fi
+              done
+      ;;
+  esac
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse centos
+  required: !!str
+  optional: !!str
+  software: !!str stat
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str
