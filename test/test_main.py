@@ -2135,6 +2135,8 @@ class TestMain(unittest.TestCase):
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
         sys.argv = [test_path, "run"]
         ec2rl_softwarecheck_test = ec2rlcore.main.Main(debug=False)
+        # Avoid triggering full_init when validate_constraints_have_args is called
+        ec2rl_softwarecheck_test._modules_need_init = False
         module_path = os.path.join(self.callpath, "test/modules/test_main_multi_run_prunemodules_fakeexecutable/")
         ec2rl_softwarecheck_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
         ec2rl_softwarecheck_test._modules.validate_constraints_have_args(options=ec2rl_softwarecheck_test.options,
@@ -2142,8 +2144,11 @@ class TestMain(unittest.TestCase):
                                                                          without_keys=["software", "distro", "sudo"])
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_softwarecheck_test.software_check())
-        self.assertEqual(self.output.getvalue(), "All test software requirements have been met.\n")
-        self.assertEqual(len(self.output.getvalue()), 46)
+        self.assertEqual(self.output.getvalue(), "One or more software packages required to run all modules are "
+                                                 "missing.\nInformation regarding these software packages can be "
+                                                 "found at the specified URLs below.\n\nPackage-Name: "
+                                                 "test\nPackage-URL: testurl\nAffected-Modules: arpcache\n\n")
+        self.assertEqual(len(self.output.getvalue()), 228)
 
         self.assertFalse(main_log_handler_mock.called)
         self.assertFalse(debug_log_hander_mock.called)
