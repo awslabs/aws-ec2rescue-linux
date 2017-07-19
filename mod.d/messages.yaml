@@ -17,9 +17,9 @@
 name: !!str messages
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /var/log/messages* or /var/log/syslog* files
+title: !!str Gather /var/log/messages* or /var/log/syslog* files
 helptext: !!str |
-  Gather up /var/log/messages* or /var/log/syslog* files
+  Gather /var/log/messages* or /var/log/syslog* files
 placement: !!str run
 package: 
   - !!str
@@ -39,16 +39,14 @@ content: !!str |
 
   echo "I will collect /var/log/messages* or /var/log/syslog* files from this machine"
 
-  if [ -r /var/log/messages ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/messages
-          cp -r /var/log/messages* $EC2RL_GATHEREDDIR/messages || true
-          echo "I have attempted to copy the /var/log/messages* files to ${EC2RL_GATHEREDDIR}/messages"
-  elif [ -r /var/log/syslog ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/messages
-          cp -r /var/log/syslog* $EC2RL_GATHEREDDIR/messages || true
-          echo "I have attempted to copy the /var/log/syslog* files to ${EC2RL_GATHEREDDIR}/messages"
+  if [ -r /var/log/messages ]; then
+      mkdir $EC2RL_GATHEREDDIR/messages
+      cp -r /var/log/messages* $EC2RL_GATHEREDDIR/messages || true
+      echo "I have attempted to copy the /var/log/messages* files to ${EC2RL_GATHEREDDIR}/messages"
+  elif [ -r /var/log/syslog ]; then
+      mkdir $EC2RL_GATHEREDDIR/messages
+      cp -r /var/log/syslog* $EC2RL_GATHEREDDIR/messages || true
+      echo "I have attempted to copy the /var/log/syslog* files to ${EC2RL_GATHEREDDIR}/messages"
   else
       echo "No /var/log/messages* or /var/log/syslog* files available or permission denied"
   fi

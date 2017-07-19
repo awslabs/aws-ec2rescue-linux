@@ -37,13 +37,12 @@ content: !!str |
 
   echo "I will gather the /etc/fstab file from this machine"
 
-  if [[ -r /etc/fstab ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/fstab
-          cp /etc/fstab $EC2RL_GATHEREDDIR/fstab || true
-          echo "I have attempted to copy the /etc/fstab file to ${EC2RL_GATHEREDDIR}/fstab"
-      else
-          echo "No cloud init log files available or permission denied"
+  if [[ -r /etc/fstab ]]; then
+      mkdir $EC2RL_GATHEREDDIR/fstab
+      cp /etc/fstab $EC2RL_GATHEREDDIR/fstab || true
+      echo "I have attempted to copy the /etc/fstab file to ${EC2RL_GATHEREDDIR}/fstab"
+  else
+      echo "No cloud init log files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

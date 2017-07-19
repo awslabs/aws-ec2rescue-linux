@@ -39,15 +39,13 @@ content: !!str |
 
   echo "I will gather the /var/log/apt and /var/log/dpkg.log files from this machine"
 
-  if [[ -r /var/log/apt && -r /var/log/dpkg.log ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/aptlog
-          cp -r /var/log/apt/* $EC2RL_GATHEREDDIR/aptlog || true
-          cp /var/log/dpkg.log $EC2RL_GATHEREDDIR/aptlog || true
-          echo "I have attempted to copy the /var/log/apt and /var/log/dpkg.log files to ${EC2RL_GATHEREDDIR}/aptlog"
-
-      else
-          echo "No /var/log/apt or /var/log/dpkg.log files available or permission denied"
+  if [[ -r /var/log/apt && -r /var/log/dpkg.log ]]; then
+      mkdir $EC2RL_GATHEREDDIR/aptlog
+      cp -r /var/log/apt/* $EC2RL_GATHEREDDIR/aptlog || true
+      cp /var/log/dpkg.log $EC2RL_GATHEREDDIR/aptlog || true
+      echo "I have attempted to copy the /var/log/apt and /var/log/dpkg.log files to ${EC2RL_GATHEREDDIR}/aptlog"
+  else
+      echo "No /var/log/apt or /var/log/dpkg.log files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

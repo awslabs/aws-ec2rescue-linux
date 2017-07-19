@@ -39,15 +39,13 @@ content: !!str |
 
   echo "I will gather /var/log/zypp and zypper.log log files from this machine"
 
-  if [[ -r /var/log/zypp && -r /var/log/zypper.log ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/zypperlog
-          cp -r /var/log/zypp/* $EC2RL_GATHEREDDIR/zypperlog || true
-          cp /var/log/zypper.log* $EC2RL_GATHEREDDIR/zypperlog || true
-          echo "I have attempted to copy the /var/log/zypp and zypper.log  log files to ${EC2RL_GATHEREDDIR}/zypperlog"
-
-      else
-          echo "No /var/log/zypp or zypper.log log files available or permission denied"
+  if [[ -r /var/log/zypp ]]; then
+      mkdir $EC2RL_GATHEREDDIR/zypperlog
+      cp -r /var/log/zypp/* $EC2RL_GATHEREDDIR/zypperlog || true
+      cp /var/log/zypper.log* $EC2RL_GATHEREDDIR/zypperlog || true
+      echo "I have attempted to copy the /var/log/zypp and zypper.log  log files to ${EC2RL_GATHEREDDIR}/zypperlog"
+  else
+      echo "No /var/log/zypp or zypper.log log files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

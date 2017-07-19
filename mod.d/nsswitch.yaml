@@ -17,9 +17,9 @@
 name: !!str nsswitch
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/nsswitch.conf file
+title: !!str Gather /etc/nsswitch.conf file
 helptext: !!str |
-  Gather up /etc/nsswitch.conf file
+  Gather /etc/nsswitch.conf file
 placement: !!str run
 package: 
   - !!str
@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will gather the /etc/nsswitch.conf file from this machine"
 
-  if [ -r /etc/nsswitch.conf ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/nsswitch
-          cp /etc/nsswitch.conf $EC2RL_GATHEREDDIR/nsswitch/ || true
-          echo "I have attempted to copy the /etc/nsswitch.conf file to ${EC2RL_GATHEREDDIR}/nsswitch"
-      else
-          echo "No /etc/nsswitch.conf available or permission denied"
+  if [ -r /etc/nsswitch.conf ]; then
+      mkdir $EC2RL_GATHEREDDIR/nsswitch
+      cp /etc/nsswitch.conf $EC2RL_GATHEREDDIR/nsswitch/ || true
+      echo "I have attempted to copy the /etc/nsswitch.conf file to ${EC2RL_GATHEREDDIR}/nsswitch"
+  else
+      echo "No /etc/nsswitch.conf available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
