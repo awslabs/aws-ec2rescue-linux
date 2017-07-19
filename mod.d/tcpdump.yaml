@@ -17,9 +17,9 @@
 name: !!str tcpdump
 path: !!str
 version: !!str 1.0
-title: !!str Collect packet capture for network troubleshooting.
+title: !!str Gather packet capture for network troubleshooting.
 helptext: !!str |
-  Collect packet capture for network troubleshooting.
+  Gather packet capture for network troubleshooting.
   Requires --interface= to determine interface to capture (usually eth0)
   Requires --count= to determine number of packets to capture
   Requires --period= to determine length of time to run for
@@ -79,7 +79,7 @@ content: !!str |
 
 
 
-  echo "I will collect tcpdump from this $EC2RL_DISTRO box."
+  echo "I will gather a tcpdump from this $EC2RL_DISTRO box."
 
 
   mkdir $EC2RL_GATHEREDDIR/tcpdump
