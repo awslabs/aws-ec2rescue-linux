@@ -29,6 +29,7 @@ python: prep
 	@cp -r pre.d /tmp/ec2rl
 	@cp -r docs /tmp/ec2rl
 	@cp -r exampleconfigs /tmp/ec2rl
+	@cp -r ssmdocs /tmp/ec2rl
 	@cp functions.bash /tmp/ec2rl
 	@cp README.md /tmp/ec2rl
 	@cp requirements.txt /tmp/ec2rl
@@ -52,6 +53,7 @@ binary: prep
 	--add-data "bin:bin" \
 	--add-data "docs:docs" \
 	--add-data "exampleconfigs:exampleconfigs" \
+	--add-data "ssmdocs:ssmdocs" \
 	--add-data "pre.d:pre.d" \
 	--add-data "mod.d:mod.d" \
 	--add-data "post.d:post.d" \
