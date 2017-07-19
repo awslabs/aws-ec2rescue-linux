@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/sysctl.conf and /etc/sysctl.d files from this machine"
 
-  if [[ -r /etc/sysctl.conf && -r /etc/sysctl.d ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/sysctlconf
-          cp -r /etc/sysctl* $EC2RL_GATHEREDDIR/sysctlconf || true
-          echo "I have attempted to copy the /etc/sysctl.conf and /etc/sysctl.d files to ${EC2RL_GATHEREDDIR}/sysctlconf"
-      else
-          echo "No /etc/sysctl.conf and /etc/sysctl.d files available or permission denied"
+  if [[ -r /etc/sysctl.conf && -r /etc/sysctl.d ]]; then
+      mkdir $EC2RL_GATHEREDDIR/sysctlconf
+      cp -r /etc/sysctl* $EC2RL_GATHEREDDIR/sysctlconf || true
+      echo "I have attempted to copy the /etc/sysctl.conf and /etc/sysctl.d files to ${EC2RL_GATHEREDDIR}/sysctlconf"
+  else
+      echo "No /etc/sysctl.conf and /etc/sysctl.d files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

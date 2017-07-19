@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/hosts from this machine"
 
-  if [[ -r /etc/hosts ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/hosts
-          cp /etc/hosts $EC2RL_GATHEREDDIR/hosts || true
-          echo "I have attempted to copy the /etc/hosts file to ${EC2RL_GATHEREDDIR}/hosts"
-      else
-          echo "No /etc/hosts file available or permission denied"
+  if [[ -r /etc/hosts ]]; then
+      mkdir $EC2RL_GATHEREDDIR/hosts
+      cp /etc/hosts $EC2RL_GATHEREDDIR/hosts || true
+      echo "I have attempted to copy the /etc/hosts file to ${EC2RL_GATHEREDDIR}/hosts"
+  else
+      echo "No /etc/hosts file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

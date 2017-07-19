@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/profile from this machine"
 
-  if [[ -r /etc/profile ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/profile
-          cp /etc/profile $EC2RL_GATHEREDDIR/profile || true
-          echo "I have attempted to copy the /etc/profile file to ${EC2RL_GATHEREDDIR}/profile"
-      else
-          echo "No /etc/profile file available or permission denied"
+  if [[ -r /etc/profile ]]; then
+      mkdir $EC2RL_GATHEREDDIR/profile
+      cp /etc/profile $EC2RL_GATHEREDDIR/profile || true
+      echo "I have attempted to copy the /etc/profile file to ${EC2RL_GATHEREDDIR}/profile"
+  else
+      echo "No /etc/profile file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

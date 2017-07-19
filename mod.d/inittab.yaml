@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/inittab from this machine"
 
-  if [[ -r /etc/inittab ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/inittab
-          cp /etc/inittab $EC2RL_GATHEREDDIR/inittab || true
-          echo "I have attempted to copy the /etc/inittab file to ${EC2RL_GATHEREDDIR}/inittab"
-      else
-          echo "No /etc/inittab file available or permission denied"
+  if [[ -r /etc/inittab ]]; then
+      mkdir $EC2RL_GATHEREDDIR/inittab
+      cp /etc/inittab $EC2RL_GATHEREDDIR/inittab || true
+      echo "I have attempted to copy the /etc/inittab file to ${EC2RL_GATHEREDDIR}/inittab"
+  else
+      echo "No /etc/inittab file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

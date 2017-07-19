@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/environment from this machine"
 
-  if [[ -r /etc/environment ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/environment
-          cp /etc/environment $EC2RL_GATHEREDDIR/environment || true
-          echo "I have attempted to copy the /etc/environment file to ${EC2RL_GATHEREDDIR}/environment"
-      else
-          echo "No /etc/environment file available or permission denied"
+  if [[ -r /etc/environment ]]; then
+      mkdir $EC2RL_GATHEREDDIR/environment
+      cp /etc/environment $EC2RL_GATHEREDDIR/environment || true
+      echo "I have attempted to copy the /etc/environment file to ${EC2RL_GATHEREDDIR}/environment"
+  else
+      echo "No /etc/environment file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

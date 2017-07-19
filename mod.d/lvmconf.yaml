@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/lvm/lvm.conf from this machine"
 
-  if [[ -r /etc/lvm/lvm.conf ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/lvmconf
-          cp /etc/lvm/lvm.conf $EC2RL_GATHEREDDIR/lvm/ || true
-          echo "I have attempted to copy the /etc/lvm/lvm.conf file to ${EC2RL_GATHEREDDIR}/lvmconf/"
-      else
-          echo "No /etc/lvm/lvm.conf file available or permission denied"
+  if [[ -r /etc/lvm/lvm.conf ]]; then
+      mkdir $EC2RL_GATHEREDDIR/lvmconf
+      cp /etc/lvm/lvm.conf $EC2RL_GATHEREDDIR/lvm/ || true
+      echo "I have attempted to copy the /etc/lvm/lvm.conf file to ${EC2RL_GATHEREDDIR}/lvmconf/"
+  else
+      echo "No /etc/lvm/lvm.conf file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

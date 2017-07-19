@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/udev rules and configuration from this machine"
 
-  if [[ -r /etc/udev ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/udev
-          cp -r /etc/udev* $EC2RL_GATHEREDDIR/udev || true
-          echo "I have attempted to copy the /etc/udev rules and configuration to ${EC2RL_GATHEREDDIR}/udev"
-      else
-          echo "No /etc/udev rules and configuration available or permission denied"
+  if [[ -r /etc/udev ]]; then
+      mkdir $EC2RL_GATHEREDDIR/udev
+      cp -r /etc/udev* $EC2RL_GATHEREDDIR/udev || true
+      echo "I have attempted to copy the /etc/udev rules and configuration to ${EC2RL_GATHEREDDIR}/udev"
+  else
+      echo "No /etc/udev rules and configuration available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

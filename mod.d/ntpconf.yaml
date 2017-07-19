@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will collect /etc/ntp.conf from this machine"
 
-  if [[ -r /etc/ntp.conf ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/ntpconf
-          cp /etc/ntp.conf $EC2RL_GATHEREDDIR/ntpconf || true
-          echo "I have attempted to copy the /etc/ntp.conf to ${EC2RL_GATHEREDDIR}/ntpconf"
-      else
-          echo "No /etc/ntp.conf available or permission denied"
+  if [[ -r /etc/ntp.conf ]]; then
+      mkdir $EC2RL_GATHEREDDIR/ntpconf
+      cp /etc/ntp.conf $EC2RL_GATHEREDDIR/ntpconf || true
+      echo "I have attempted to copy the /etc/ntp.conf to ${EC2RL_GATHEREDDIR}/ntpconf"
+  else
+      echo "No /etc/ntp.conf available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
