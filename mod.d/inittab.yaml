@@ -17,9 +17,9 @@
 name: !!str inittab
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/inittab file
+title: !!str Gather /etc/inittab file
 helptext: !!str |
-  Gather up /etc/inittab file
+  Gather /etc/inittab file
 placement: !!str run
 package: 
   - !!str

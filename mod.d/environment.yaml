@@ -17,9 +17,9 @@
 name: !!str environment
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/environment file
+title: !!str Gather /etc/environment file
 helptext: !!str |
-  Gather up /etc/environment file
+  Gather /etc/environment file
 placement: !!str run
 package: 
   - !!str

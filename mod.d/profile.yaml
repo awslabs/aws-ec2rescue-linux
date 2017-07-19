@@ -17,9 +17,9 @@
 name: !!str profile
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/profile file
+title: !!str Gather /etc/profile file
 helptext: !!str |
-  Gather up /etc/profile file
+  Gather /etc/profile file
 placement: !!str run
 package: 
   - !!str

@@ -17,9 +17,9 @@
 name: !!str ntpconf
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/ntp.conf
+title: !!str Gather /etc/ntp.conf
 helptext: !!str |
-  Gather up /etc/ntp.conf
+  Gather /etc/ntp.conf
 placement: !!str run
 package: 
   - !!str

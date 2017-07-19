@@ -17,9 +17,9 @@
 name: !!str hosts
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/hosts file
+title: !!str Gather /etc/hosts file
 helptext: !!str |
-  Gather up /etc/hosts file
+  Gather /etc/hosts file
 placement: !!str run
 package: 
   - !!str

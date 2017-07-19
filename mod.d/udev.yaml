@@ -17,9 +17,9 @@
 name: !!str udev
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/udev rules and configuration
+title: !!str Gather /etc/udev rules and configuration
 helptext: !!str |
-  Gather up /etc/udev rules and configuration
+  Gather /etc/udev rules and configuration
 placement: !!str run
 package: 
   - !!str

@@ -17,9 +17,9 @@
 name: !!str lvmconf
 path: !!str
 version: !!str 1.0
-title: !!str Gather up /etc/lvm/lvm.conf file
+title: !!str Gather /etc/lvm/lvm.conf file
 helptext: !!str |
-  Gather up /etc/lvm/lvm.conf file
+  Gather /etc/lvm/lvm.conf file
 placement: !!str run
 package: 
   - !!str
