@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will gather /var/log/mysqld.log* files from this machine"
 
-  if [ -r /var/log/mysqld.log ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/mysqldlog
-          cp -r /var/log/mysqld.log* $EC2RL_GATHEREDDIR/mysqldlog
-          echo "I have attempted to copy the /var/log/mysqld.log* files to ${EC2RL_GATHEREDDIR}/mysqldlog"
-      else
-          echo "No /var/log/mysqld.log* file available or permission denied"
+  if [ -r /var/log/mysqld.log ]; then
+      mkdir $EC2RL_GATHEREDDIR/mysqldlog
+      cp -r /var/log/mysqld.log* $EC2RL_GATHEREDDIR/mysqldlog
+      echo "I have attempted to copy the /var/log/mysqld.log* files to ${EC2RL_GATHEREDDIR}/mysqldlog"
+  else
+      echo "No /var/log/mysqld.log* file available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

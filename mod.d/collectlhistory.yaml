@@ -40,13 +40,12 @@ content: !!str |
 
   echo "I will gather /var/log/collectl history files from this machine"
 
-  if [ -r /var/log/collectl ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/collectlhistory
-          cp -r /var/log/collectl/* $EC2RL_GATHEREDDIR/collectlhistory || true
-          echo "I have attempted to copy the /var/log/collectl history files to ${EC2RL_GATHEREDDIR}/collectlhistory"
-      else
-          echo "No /var/log/collectl h history files available or permission denied"
+  if [ -r /var/log/collectl ]; then
+      mkdir $EC2RL_GATHEREDDIR/collectlhistory
+      cp -r /var/log/collectl/* $EC2RL_GATHEREDDIR/collectlhistory || true
+      echo "I have attempted to copy the /var/log/collectl history files to ${EC2RL_GATHEREDDIR}/collectlhistory"
+  else
+      echo "No /var/log/collectl h history files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

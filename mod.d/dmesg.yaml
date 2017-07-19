@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will gather /var/log/dmesg* files from this machine"
 
-  if [ -r /var/log/dmesg ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/dmesg
-          cp -r /var/log/dmesg* $EC2RL_GATHEREDDIR/dmesg || true
-          echo "I have attempted to copy the /var/log/dmesg* files to ${EC2RL_GATHEREDDIR}/dmesg"
-      else
-          echo "No /var/log/dmesg* files available or permission denied"
+  if [ -r /var/log/dmesg ]; then
+      mkdir $EC2RL_GATHEREDDIR/dmesg
+      cp -r /var/log/dmesg* $EC2RL_GATHEREDDIR/dmesg || true
+      echo "I have attempted to copy the /var/log/dmesg* files to ${EC2RL_GATHEREDDIR}/dmesg"
+  else
+      echo "No /var/log/dmesg* files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

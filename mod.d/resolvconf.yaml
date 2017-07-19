@@ -39,13 +39,12 @@ content: !!str |
 
   echo "I will gather the /etc/resolv.conf filefile from this machine"
 
-  if [ -r /etc/resolv.conf ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/resolvconf
-          cp /etc/resolv.conf $EC2RL_GATHEREDDIR/resolvconf/ || true
-          echo "I have attempted to copy the /etc/resolv.conf file to ${EC2RL_GATHEREDDIR}/resolvconf"
-      else
-          echo "No /etc/resolv.conf available or permission denied"
+  if [ -r /etc/resolv.conf ]; then
+      mkdir $EC2RL_GATHEREDDIR/resolvconf
+      cp /etc/resolv.conf $EC2RL_GATHEREDDIR/resolvconf/ || true
+      echo "I have attempted to copy the /etc/resolv.conf file to ${EC2RL_GATHEREDDIR}/resolvconf"
+  else
+      echo "No /etc/resolv.conf available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
