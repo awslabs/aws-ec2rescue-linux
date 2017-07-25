@@ -84,7 +84,7 @@ class Options(object):
     def cmdline(self, argv=None):
         """
         Parse the arguments provided to ec2rl and set the subcommand, handle any special arguments,
-        and set the argument:value key pairs. Hyphens are removed to satisfy BASH variable naming requirements.
+        and set the argument:value key pairs. Hyphens are removed to satisfy variable naming requirements.
 
         Parameters:
             argv (list): the arguments provided to ec2rl
@@ -93,22 +93,16 @@ class Options(object):
             True (bool)
         """
         self.logger.debug("options.Options.cmdline({})".format(argv))
-        # process subcommands. With the exception of the --config_file variable, the only known arguments are
+        # Process subcommands. With the exception of the --config_file variable, the only known arguments are
         # the subcommands. The remainder are unknown arguments and dynamically added below.
         self.logger.debug("subcommands:  {}".format(self.subcommand_list))
         self.parser.add_argument("subcommand", nargs="?")
         self.parser.add_argument("--config-file", dest="config_file")
         self.parser.add_argument("--no", nargs="?", default=None)
-        known_args, unknown_args = self.parser.parse_known_args()
-        if known_args.subcommand:
-            if known_args.subcommand in self.subcommand_list:
-                self.subcommand = known_args.subcommand
-            else:
-                raise OptionsInvalidSubcommandError(known_args.subcommand, re.sub(r"[\[\]]", "",
-                                                                                  str(self.subcommand_list)))
-        self.logger.debug("...subcommand= {}".format(self.subcommand))
+        known_args, unknown_args_list = self.parser.parse_known_args()
+        known_args_dict = vars(known_args)
 
-        for dynamic_arg in unknown_args:
+        for dynamic_arg in unknown_args_list:
             if dynamic_arg.startswith("--"):
                 dynamic_arg = dynamic_arg.split("=")[0]
                 self.parser.add_argument(dynamic_arg, action="store", default=True, nargs="?")
@@ -118,32 +112,56 @@ class Options(object):
                 self.logger.debug("unknown command-line token '{}'".format(dynamic_arg))
                 raise OptionsInvalidOptionError(dynamic_arg)
 
-        # parse arguments.
-        parsed_args = self.parser.parse_args()
-        self.logger.debug("arguments:  {}".format(str(parsed_args)))
+        # Parse and create a dict of the args
+        parsed_arg_dict = vars(self.parser.parse_args())
+        self.logger.debug("arguments:  {}".format(parsed_arg_dict))
+        resultant_args_dict = {}
 
-        if parsed_args.config_file:
-            self.load_config(parsed_args.config_file)
+        # Remove known args that are not set (default to None)
+        for key in known_args_dict.keys():
+            if not known_args_dict[key]:
+                del parsed_arg_dict[key]
 
-        parsed_args_dict = {}
-        parsed_dict = vars(parsed_args)
-        for key in parsed_dict.keys():
+        for key in parsed_arg_dict.keys():
             # If the "no" key has a value, handle the args.
-            if key == "no" and parsed_dict[key]:
-                parsed_args_dict[parsed_dict[key]] = "False"
-            # Base case for "no" where it has no args and execution should skip to the next iteration.
-            elif key == "no":
-                continue
-            elif parsed_dict[key] is None:
-                parsed_dict[key] = "True"
+            if key == "no" and parsed_arg_dict[key]:
+                resultant_args_dict[parsed_arg_dict[key]] = "False"
+            elif parsed_arg_dict[key] is None:
+                parsed_arg_dict[key] = "True"
             # Remove underscores in the dict keys.
-            parsed_args_dict[key.replace("_", "")] = parsed_dict[key]
-        for key in parsed_args_dict.keys():
-            self.global_args[key] = parsed_args_dict[key]
+            resultant_args_dict[key.replace("_", "")] = parsed_arg_dict[key]
 
+        # Populate global_args with the resultant key:value pairs
+        for key in resultant_args_dict.keys():
+            self.global_args[key] = resultant_args_dict[key]
+
+        # If a subcommand was provided, verify it is valid
+        if "subcommand" in parsed_arg_dict.keys() and parsed_arg_dict["subcommand"]:
+            if parsed_arg_dict["subcommand"] in self.subcommand_list:
+                self.subcommand = known_args_dict["subcommand"]
+            else:
+                raise OptionsInvalidSubcommandError(known_args.subcommand, re.sub(r"[\[\]]", "",
+                                                                                  str(self.subcommand_list)))
+
+        # Explicitly add notaninstance so it is always clear whether the config was run an instance or not in the
+        # absence of this value being True
         if "notaninstance" not in self.global_args.keys():
             self.global_args["notaninstance"] = "False"
 
+        # Load the config file, if specified. This will overwrite existing values in global_args.
+        if "config_file" in parsed_arg_dict.keys():
+            self.load_config(parsed_arg_dict["config_file"])
+            # The configfile key pair should not be saved in the config file so remove it
+            del self.global_args["configfile"]
+            if "subcommand" in self.global_args.keys():
+                if self.global_args["subcommand"] not in self.subcommand_list:
+                    raise OptionsInvalidSubcommandConfigFileError(self.global_args["subcommand"],
+                                                                  parsed_arg_dict["config_file"],
+                                                                  re.sub(r"[\[\]]", "", str(self.subcommand_list)))
+                else:
+                    self.subcommand = self.global_args["subcommand"]
+
+        self.logger.debug("...subcommand= {}".format(self.subcommand))
         return True
 
     def load_config(self, config_file):
@@ -266,6 +284,14 @@ class OptionsInvalidOptionError(OptionsError):
         message = "Invalid Command line option '{}'.  Options should be in the format --abc or --abc=xyz".format(
             bad_option)
         super(OptionsInvalidOptionError, self).__init__(message, *args)
+
+
+class OptionsInvalidSubcommandConfigFileError(OptionsError):
+    """An unsupported subcommand was encountered in a configuration file."""
+    def __init__(self, bad_subcommand, file_name, subcommands, *args):
+        message = "Invalid Subcommand '{}' found in configuration file {}.  Valid subcommands are: {}.".format(
+            bad_subcommand, file_name, subcommands)
+        super(OptionsInvalidSubcommandConfigFileError, self).__init__(message, *args)
 
 
 class OptionsInvalidSubcommandError(OptionsError):
