@@ -11,7 +11,6 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-PYTHONDIR:=/opt/anaconda3/bin
 PYTHON:=python3
 SHELL:=/bin/bash
 
@@ -42,8 +41,8 @@ python: prep
 binary: prep
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	rm -f ec2rl-binary.tgz
-	@$(PYTHONDIR)/$(PYTHON) make_bin_modules.py
-	@$(PYTHONDIR)/pyinstaller -y \
+	@$(PYTHON) make_bin_modules.py
+	@pyinstaller -y \
 	-p lib \
 	--add-data "functions.bash:." \
 	--add-data "LICENSE:." \
@@ -60,7 +59,7 @@ binary: prep
 	--hidden-import botocore \
 	ec2rl.py
 
-	@$(PYTHONDIR)/$(PYTHON) make_symlinks.py
+	@$(PYTHON) make_symlinks.py
 
 	@# Build the one-directory binary tarball
 	@echo "Building tarball, ec2rl-binary.tgz ..."
