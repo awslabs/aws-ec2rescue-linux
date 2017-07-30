@@ -19,21 +19,21 @@ python: prep
 	rm -f ec2rl.tgz
 	@echo "Creating ec2rl.tgz..."
 	@mkdir /tmp/ec2rl
-	@cp ec2rl /tmp/ec2rl
-	@cp ec2rl.py /tmp/ec2rl
-	@cp -r ec2rlcore /tmp/ec2rl
-	@cp -r lib /tmp/ec2rl
-	@cp -r mod.d /tmp/ec2rl
-	@cp -r post.d /tmp/ec2rl
-	@cp -r pre.d /tmp/ec2rl
-	@cp -r docs /tmp/ec2rl
-	@cp -r exampleconfigs /tmp/ec2rl
-	@cp -r ssmdocs /tmp/ec2rl
-	@cp functions.bash /tmp/ec2rl
-	@cp README.md /tmp/ec2rl
-	@cp requirements.txt /tmp/ec2rl
-	@cp LICENSE /tmp/ec2rl
-	@cp NOTICE /tmp/ec2rl
+	@cp -ap ec2rl /tmp/ec2rl
+	@cp -ap ec2rl.py /tmp/ec2rl
+	@cp -ap ec2rlcore /tmp/ec2rl
+	@cp -ap lib /tmp/ec2rl
+	@cp -ap mod.d /tmp/ec2rl
+	@cp -ap post.d /tmp/ec2rl
+	@cp -ap pre.d /tmp/ec2rl
+	@cp -ap docs /tmp/ec2rl
+	@cp -ap exampleconfigs /tmp/ec2rl
+	@cp -ap ssmdocs /tmp/ec2rl
+	@cp -ap functions.bash /tmp/ec2rl
+	@cp -ap README.md /tmp/ec2rl
+	@cp -ap requirements.txt /tmp/ec2rl
+	@cp -ap LICENSE /tmp/ec2rl
+	@cp -ap NOTICE /tmp/ec2rl
 	@tar -czf ec2rl.tgz -C /tmp ec2rl
 	@rm -rf /tmp/ec2rl
 	@echo "Done!"
