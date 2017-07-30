@@ -6,7 +6,7 @@ phases:
       - echo "Nothing to do in the install phase..."
   pre_build:
     commands:
-      - echo "Nothing to do in the pre_build phase..."
+      - chmod +x ec2rl
   build:
     commands:
       - echo "Build started on $(date)"
