@@ -14,6 +14,6 @@ configparser >= 3.5.0; python_version == '2.7'
 contextlib2 >= 0.5.4; python_version < '3.4'
 coverage >= 4.3.4
 mock >= 1.3.0 ; python_version >= '3.3'
-moto >= 0.4.31
+moto == 0.4.31
 responses >= 0.5.1
 requests >= 2.9.0
