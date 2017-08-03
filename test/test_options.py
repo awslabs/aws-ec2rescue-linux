@@ -39,7 +39,10 @@ class TestOptions(unittest.TestCase):
     _callp = sys.argv[0]
     if not os.path.isabs(_callp):
         _callp = os.path.abspath(_callp)
-    callpath = os.path.split(_callp)[0]
+    if os.path.isdir(_callp):
+        callpath = _callp
+    else:
+        callpath = os.path.split(_callp)[0]
 
     def setUp(self):
         """Setup the default options"""
