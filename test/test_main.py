@@ -545,14 +545,14 @@ class TestMain(unittest.TestCase):
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.bug_report())
 
-        # Check that the length of the bugreport message is of the minimum expected length
-        # This is very variable so the comparison is against:
-        # 22, the hardcoded character count
-        # + the length of the version number
-        # + 5 characters for the Python version (may be 6 though)
-        # + 5 characters for kernel version (this is the absolute minimum e.g. 4.4.0 but will likely be many more)
-        # + 4 characters for distro with "suse" being the shortest string returned by prediag.get_distro()
-        self.assertTrue(len(self.output.getvalue()) >= 22 + len(self.PROGRAM_VERSION) + 5 + 5 + 4)
+        # Example output:
+        # ec2rl 1.0.0
+        # ubuntu, 4.4.0-83-generic
+        # Python 3.5.2, /usr/bin/python3
+        regex_str = r"^ec2rl\ [0-9]+\.[0-9]+\.[0-9]+.*\n(ubuntu|suse|rhel|alami),\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
+                    r"Python\ [0-9]+\.[0-9]+\.[0-9]+.*,\ /.*\n$"
+
+        self.assertTrue(re.match(regex_str, self.output.getvalue()))
 
     def test_main__setup_environ(self):
         """Test that environment variables are setup as expected."""
