@@ -680,8 +680,8 @@ class Main(object):
     def bug_report(self):
         """Print version information relevant for inclusion in a bug report and return True."""
         print("ec2rl {}".format(self.PROGRAM_VERSION))
-        print("Python {}".format(platform.python_version()))
-        print("{}, kernel {}".format(ec2rlcore.prediag.get_distro(), platform.release()))
+        print("{}, {}".format(ec2rlcore.prediag.get_distro(), platform.release()))
+        print("Python {}, {}".format(platform.python_version(), sys.executable))
         return True
 
     def upload(self):
