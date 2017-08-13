@@ -82,6 +82,7 @@ SPECIAL:
 from __future__ import print_function
 import platform
 import pdb
+import signal
 import sys
 
 
@@ -105,9 +106,16 @@ def main():
 
     return 0
 
+
+def pdb_signal_handler(signal_num, stack_frame):
+    print("Received signal: {}".format(signal_num))
+    pdb.Pdb().set_trace(stack_frame)
+
 if __name__ == "__main__":
     if "--pdb" in sys.argv:
         sys.argv.remove("--pdb")
         sys.exit(pdb.run("main()"))
     else:
+        # SIGUSR1 is POSIX signal 10
+        signal.signal(signal.SIGUSR1, pdb_signal_handler)
         sys.exit(main())
