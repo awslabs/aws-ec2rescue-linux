@@ -34,11 +34,7 @@ content: !!str |
       print("Determining if agressive ARP caching is is enabled")
       arpstatus = subprocess.check_output(["sysctl", "net.ipv4.neigh.default.gc_thresh1"]).decode("utf-8")
       if re.match(r"net.ipv4.neigh.default.gc_thresh1\ =\ 0", arpstatus):
-          arp_success = True
-      else:
-          arp_success = False
-      if arp_success:
-          print("[SUCCESS] Aggressive arp caching is disabled.")
+           print("[SUCCESS] Aggressive arp caching is disabled.")
       else:
           print("[FAILURE] You have aggressive arp caching enabled. "
                 "This can cause issues communicating with instances in the same subnet")

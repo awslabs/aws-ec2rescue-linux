@@ -34,10 +34,6 @@ content: !!str |
       print("Determining if TCP recycle is enabled")
       recyclestatus = subprocess.check_output(["sysctl", "net.ipv4.tcp_tw_recycle"]).decode("utf-8")
       if re.match(r"net.ipv4.tcp_tw_recycle\ =\ 0", recyclestatus):
-          recycle_success = True
-      else:
-          recycle_success = False
-      if recycle_success:
           print("[SUCCESS] Aggressive TCP recycling is disabled.")
       else:
           print("[FAILURE] You have aggressive TCP connection recycling enabled. "
