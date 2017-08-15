@@ -227,7 +227,7 @@ class Module(object):
         # Load the global values
         if options and options.global_args:
             for option, optionvalue in options.global_args.items():
-                # subprocess requries all values be strings so attempt to cast any non-str values to str
+                # subprocess requires all values be strings so attempt to cast any non-str values to str
                 if type(optionvalue) != str:
                     optionvalue = str(optionvalue)
                 envlist[option] = optionvalue
