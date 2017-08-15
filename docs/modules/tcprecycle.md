@@ -41,11 +41,11 @@ This setting can be disabled on a temporary or permanent basis.
 To disable it temporarily:
 
 ```commandline
-sudo sysctl -w inet.ipv4.tcp_tw_recycle=0
+sudo sysctl -w net.ipv4.tcp_tw_recycle=0
 ```
 
 To disable it permanently
 
 ```commandline
-echo 'inet.ipv4.tcp_tw_recycle=0' | sudo tee /etc/sysctl.conf
+echo 'net.ipv4.tcp_tw_recycle=0' | sudo tee /etc/sysctl.conf
 ```
