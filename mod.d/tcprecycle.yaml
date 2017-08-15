@@ -29,6 +29,7 @@ content: !!str |
   from __future__ import print_function
   import re
   import subprocess
+  import sys
 
   try:
       print("Determining if TCP recycle is enabled")
