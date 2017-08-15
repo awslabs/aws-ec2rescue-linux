@@ -33,7 +33,7 @@ content: !!str |
   try:
       print("Determining if TCP recycle is enabled")
       recyclestatus = subprocess.check_output(["sysctl", "net.ipv4.tcp_tw_recycle"]).decode("utf-8")
-      if re.search("0", recyclestatus):
+      if re.match(r"net.ipv4.tcp_tw_recycle\ =\ 0", recyclestatus):
           recycle_success = True
       else:
           recycle_success = False

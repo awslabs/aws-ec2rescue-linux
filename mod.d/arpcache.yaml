@@ -33,7 +33,7 @@ content: !!str |
   try:
       print("Determining if agressive ARP caching is is enabled")
       arpstatus = subprocess.check_output(["sysctl", "net.ipv4.neigh.default.gc_thresh1"]).decode("utf-8")
-      if re.search("0", arpstatus):
+      if re.match(r"net.ipv4.neigh.default.gc_thresh1\ =\ 0", arpstatus):
           arp_success = True
       else:
           arp_success = False
@@ -52,7 +52,6 @@ content: !!str |
       print("[WARN] module generated an exception and exited abnormally. "
             "Review the logs to determine the cause of the issue.")
       sys.exit(0)
-
 constraint:
   requires_ec2: !!str False
   domain: !!str net
