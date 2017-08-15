@@ -42,8 +42,8 @@ content: !!str |
       else:
           print("[FAILURE] You have aggressive TCP connection recycling enabled. "
                 "This may cause networking issues when source TCP connections originate from a NAT device.")
-          print("-- To disable, you can run sudo sysctl -w net.ipv4.tcp_tw_recycle=0")
-          print("-- To disable it from re-occuring on next boot, you can run'echo 'net.ipv4.tcp_tw_recycle= 0' |"
+          print("-- To disable, you can run 'sudo sysctl -w net.ipv4.tcp_tw_recycle=0'")
+          print("-- To disable it from re-occuring on next boot, you can run 'echo 'net.ipv4.tcp_tw_recycle= 0' |"
                 " sudo tee /etc/sysctl.conf'")
       print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/tcprecycle.md"
           " for further details")
