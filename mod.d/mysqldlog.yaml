@@ -44,7 +44,14 @@ content: !!str |
       cp -r /var/log/mysqld.log* $EC2RL_GATHEREDDIR/mysqldlog
       echo "I have attempted to copy the /var/log/mysqld.log* files to ${EC2RL_GATHEREDDIR}/mysqldlog"
   else
-      echo "No /var/log/mysqld.log* file available or permission denied"
+      echo "No /var/log/mysqld.log* files available or permission denied"
+  fi
+  if [ -r /var/log/mariadb ]; then
+      mkdir -p $EC2RL_GATHEREDDIR/mysqldlog/mariadb
+      cp -r /var/log/mariadb/* $EC2RL_GATHEREDDIR/mysqldlog/mariadb
+      echo "I have attempted to copy the /var/log/maria/* files to ${EC2RL_GATHEREDDIR}/mysqldlog/mariadb"
+  else
+      echo "No /var/log/mariadb/* files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
