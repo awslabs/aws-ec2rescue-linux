@@ -42,28 +42,32 @@ Additional usage information is available in the usage guide in docs/USAGE.md an
 
 ## Examples
 
-ec2rl can be run with no options or special configuration:
+ec2rl can be run with no options or special configuration.
 ```commandline
 ec2rl run
 ```
 
-Some modules require sudo/root. If executing as a regular user, utilizing sudo is required in order to run these modules:
+Some modules require sudo/root. Utilizing sudo is required in order to run these modules if executing ec2rl as a regular user.
 ```commandline
 sudo ec2rl run
 ```
 
-Many modules require arguments for their usage. For example, most performance metric collection modules 
-require times (number of samples to take) and period (length of sample).
+Some modules require arguments for their usage. For example, most performance metric collection modules require times (number of samples to take) and period (length of sample).
 
 ```commandline
 sudo ec2rl run --times=3 --period=5
 ```
 
-Some modules may negatively impact system performance and will not run by default. These modules can be run by
-specifying the perfimpact argument.
+Some modules may negatively impact system performance. These modules require the perfimpact argument to run.
 
 ```commandline
 sudo ec2rl run --times=3 --period=5 --perfimpact=true
+```
+
+Some modules detect an issue and can also remediate the issue. These modules require the remediate argument to perform the remediation actions.
+
+```commandline
+sudo ec2rl run --remediate
 ```
 
 ## Module Development
