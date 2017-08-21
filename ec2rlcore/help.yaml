@@ -89,6 +89,8 @@ run_help:  !!str |+
                                   creating an AMI or snapshotting all volumes
                                   if valid permissions are available. Select one
                                   of ami or allvolumes
+              --remediate - enables remediation for modules that support it
+
           Key/Value Parameters:
               --abc=xyz   - pass variable "abc" to modules, set to "xyz"
                             to satisfy module constraints
