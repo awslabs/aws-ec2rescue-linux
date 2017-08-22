@@ -109,6 +109,8 @@ The virtualization type as provided by the instance metadata. Examples include "
 #### EC2RL_INTERFACES
 An enumerated list of interfaces on the system. String containing names, such as eth0, eth1, etc. This is generated via the functions.bash, 
 and is only available for modules that have sourced it.
+#### EC2RL_DISTRO
+The detected distribution for the Linux system running ec2rl. One of alami, rhel, ubuntu, suse. 
 ## BASH ec2rl Function Library
 ### Inclusion
 Include the following code snippet in BASH scripts to load in the ec2rl BASH function library.
