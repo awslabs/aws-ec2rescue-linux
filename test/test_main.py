@@ -355,7 +355,7 @@ class TestMain(unittest.TestCase):
         """Test that the help function returns a help string when no subcommand is given."""
         output = self.ec2rl.get_help()
         self.assertIsInstance(output, str)
-        self.assertEqual(len(output), 8362)
+        self.assertEqual(len(output), 8437)
         self.assertTrue(output.startswith("ec2rl:  A framework for executing diagnostic and troubleshooting\n"))
         self.assertTrue(output.endswith("bug                    - enables debug level logging\n"))
 
@@ -363,7 +363,7 @@ class TestMain(unittest.TestCase):
         """Test that the help function returns a help string for a valid subcommand (run)."""
         output = self.ec2rl.get_help("run")
         self.assertIsInstance(output, str)
-        self.assertEqual(len(output), 2465)
+        self.assertEqual(len(output), 2540)
         self.assertTrue(output.startswith("run:\n    SYNOPSIS:\n        ec2rl run [--only-"))
         self.assertTrue(output.endswith("to run in parallel. The default is 10.\n\n"))
 
@@ -401,7 +401,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8363)
+        self.assertEqual(len(self.output.getvalue()), 8438)
 
     def test_main_help_module(self):
         """Test output from a single module."""
@@ -512,7 +512,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 2466)
+        self.assertEqual(len(self.output.getvalue()), 2541)
         self.assertTrue(self.output.getvalue().startswith("run:\n    SYNOPSIS:\n        ec2rl run [--only-modules=MOD"))
         self.assertTrue(self.output.getvalue().endswith("to run in parallel. The default is 10.\n\n\n"))
 
@@ -1708,7 +1708,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8363)
+        self.assertEqual(len(self.output.getvalue()), 8438)
         self.ec2rl.subcommand = original_subcommand
 
     def test_main___call__subcommand_arg(self):
@@ -1718,7 +1718,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl(subcommand="help"))
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8363)
+        self.assertEqual(len(self.output.getvalue()), 8438)
 
     @responses.activate
     @mock.patch("logging.FileHandler")
