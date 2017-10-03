@@ -578,8 +578,8 @@ class TestMain(unittest.TestCase):
         """Test that save_config() returns True and the configuration file would have been opened."""
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.save_config())
-        self.assertEqual(len(self.output.getvalue()), 128)
-        self.assertTrue(re.match(r"^----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
+        self.assertEqual(len(self.output.getvalue()), 129)
+        self.assertTrue(re.match(r"^\n----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
                                  r"/var/tmp/ec2rl/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}_[0-9]{2}_[0-9]{2}.[0-9]{6}"
                                  r"/configuration.cfg\n$",
                                  self.output.getvalue()))
@@ -633,11 +633,11 @@ class TestMain(unittest.TestCase):
         curses.ungetch("\n")
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.menu_config())
-        self.assertTrue(re.match(r"^----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
+        self.assertTrue(re.match(r"^\n----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
                                  r"/var/tmp/ec2rl/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}_[0-9]{2}_[0-9]{2}.[0-9]{6}"
                                  r"/configuration.cfg\n$",
                                  self.output.getvalue()))
-        self.assertEqual(len(self.output.getvalue()), 128)
+        self.assertEqual(len(self.output.getvalue()), 129)
         self.assertTrue(open_mock.called)
         self.assertEqual(self.ec2rl.options.global_args["abc"], "def")
         self.assertEqual(self.ec2rl.options.global_args["concurrency"], "2")
@@ -697,7 +697,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("\n-----------[Backup  Creation]-----------\n\nNo backup op"))
         self.assertTrue(self.output.getvalue().endswith("/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nRunning Modules:\nxennetrocket\n\n-" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1634)
+        self.assertEqual(len(self.output.getvalue()), 1635)
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
@@ -732,8 +732,8 @@ class TestMain(unittest.TestCase):
         curses.ungetch(curses.KEY_RIGHT)
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.menu_config())
-        self.assertEqual(len(self.output.getvalue()), 128)
-        self.assertTrue(re.match(r"^----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
+        self.assertEqual(len(self.output.getvalue()), 129)
+        self.assertTrue(re.match(r"^\n----------\[Configuration File\]----------\n\nConfiguration file saved:\n"
                                  r"/var/tmp/ec2rl/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}_[0-9]{2}_[0-9]{2}.[0-9]{6}"
                                  r"/configuration.cfg\n$",
                                  self.output.getvalue()))
@@ -1761,7 +1761,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("\n-----------[Backup  Creation]-----------\n\nNo backup op"))
         self.assertTrue(self.output.getvalue().endswith("/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("Total modules run:               1" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1634)
+        self.assertEqual(len(self.output.getvalue()), 1635)
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
@@ -1815,7 +1815,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().endswith("V_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("Total modules run:               1" in self.output.getvalue())
         self.assertTrue(ec2rl_run_test._modules[0].processoutput == "[SUCCESS] Hello, world!\n")
-        self.assertEqual(len(self.output.getvalue()), 1557)
+        self.assertEqual(len(self.output.getvalue()), 1558)
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
@@ -1867,10 +1867,12 @@ class TestMain(unittest.TestCase):
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
-        self.assertTrue(self.output.getvalue().startswith("----------[Configuration File]----------\n\nConfiguration "))
-        self.assertTrue(self.output.getvalue().endswith("KrcrMZ2quIDzjn?InstanceID=not_an_instance&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
+        self.assertTrue(self.output.getvalue().startswith(
+            "\n----------[Configuration File]----------\n\nConfiguration "))
+        self.assertTrue(self.output.getvalue().endswith(
+            "KrcrMZ2quIDzjn?InstanceID=not_an_instance&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nRunning Modules:\nxennetrocket\n\n-" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1517)
+        self.assertEqual(len(self.output.getvalue()), 1518)
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
@@ -1924,7 +1926,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().endswith(
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nTotal modules run:               0\n\n-" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1320)
+        self.assertEqual(len(self.output.getvalue()), 1321)
         self.assertTrue(re.search(r"\d{4}-\d{2}-\d{2}T\d{2}_\d{2}_\d{2}.\d{6}$", self.output.getvalue(), re.M))
 
         self.assertTrue(prediag_mock.called)
@@ -1977,7 +1979,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("\n-----------[Backup  Creation]-----------\n\nNo backup op"))
         self.assertTrue(self.output.getvalue().endswith("/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nRunning Modules:\nxennetrocket\n\n-" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1634)
+        self.assertEqual(len(self.output.getvalue()), 1635)
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)

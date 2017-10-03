@@ -500,7 +500,7 @@ class Main(object):
 
         config_file = os.sep.join((self.directories["RUNDIR"], "configuration.cfg"))
         self.options.write_config(config_file, self.modules)
-        ec2rlcore.dual_log("----------[Configuration File]----------\n")
+        ec2rlcore.dual_log("\n----------[Configuration File]----------\n")
         ec2rlcore.dual_log("Configuration file saved:")
         ec2rlcore.dual_log(config_file)
 
