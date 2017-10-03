@@ -73,6 +73,7 @@ def get_distro():
             else:
                 distro = "unknown for /etc/system-release"
     # SUSE
+    # /etc/SuSE-release is deprecated
     elif os.path.isfile("/etc/SuSE-release"):
         with open("/etc/SuSE-release", "r") as fp:
             # This file is a single line
@@ -107,6 +108,20 @@ def get_distro():
                 distro = "rhel"
             else:
                 distro = "unknown for /etc/issue"
+    # Amazon Linux & SUSE
+    # /etc/os-release will be replacing /etc/SuSE-release in the future
+    elif os.path.isfile("/etc/os-release"):
+        with open("/etc/os-release", "r") as fp:
+            lines = fp.readlines()
+            for line in lines:
+                if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server [0-9]{2}", line):
+                    distro = "suse"
+                    break
+                elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI [0-9]{4}\.[0-9]{2}", line):
+                    distro = "alami"
+                    break
+                else:
+                    distro = "unknown for /etc/os-release"
     return distro
 
 
