@@ -20,6 +20,22 @@ except ImportError:
     # Python 3.x
     from io import StringIO
 
+try:
+    # Python 3.x
+    import urllib
+    import urllib.error
+    import urllib.request as urllib_request
+    urllib_urlopen = urllib.request.urlopen
+    urllib_urlopen_str = "urllib.request.urlopen"
+    urllib_urlerror = urllib.error.URLError
+except ImportError:
+    # Python 2.x
+    import urllib2 as urllib
+    import urllib2 as urllib_request
+    urllib_urlopen = urllib.urlopen
+    urllib_urlopen_str = "urllib.urlopen"
+    urllib_urlerror = urllib.URLError
+
 import sys
 import unittest
 
@@ -161,6 +177,12 @@ class TestS3upload(unittest.TestCase):
                                                  "key=92e1ab350e7f5302551e0b05a89616381bb6c66"
                                                  "9c9492d9acfbf63701e455ef6", "test")
 
+    @mock.patch(urllib_urlopen_str, side_effect=urllib_urlerror(reason="Test"))
+    def test_s3upload_get_presigned_url_bad_url(self, mock_urllib):
+        """Test that obtaining the real url of a non-real URL leads to an S3UploadUrlParsingFailure exception."""
+        with self.assertRaises(ec2rlcore.s3upload.S3UploadUrlParsingFailure):
+            ec2rlcore.s3upload.get_presigned_url("http://fakeurl.asdf123", "test")
+
     @responses.activate
     @mock.patch("ec2rlcore.s3upload.open")
     def test_s3upload_fail(self, mock_open):
@@ -171,8 +193,6 @@ class TestS3upload(unittest.TestCase):
             with contextlib.redirect_stdout(self.output):
                 ec2rlcore.s3upload.s3upload("https://test", "s3upload_test")
         self.assertEqual(self.output.getvalue(), "ERROR: Upload failed.  Received response 404\n")
-
-
         self.assertTrue(mock_open.called)
 
     @responses.activate
