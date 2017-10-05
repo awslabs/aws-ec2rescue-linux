@@ -324,6 +324,7 @@ class TestMenuConfig(unittest.TestCase):
         """Test redrawing the window in response to a resize keypress."""
         curses.initscr()
         curses.ungetch("\n")
+        curses.ungetch("\n")
         curses.ungetch(curses.KEY_RESIZE)
         curses.ungetch(curses.KEY_RIGHT)
         self.assertTrue(self.menu())
