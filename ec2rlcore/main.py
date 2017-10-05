@@ -220,10 +220,9 @@ class Main(object):
 
         # create working directory if it doesn't exist
         try:
-            os.mkdir(self.directories["WORKDIR"])
             # Ensure the file is read/writeable by all users.
             # Prevents permission issues when executed by root/sudo then a regular user
-            os.chmod(self.directories["WORKDIR"], 0o777)
+            os.mkdir(self.directories["WORKDIR"], 0o777)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError(self.directories["WORKDIR"])
@@ -254,6 +253,7 @@ class Main(object):
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError("{}/run".format(self.directories["LOGDIR"]))
+
         try:
             os.mkdir("{}/postdiagnostic".format(self.directories["LOGDIR"]))
         except OSError as err:
