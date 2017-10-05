@@ -134,7 +134,7 @@ class TestPrediag(unittest.TestCase):
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data='PRETTY_NAME="SUSE Linux Enterprise Server 12 SP2"'))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
-    def test_prediag_osrelease_alami(self, mock_isfile):
+    def test_prediag_osrelease_suse(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "suse")
         self.assertTrue(mock_isfile.called)
 
