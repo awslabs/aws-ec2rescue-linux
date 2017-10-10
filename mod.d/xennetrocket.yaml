@@ -40,7 +40,7 @@ content: !!str |
 
   echo -e "Checking for SKB overflow bug: 'xennet: skb rides the rocket'\n\n"
 
-  if [ "$EC2RL_NET_DRIVER" != "xen_netfront" ]; then
+  if [[ "$EC2RL_NET_DRIVER" != "xen_netfront" && "$EC2RL_NET_DRIVER" != "netfront" ]]; then
       echo "[SUCCESS] Not using xen_netfront driver."
       echo "Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/xennetrocket.md for further details"
       exit 0
@@ -48,10 +48,10 @@ content: !!str |
 
   case $EC2RL_DISTRO in
        *)
-          if grep 'skb rides the rocket' /var/log/dmesg 2>&1 > /dev/null
+          if dmesg | grep 'skb rides the rocket' 2>&1 > /dev/null
               then
-                  echo "[FAILURE] SKB overflow bug found. $(grep -c 'skb rides the rocket' /var/log/dmesg) occurrences in dmesg"
-                  grep 'skb rides the rocket' /var/log/dmesg
+                  echo "[FAILURE] SKB overflow bug found. $(dmesg | grep -c 'skb rides the rocket') occurrences in dmesg"
+                  dmesg | grep 'skb rides the rocket'
                   echo "-- This can result in packet loss and network connectivity issues"
                   echo "-- Please update your kernel to resolve this."
               else
