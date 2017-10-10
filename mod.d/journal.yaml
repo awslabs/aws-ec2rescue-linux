@@ -19,7 +19,7 @@ path: !!str
 version: !!str 1.0
 title: !!str Gather journal output
 helptext: !!str |
-  Gather journal output
+  Gather journal output - Temporarily disabled due to performance impact
 placement: !!str run
 package: 
   - !!str
@@ -47,7 +47,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str gather
-  distro: !!str ubuntu rhel suse
+  distro: !!str none
   required: !!str
   optional: !!str
   software: !!str journalctl
