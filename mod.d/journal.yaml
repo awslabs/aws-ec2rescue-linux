@@ -17,9 +17,9 @@
 name: !!str journal
 path: !!str
 version: !!str 1.0
-title: !!str Collect journal output
+title: !!str Gather journal output
 helptext: !!str |
-  Collect journal output
+  Gather journal output - Temporarily disabled due to performance impact
 placement: !!str run
 package: 
   - !!str
@@ -37,7 +37,7 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect the journal from this machine"
+  echo "I will gather the journal from this machine"
 
   mkdir $EC2RL_GATHEREDDIR/journal
   journalctl -qxl > $EC2RL_GATHEREDDIR/journal/journal.out
@@ -47,7 +47,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str gather
-  distro: !!str ubuntu rhel suse
+  distro: !!str none
   required: !!str
   optional: !!str
   software: !!str journalctl

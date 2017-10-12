@@ -36,7 +36,10 @@ class TestMenuConfig(unittest.TestCase):
     _callp = sys.argv[0]
     if not os.path.isabs(_callp):
         _callp = os.path.abspath(_callp)
-    callpath = os.path.split(_callp)[0]
+    if os.path.isdir(_callp):
+        callpath = _callp
+    else:
+        callpath = os.path.split(_callp)[0]
 
     module_path = os.path.join(callpath, "test/modules/mod.d")
     modules = ec2rlcore.moduledir.ModuleDir(module_path)
@@ -320,6 +323,7 @@ class TestMenuConfig(unittest.TestCase):
     def test_menu_config_key_resize(self):
         """Test redrawing the window in response to a resize keypress."""
         curses.initscr()
+        curses.ungetch("\n")
         curses.ungetch("\n")
         curses.ungetch(curses.KEY_RESIZE)
         curses.ungetch(curses.KEY_RIGHT)

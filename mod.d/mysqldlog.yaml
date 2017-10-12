@@ -17,9 +17,9 @@
 name: !!str mysqldlog
 path: !!str
 version: !!str 1.0
-title: !!str Collect mysqld.log files
+title: !!str Gather /var/log/mysqld.log* files
 helptext: !!str |
-  Collect mysqld.log files
+  Gather /var/log/mysqld.log* files
 placement: !!str run
 package: 
   - !!str
@@ -37,15 +37,21 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect mysqld.log files from this machine"
+  echo "I will gather /var/log/mysqld.log* files from this machine"
 
-  if [ -r /var/log/mysqld.log ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/mysqldlog
-          cp -r /var/log/mysqld.log* $EC2RL_GATHEREDDIR/mysqldlog
-          echo "I have attempted to copy the mysqld log files to ${EC2RL_GATHEREDDIR}/mysqldlog"
-      else
-          echo "No mysqld.log file available or permission denied"
+  if [ -r /var/log/mysqld.log ]; then
+      mkdir -p $EC2RL_GATHEREDDIR/mysqldlog/mysql
+      cp -r /var/log/mysqld.log* $EC2RL_GATHEREDDIR/mysqldlog/mysql
+      echo "I have attempted to copy the /var/log/mysqld.log* files to ${EC2RL_GATHEREDDIR}/mysqldlog"
+  else
+      echo "No /var/log/mysqld.log* files available or permission denied"
+  fi
+  if [ -r /var/log/mariadb ]; then
+      mkdir -p $EC2RL_GATHEREDDIR/mysqldlog/mariadb
+      cp -r /var/log/mariadb/* $EC2RL_GATHEREDDIR/mysqldlog/mariadb
+      echo "I have attempted to copy the /var/log/maria/* files to ${EC2RL_GATHEREDDIR}/mysqldlog/mariadb"
+  else
+      echo "No /var/log/mariadb/* files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
@@ -55,6 +61,6 @@ constraint:
   required: !!str
   optional: !!str
   software: !!str
-  sudo: !!str False
+  sudo: !!str True
   perfimpact: !!str False
   parallelexclusive: !!str

@@ -17,9 +17,9 @@
 name: !!str sarhistory
 path: !!str
 version: !!str 1.0
-title: !!str Collect historical sar files
+title: !!str Gather /var/log/sa (sar) history files
 helptext: !!str |
-  Collect historical sar files
+  Gather /var/log/sa (sar) history files
   sar is provided by the sysstat package
 placement: !!str run
 package: 
@@ -38,20 +38,18 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect historical sar files from this machine"
+  echo "I will gather /var/log/sa (sar) history files from this machine"
 
-  if [ -r /var/log/sa ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/sarhistory
-          cp -r /var/log/sa/* $EC2RL_GATHEREDDIR/sarhistory || true
-          echo "I have attempted to copy the sar history files to ${EC2RL_GATHEREDDIR}/sarhistory"
-  elif [ -r /var/log/sysstat ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/sarhistory
-          cp -r /var/log/sysstat/* $EC2RL_GATHEREDDIR/sarhistory || true
-          echo "I have attempted to copy the sar history files to ${EC2RL_GATHEREDDIR}/sarhistory"
+  if [ -r /var/log/sa ]; then
+      mkdir $EC2RL_GATHEREDDIR/sarhistory
+      cp -r /var/log/sa/* $EC2RL_GATHEREDDIR/sarhistory || true
+      echo "I have attempted to copy the /var/log/sa history files to ${EC2RL_GATHEREDDIR}/sarhistory"
+  elif [ -r /var/log/sysstat ]; then
+      mkdir $EC2RL_GATHEREDDIR/sarhistory
+      cp -r /var/log/sysstat/* $EC2RL_GATHEREDDIR/sarhistory || true
+      echo "I have attempted to copy the /var/log/sysstat history files to ${EC2RL_GATHEREDDIR}/sarhistory"
   else
-      echo "No sar history files available or permission denied"
+      echo "No /var/log/sa or /var/log/sysstat history files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

@@ -17,9 +17,9 @@
 name: !!str cloudinitlog
 path: !!str
 version: !!str 1.0
-title: !!str Collect cloud-init log files
+title: !!str Gather /etc/cloud-init* log files
 helptext: !!str |
-  Collect cloud-init log files
+  Gather /etc/cloud-init* log files
 placement: !!str run
 package: 
   - !!str
@@ -37,15 +37,14 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect cloud-init log files from this machine"
+  echo "I will collect /etc/cloud-init* log files from this machine"
 
-  if [[ -r /var/log/cloud-init.log && -r /var/log/cloud-init-output.log ]]
-      then
-          mkdir $EC2RL_GATHEREDDIR/cloudinitlog
-          cp /var/log/cloud-init* $EC2RL_GATHEREDDIR/cloudinitlog || true
-          echo "I have attempted to copy the cloudinit log files to ${EC2RL_GATHEREDDIR}/cloudinitlog"
-      else
-          echo "No cloud init log files available or permission denied"
+  if [[ -r /var/log/cloud-init.log && -r /var/log/cloud-init-output.log ]]; then
+      mkdir $EC2RL_GATHEREDDIR/cloudinitlog
+      cp /var/log/cloud-init* $EC2RL_GATHEREDDIR/cloudinitlog || true
+      echo "I have attempted to copy the /etc/cloud-init* log files to ${EC2RL_GATHEREDDIR}/cloudinitlog"
+  else
+      echo "No /etc/cloud-init* log files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False
@@ -55,6 +54,6 @@ constraint:
   required: !!str
   optional: !!str
   software: !!str
-  sudo: !!str True
+  sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str

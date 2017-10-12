@@ -17,10 +17,11 @@
 name: !!str strace
 path: !!str
 version: !!str 1.0
-title: !!str Collect output from strace -fp for application analysis
+title: !!str Gather output from strace -fp for application analysis
 helptext: !!str |
-  Collect output from strace -fp for application analysis
+  Gather output from strace -fp for application analysis
   Requires --period= for time period between repetition
+  Requires --pid= for pid to trace
   Incompatible with parallel mode due to ptrace functionality.
 placement: !!str run
 package: 
@@ -39,11 +40,11 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect strace -fp output from this $EC2RL_DISTRO box for $period seconds"
+  echo "I will gather strace -fp output from this $EC2RL_DISTRO box for $period seconds"
 
   mkdir $EC2RL_GATHEREDDIR/strace
 
-  echo "I have attempted to copy the strace output to ${EC2RL_GATHEREDDIR}/strace"
+  echo "I have attempted to copy the strace -fp output to ${EC2RL_GATHEREDDIR}/strace"
   timeout $period strace -fp $pid -o $EC2RL_GATHEREDDIR/strace/strace.out
   exit 0
 constraint:

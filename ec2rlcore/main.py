@@ -107,7 +107,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.0.0")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.0.1")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
@@ -220,10 +220,9 @@ class Main(object):
 
         # create working directory if it doesn't exist
         try:
-            os.mkdir(self.directories["WORKDIR"])
             # Ensure the file is read/writeable by all users.
             # Prevents permission issues when executed by root/sudo then a regular user
-            os.chmod(self.directories["WORKDIR"], 0o777)
+            os.mkdir(self.directories["WORKDIR"], 0o777)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError(self.directories["WORKDIR"])
@@ -254,6 +253,7 @@ class Main(object):
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError("{}/run".format(self.directories["LOGDIR"]))
+
         try:
             os.mkdir("{}/postdiagnostic".format(self.directories["LOGDIR"]))
         except OSError as err:
@@ -500,7 +500,7 @@ class Main(object):
 
         config_file = os.sep.join((self.directories["RUNDIR"], "configuration.cfg"))
         self.options.write_config(config_file, self.modules)
-        ec2rlcore.dual_log("----------[Configuration File]----------\n")
+        ec2rlcore.dual_log("\n----------[Configuration File]----------\n")
         ec2rlcore.dual_log("Configuration file saved:")
         ec2rlcore.dual_log(config_file)
 
@@ -680,8 +680,8 @@ class Main(object):
     def bug_report(self):
         """Print version information relevant for inclusion in a bug report and return True."""
         print("ec2rl {}".format(self.PROGRAM_VERSION))
-        print("Python {}".format(platform.python_version()))
-        print("{}, kernel {}".format(ec2rlcore.prediag.get_distro(), platform.release()))
+        print("{}, {}".format(ec2rlcore.prediag.get_distro(), platform.release()))
+        print("Python {}, {}".format(platform.python_version(), sys.executable))
         return True
 
     def upload(self):

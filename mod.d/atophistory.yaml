@@ -17,9 +17,9 @@
 name: !!str atophistory
 path: !!str
 version: !!str 1.0
-title: !!str Collect historical atop files.
+title: !!str Gather /var/log/atop history files
 helptext: !!str |
-  Collect historical atop files
+  Gather /var/log/atop history files
   Requires atop tool ( http://www.atoptool.nl/ )
 placement: !!str run
 package: 
@@ -38,15 +38,14 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect historical atop files from this machine"
+  echo "I will gather /var/log/atop history files from this machine"
 
-  if [ -r /var/log/atop ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/atophistory
-          cp -r /var/log/atop/* $EC2RL_GATHEREDDIR/atophistory || true
-          echo "I have attempted to copy the atophistory files to ${EC2RL_GATHEREDDIR}/atophistory"
-      else
-          echo "No atop history files available or permission denied"
+  if [ -r /var/log/atop ]; then
+      mkdir $EC2RL_GATHEREDDIR/atophistory
+      cp -r /var/log/atop/* $EC2RL_GATHEREDDIR/atophistory || true
+      echo "I have attempted to copy the /var/log/atop history files to ${EC2RL_GATHEREDDIR}/atophistory"
+  else
+      echo "No /var/log/atop history files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

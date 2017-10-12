@@ -17,9 +17,9 @@
 name: !!str yumlog
 path: !!str
 version: !!str 1.0
-title: !!str Collect yum.log file
+title: !!str Gather /var/log/yum.log file
 helptext: !!str |
-  Collect yum.log file
+  Gather /var/log/yum.log file
 placement: !!str run
 package: 
   - !!str
@@ -37,15 +37,14 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect the yumlog file from this machine"
+  echo "I will gather the /var/log/yum.log file from this machine"
 
-  if [ -r /var/log/yum.log ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/yumlog
-          cp /var/log/yum.log $EC2RL_GATHEREDDIR/yumlog || true
-          echo "I have attempted to copy the yum log files to ${EC2RL_GATHEREDDIR}/yumlog"
-      else
-          echo "No yum.log available or permission denied"
+  if [ -r /var/log/yum.log ]; then
+      mkdir $EC2RL_GATHEREDDIR/yumlog
+      cp /var/log/yum.log $EC2RL_GATHEREDDIR/yumlog || true
+      echo "I have attempted to copy the /var/logyum.log file to ${EC2RL_GATHEREDDIR}/yumlog"
+  else
+      echo "No /var/log/yum.log available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

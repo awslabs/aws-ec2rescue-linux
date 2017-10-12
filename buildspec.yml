@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Nothing to do in the install phase..."
+  pre_build:
+    commands:
+      - chmod +x ec2rl
+  build:
+    commands:
+      - echo "Build started on $(date)"
+      - make all
+      - if [ "$NIGHTLY" == "TRUE" ]; then echo "Detected nightly build env var" && mv -v ec2rl.tgz ec2rl-nightly.tgz && mv -v ec2rl-binary.tgz ec2rl-nightly-binary.tgz ; fi
+  post_build:
+    commands:
+      - echo "Build completed on $(date)"
+artifacts:
+  files:
+    - ec2rl*tgz

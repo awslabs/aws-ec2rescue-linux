@@ -100,12 +100,13 @@ function logsearch {
         fi
     done
 
-    if which journalctl >/dev/null 2>&1; then
-        if journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern" >/dev/null 2>&1; then
-            echo -e "Match found in systemd journal"
-            journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern"
-        fi
-    fi
+    # Disabled journal searching due to performance impact
+    # if which journalctl >/dev/null 2>&1; then
+    #     if journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern" >/dev/null 2>&1; then
+    #         echo -e "Match found in systemd journal"
+    #         journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern"
+    #     fi
+    # fi
 }
 
 ##

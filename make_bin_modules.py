@@ -60,7 +60,7 @@ for module_dir_prefix in all_modules.keys():
                     module_file.write(module_data)
                 with open(os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py")), "w") as module_file:
                     module_file.write(module_obj.content)
-                subprocess.check_call(["/opt/anaconda3/bin/pyinstaller",
+                subprocess.check_call(["pyinstaller",
                                        os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py"))])
                 # Copy the resulting files to bin/mod.d
                 # shutil.copy will overwrite which is desirable as the intention is to consolidate the compiled

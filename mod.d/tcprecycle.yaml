@@ -16,39 +16,39 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str tcprecycle
 path: !!str
-version: !!str 1.0
+version: !!str 2.0
 title: !!str Determines if aggressive TCP recycling is enabled
 helptext: !!str |
   Determines if aggressive TCP recycling is enabled.
   This may cause networking issues when source TCP connections originate from a NAT device.
 placement: !!str run
-package: 
+package:
   - !!str
-language: !!str bash
+language: !!str python
 content: !!str |
-  #!/bin/bash
-  error_trap()
-  {
-      printf "%0.s=" {1..80}
-      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
-      exit 0
-  }
-  trap error_trap ERR
- 
-  # read-in shared function
-  source functions.bash
- 
-  echo "Determining if TCP recycle is enabled"
- 
-  if sysctl net.ipv4.tcp_tw_recycle |grep "= 1"
-      then
-          echo "[FAILURE] You have aggressive TCP connection recycling enabled. This may cause networking issues when source TCP connections originate from a NAT device."
-          echo "-- To disable, you can run sudo sysctl -w inet.ipv4.tcp_tw_recycle=0"
-          echo "-- To disable it from re-occuring on next boot, you can run'echo 'inet.ipv4.tcp_tw_recycle= 0' | sudo tee /etc/sysctl.conf'"
-      else
-          echo "[SUCCESS] Aggressive TCP recycling is disabled."
-  fi
-  echo "Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/tcprecycle.md for further details"
+  from __future__ import print_function
+  import re
+  import subprocess
+  import sys
+
+  try:
+      print("Determining if TCP recycle is enabled")
+      recyclestatus = subprocess.check_output(["sysctl", "net.ipv4.tcp_tw_recycle"]).decode("utf-8")
+      if re.match(r"net.ipv4.tcp_tw_recycle\ =\ 0", recyclestatus):
+          print("[SUCCESS] Aggressive TCP recycling is disabled.")
+      else:
+          print("[FAILURE] You have aggressive TCP connection recycling enabled. "
+                "This may cause networking issues when source TCP connections originate from a NAT device.")
+          print("-- To disable, you can run 'sudo sysctl -w net.ipv4.tcp_tw_recycle=0'")
+          print("-- To disable it from re-occuring on next boot, you can run 'echo 'net.ipv4.tcp_tw_recycle= 0' |"
+                " sudo tee /etc/sysctl.conf'")
+      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/tcprecycle.md"
+          " for further details")
+  except Exception as ex:
+      print(ex)
+      print("[WARN] module generated an exception and exited abnormally. "
+            "Review the logs to determine the cause of the issue.")
+      sys.exit(0)
 constraint:
   requires_ec2: !!str False
   domain: !!str net

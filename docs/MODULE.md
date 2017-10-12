@@ -109,6 +109,8 @@ The virtualization type as provided by the instance metadata. Examples include "
 #### EC2RL_INTERFACES
 An enumerated list of interfaces on the system. String containing names, such as eth0, eth1, etc. This is generated via the functions.bash, 
 and is only available for modules that have sourced it.
+#### EC2RL_DISTRO
+The detected distribution for the Linux system running ec2rl. One of alami, rhel, ubuntu, suse. 
 ## BASH ec2rl Function Library
 ### Inclusion
 Include the following code snippet in BASH scripts to load in the ec2rl BASH function library.
@@ -141,9 +143,14 @@ arg3 = Grep arguments (optional)
 5. Modules must complete without any user intervention such as waiting for user input.
 5. Modules must be tested for compatibility on the latest Amazon Machine Images (AMIs) of Amazon Linux, RHEL, SLES, and Ubuntu or as many as possible depending upon the intended operations performed.
 ### Diagnostic Module Requirements
-1. A successful diagnostic should print a message prefixed with [SUCCESS].
-2. A failing diagnostic should print a message prefixed with [FAIL].
-3. A warning should print a message prefixed with [WARN].
+1. A diagnostic module must print a status message.
+   * A successful diagnostic should print a message prefixed with "[SUCCESS]".
+   * A failing diagnostic should print a message prefixed with "[FAIL]".
+   * A warning should print a message prefixed with "[WARN]".
+2. A diagnostic module may include optional detail messages.
+   * Detail messages are included in the run summary that is printed to standard output and are most useful when running the tool manually.
+   * Detail messages must immediately follow the status message.
+   * Detail messages must be prefixed with "--".
 ### Gather Module Requirements
 1. Prefer copying a file rather than reading it.
 2. Create a dir in $EC2RL_GATHEREDIR/modulename - e.g. $EC2RL_GATHEREDDIR/messages and copy the files into it.

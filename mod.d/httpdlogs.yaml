@@ -17,9 +17,9 @@
 name: !!str httpdlogs
 path: !!str
 version: !!str 1.0
-title: !!str Collect apache httpd log files
+title: !!str Gather Apache /var/log/httpd/* or /var/log/apache2/* log files
 helptext: !!str |
-  Collect apache httpd log files. This assumes default paths.
+  Gather Apache /var/log/httpd/* or /var/log/apache2/* log files This assumes default paths.
 placement: !!str run
 package: 
   - !!str
@@ -37,20 +37,18 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect apache httpd log files from this machine"
+  echo "I will collect Apache httpd log files from this machine"
 
-  if [ -r /var/log/httpd ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/httpdlogs
-          cp -r /var/log/httpd/* $EC2RL_GATHEREDDIR/httpdlogs || true
-          echo "I have attempted to copy the httpd log files to ${EC2RL_GATHEREDDIR}/httpdlogs"
-  elif [ -r /var/log/apache2 ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/httpdlogs
-          cp -r /var/log/apache2/* $EC2RL_GATHEREDDIR/httpdlogs || true
-          echo "I have attempted to copy the httpd log files to ${EC2RL_GATHEREDDIR}/httpdlogs"
+  if [ -r /var/log/httpd ]; then
+      mkdir $EC2RL_GATHEREDDIR/httpdlogs
+      cp -r /var/log/httpd/* $EC2RL_GATHEREDDIR/httpdlogs || true
+      echo "I have attempted to copy the Apache /var/log/httpd/* log files to ${EC2RL_GATHEREDDIR}/httpdlogs"
+  elif [ -r /var/log/apache2 ]; then
+      mkdir $EC2RL_GATHEREDDIR/httpdlogs
+      cp -r /var/log/apache2/* $EC2RL_GATHEREDDIR/httpdlogs || true
+      echo "I have attempted to copy the Apache /var/log/apache2/* log files to ${EC2RL_GATHEREDDIR}/httpdlogs"
   else
-      echo "No apache httpd log files available or permission denied"
+      echo "No Apache /var/log/httpd/* or /var/log/apache2/* log files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

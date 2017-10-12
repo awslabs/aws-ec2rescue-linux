@@ -39,7 +39,10 @@ class TestOptions(unittest.TestCase):
     _callp = sys.argv[0]
     if not os.path.isabs(_callp):
         _callp = os.path.abspath(_callp)
-    callpath = os.path.split(_callp)[0]
+    if os.path.isdir(_callp):
+        callpath = _callp
+    else:
+        callpath = os.path.split(_callp)[0]
 
     def setUp(self):
         """Setup the default options"""
@@ -144,6 +147,18 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(self.options.global_args["asdf"], "1234")
         self.assertEqual(self.options.per_module_args["arpcache"]["efgh"], "5678")
 
+    def test_options_load_good_config_no_subcommand(self):
+        """
+        Test that loading a good configuration file with no subcommand and no subcommand provided via CLI args
+        results in an unset subcommand.
+        """
+        configuration_path = os.path.join(self.callpath, "test/configurations/configuration.cfg")
+        sys.argv = ["ec2rl", "--config-file={}".format(configuration_path)]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        self.assertEqual(self.options.global_args["asdf"], "1234")
+        self.assertEqual(self.options.per_module_args["arpcache"]["efgh"], "5678")
+        self.assertFalse(self.options.subcommand)
+
     def test_options_load_good_config_empty_section(self):
         """Test that loading a configuration file with an empty section doesn't create a corresponding dict key."""
         configuration_path = os.path.join(self.callpath, "test/configurations/empty_section_config.cfg")
@@ -164,6 +179,16 @@ class TestOptions(unittest.TestCase):
         configuration_path = os.path.join(self.callpath, "test/configurations/junk_config.cfg")
         sys.argv = ["ec2rl", "run", "--config-file={}".format(configuration_path)]
         with self.assertRaises(ec2rlcore.options.OptionsInvalidConfigurationFile):
+            self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+
+    def test_options_load_invalid_subcommand(self):
+        """
+        Test that attempting to load configuration with an unsupport subcommand raises
+        OptionsInvalidSubcommandConfigFileError.
+        """
+        configuration_path = os.path.join(self.callpath, "test/configurations/invalid_subcommand.cfg")
+        sys.argv = ["ec2rl", "run", "--config-file={}".format(configuration_path)]
+        with self.assertRaises(ec2rlcore.options.OptionsInvalidSubcommandConfigFileError):
             self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
 
     def test_options_load_missing_config(self):

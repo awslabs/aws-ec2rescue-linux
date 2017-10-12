@@ -126,7 +126,25 @@ class TestPrediag(unittest.TestCase):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown for /etc/issue")
         self.assertTrue(mock_isfile.called)
 
-    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False))
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data='PRETTY_NAME="Amazon Linux AMI 2017.03"'))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    def test_prediag_osrelease_alami(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami")
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data='PRETTY_NAME="SUSE Linux Enterprise Server 12 SP2"'))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    def test_prediag_osrelease_suse(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(), "suse")
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    def test_prediag_osrelease_unknown(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown for /etc/os-release")
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, False))
     def test_prediag_os_unknown(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown")
         self.assertTrue(mock_isfile.called)

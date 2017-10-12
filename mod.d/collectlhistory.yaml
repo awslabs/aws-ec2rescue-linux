@@ -17,9 +17,9 @@
 name: !!str collectlhistory
 path: !!str
 version: !!str 1.0
-title: !!str Collect historical collectl files
+title: !!str Gather /var/log/collectl history files
 helptext: !!str |
-  Collect historical collectl files
+  Gather /var/log/collectl history files
   Requires collectl tool ( http://collectl.sourceforge.net/ )
 placement: !!str run
 package: 
@@ -38,15 +38,14 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect historical collectl files from this machine"
+  echo "I will gather /var/log/collectl history files from this machine"
 
-  if [ -r /var/log/collectl ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/collectlhistory
-          cp -r /var/log/collectl/* $EC2RL_GATHEREDDIR/collectlhistory || true
-          echo "I have attempted to copy the collectl history files to ${EC2RL_GATHEREDDIR}/collectlhistory"
-      else
-          echo "No collectl history files available or permission denied"
+  if [ -r /var/log/collectl ]; then
+      mkdir $EC2RL_GATHEREDDIR/collectlhistory
+      cp -r /var/log/collectl/* $EC2RL_GATHEREDDIR/collectlhistory || true
+      echo "I have attempted to copy the /var/log/collectl history files to ${EC2RL_GATHEREDDIR}/collectlhistory"
+  else
+      echo "No /var/log/collectl h history files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

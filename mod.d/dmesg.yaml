@@ -17,9 +17,9 @@
 name: !!str dmesg
 path: !!str
 version: !!str 1.0
-title: !!str Collect dmesg files
+title: !!str Gather /var/log/dmesg* files
 helptext: !!str |
-  Collect dmesg files
+  Gather /var/log/dmesg* files
 placement: !!str run
 package: 
   - !!str
@@ -37,15 +37,14 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect dmesg files from this machine"
+  echo "I will gather /var/log/dmesg* files from this machine"
 
-  if [ -r /var/log/dmesg ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/dmesg
-          cp -r /var/log/dmesg* $EC2RL_GATHEREDDIR/dmesg || true
-          echo "I have attempted to copy the dmesg file to ${EC2RL_GATHEREDDIR}/dmesg"
-      else
-          echo "No dmesg files available or permission denied"
+  if [ -r /var/log/dmesg ]; then
+      mkdir $EC2RL_GATHEREDDIR/dmesg
+      cp -r /var/log/dmesg* $EC2RL_GATHEREDDIR/dmesg || true
+      echo "I have attempted to copy the /var/log/dmesg* files to ${EC2RL_GATHEREDDIR}/dmesg"
+  else
+      echo "No /var/log/dmesg* files available or permission denied"
   fi
 constraint:
   requires_ec2: !!str False

@@ -31,23 +31,22 @@ Exceptions:
     S3UploadTarfileReadError: raised when an error occurs reading the archive file
     S3UploadTarfileWriteError: raised when an error occurs writing to the archive file
 """
-# Python 3
 try:
-    import urllib.parse as urlparse
-# Python 2
-except ImportError:  # pragma: no cover
-    import urlparse
-
-# Python 3
-try:
+    # Python 3
     import urllib
+    import urllib.error
     import urllib.request as urllib_request
     urllib_urlopen = urllib.request.urlopen
-# Python 2
+    urllib_urlerror = urllib.error.URLError
+    import urllib.parse as urlparse
 except ImportError:  # pragma: no cover
+    # Python 2
     import urllib2 as urllib
     import urllib2 as urllib_request
     urllib_urlopen = urllib.urlopen
+    urllib_urlerror = urllib.URLError
+    import urlparse
+
 
 import json
 import os
@@ -108,12 +107,15 @@ def get_presigned_url(uploader_url, filename, region="us-east-1"):
     query_str = urlparse.urlparse(uploader_url).query
     put_dict = urlparse.parse_qs(query_str)
 
-    # If uploader_url isn't parsable then maybe it is a shortened URL
-    if not put_dict:
-        the_request = urllib_request.Request(uploader_url)
-        uploader_url = urllib_urlopen(the_request).geturl()
-        query_str = urlparse.urlparse(uploader_url).query
-        put_dict = urlparse.parse_qs(query_str)
+    # If uploader_url is not parsable then maybe it is a shortened URL
+    try:
+        if not put_dict:
+            the_request = urllib_request.Request(uploader_url)
+            uploader_url = urllib_urlopen(the_request).geturl()
+            query_str = urlparse.urlparse(uploader_url).query
+            put_dict = urlparse.parse_qs(query_str)
+    except urllib_urlerror:
+        pass
 
     if put_dict:
         # urlparse.parse_qs returns dict values that are single value lists
