@@ -108,6 +108,9 @@ def main():
 
 
 def pdb_signal_handler(signal_num, stack_frame):
+    """
+    Handles the SIGUSR1 signal to initiate pdb
+    """
     print("Received signal: {}".format(signal_num))
     pdb.Pdb().set_trace(stack_frame)
 
