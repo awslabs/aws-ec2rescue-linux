@@ -1,3 +1,4 @@
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aws-ec2rescue-linux/Lobby)
 # Amazon Elastic Compute Cloud (EC2) Rescue for Linux
 
 ## What is it?
