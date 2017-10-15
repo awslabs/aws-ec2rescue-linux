@@ -75,7 +75,7 @@ class TestMain(unittest.TestCase):
     else:
         callpath = os.path.split(_callp)[0]
     ec2rl = None
-    PROGRAM_VERSION = "1.0.0"
+    PROGRAM_VERSION = str(ec2rlcore.main.Main.PROGRAM_VERSION)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)

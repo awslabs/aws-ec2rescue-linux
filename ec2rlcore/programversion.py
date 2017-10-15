@@ -79,19 +79,30 @@ class ProgramVersion(object):
 
     def __repr__(self):
         """
-        Implementation of __repr__ enables customization of how an object instance is 'printed' when used as
+        Implementation of __repr__ returns a string suitable for recreation of a ProgramVersion instance.
+        """
+        if self.release_short == "r":
+            return "ProgramVersion(\"{}.{}.{}\")".format(self.major, self.minor, self.maintenance)
+        else:
+            return "ProgramVersion(\"{}.{}.{}{}{}\")".format(self.major, self.minor, self.maintenance,
+                                                             self.release_short, self.pre_release)
+
+    def __str__(self):
+        """
+       Implementation of __str__ enables customization of how an object instance is 'printed' when used as
         an argument of print().
-        For example (from ec2lcore.main.Main): 'print("ec2rl {}".format(self.PROGRAM_VERSION))' prints:
-        'ec2rl 1.0.0b6'
         """
         if self.release_short == "r":
             return "{}.{}.{}".format(self.major, self.minor, self.maintenance)
         else:
             return "{}.{}.{}{}{}".format(self.major, self.minor, self.maintenance, self.release_short, self.pre_release)
 
+    def __format__(self, *args):
+        return self.__str__()
+
     def __len__(self):
         """Implementation enables the builtin len() function to return the length of the string representation."""
-        return len(self.__repr__())
+        return len(self.__str__())
 
     def __eq__(self, other):
         """Implenentation enables the rich comparison operator '=='."""
