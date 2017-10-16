@@ -35,6 +35,7 @@ python: prep
 	@cp -ap LICENSE /tmp/ec2rl
 	@cp -ap NOTICE /tmp/ec2rl
 	@tar -czf ec2rl.tgz -C /tmp ec2rl
+	@sha256sum ec2rl.tgz > ec2rl.tgz.sha256
 	@rm -rf /tmp/ec2rl
 	@echo "Done!"
 
@@ -64,6 +65,7 @@ binary: prep
 	@# Build the one-directory binary tarball
 	@echo "Building tarball, ec2rl-binary.tgz ..."
 	@tar -czf ec2rl-binary.tgz -C dist ec2rl
+	@sha256sum ec2rl-binary.tgz > ec2rl-binary.tgz.sha256
 	@echo "Done!"
 
 
@@ -85,6 +87,8 @@ prep:
 
 clean: prep
 	rm -f ec2rl.tgz
+	rm -f ec2rl.tgz.sha256
 	rm -f ec2rl-binary.tgz
+	rm -f ec2rl-binary.tgz.sha256
 
 all: python binary
