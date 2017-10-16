@@ -18,3 +18,4 @@ phases:
 artifacts:
   files:
     - ec2rl*tgz
+    - ec2rl*sha256
