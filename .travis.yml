@@ -1,0 +1,23 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+install:
+  - pip install -r requirements.txt
+  - pip install -r requirements_test.txt
+  - pip install unittest-xml-reporting
+  - pip install pylint
+script: |
+  pylint ec2rlcore -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > pylint-report.txt
+  coverage run --branch --source=ec2rlcore/ -m unittest discover
+  coverage xml
+  sed -i 's/filename="/filename=".\/ec2rlcore\//g' coverage.xml
+  python -m xmlrunner discover
+  sonar-scanner -Dproject.settings=github-sonar.properties
+addons:
+  sonarcloud:
+    organization: "aws-ec2rescue-linux"
+    token:
+      secure: "Ywc/2f7ySeRDHeJ30JDo2NX6kMEBbwVnyBThQWwTiY+Is+F2zA6SoDLCLNrAmESYTeasA670LDHgz9fNi3XMm4A7KMS+cBT67GX8Q0XCAxtuolHUKC9wiSrT4CyNzkB5iTpc/lKehzTJChv9qUCE+KIhfzP4KJiXGwJMVQgJzzRuuwXilomttx7EOYOh302u4wonsZCi6Arsk86t32s9J1iIZsB9cwX8AY3qINoPEJMxl2RxwOFDftonHqm2XdsbPropQpmrKHumkknExo8lDiIHYi3u3SHYHjxYJv2hibp4uZ/MlWCQ31JCE7XJT8zHLwaJqk5KvSfDytzF6C2GEgxje/odNmOlS8kNz+GVuRoFPDp7TkO+d3bpcDcDBrK4xYi4Qj2LLNSQ8hZyNAm43Fq5Mtj/KIeV8UbWkn0si70Bl7lgWhBUOChZiIA87HAjB4R1waEWs+kCc3saIvTMRlQCGOXsIttOVsMucu4NUR/+fR1YwqYxod7cOesx5C4YPS+Xe9HE9FTRdYxi/I77JCh1oW3t6NH9SLUNr8ja8x2hlVoN0HNyw9HJfUU4k/pCJugDLlAMy+BEGcHFIZrYYPvS16SKpLtLB30lbtohltGtK3npRAyTRtXzmpzLt6FK9hlOBrcFTSmMO3HGOiE2J9yWjHPNjTbpusEVUP5xPKg="
+    branches:
+      - develop

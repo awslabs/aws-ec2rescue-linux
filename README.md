@@ -1,4 +1,4 @@
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aws-ec2rescue-linux/Lobby)
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aws-ec2rescue-linux/Lobby) [![Build Status](https://travis-ci.org/awslabs/aws-ec2rescue-linux.svg?branch=develop)](https://travis-ci.org/awslabs/aws-ec2rescue-linux)
 # Amazon Elastic Compute Cloud (EC2) Rescue for Linux
 
 ## What is it?
