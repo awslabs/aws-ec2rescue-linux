@@ -871,7 +871,7 @@ class Main(object):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.REQUIRES_SUDO)
         elif mod.whyskipping.startswith("Requires missing/non-executable software"):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_SOFTWARE)
-        elif mod.whyskipping.startswith("missing value for required argument"):
+        elif mod.whyskipping.startswith("Missing required argument"):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_ARGUMENT)
 
         self.pruned_modules.append(mod)
