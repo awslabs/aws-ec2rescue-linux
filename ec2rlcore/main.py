@@ -229,7 +229,7 @@ class Main(object):
 
         # create subdirectory for each tool run
         try:
-            os.mkdir(self.directories["RUNDIR"])
+            os.mkdir(self.directories["RUNDIR"], 0o700)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError(self.directories["RUNDIR"])
