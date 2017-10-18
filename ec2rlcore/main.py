@@ -958,10 +958,10 @@ class Main(object):
         Returns:
             (int): Count of modules run
         """
-        # If concurrency arg is set, is a number, and is greater than 0
+        # If concurrency arg is set and is a number
         if "concurrency" in self.options.global_args and self.options.global_args["concurrency"].isdigit():
-            # Concurrency has a minimum of 1.  If arg concurrency is less than 1, floor at 1
-            concurrency = max(1, int(self.options.global_args["concurrency"]))
+            # Concurrency has a minimum of 1 and a maximum of 100.
+            concurrency = min(max(1, int(self.options.global_args["concurrency"])), 100)
         else:
             # Default concurrency level is set here:
             concurrency = 10

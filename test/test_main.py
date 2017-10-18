@@ -1885,6 +1885,106 @@ class TestMain(unittest.TestCase):
         self.assertTrue(write_config_mock.called)
         self.assertTrue(logging_fh_mock.called)
 
+    @responses.activate
+    @mock.patch("ec2rlcore.paralleldiagnostics.parallel_run")
+    @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
+    @mock.patch("os.chdir", side_effect=simple_return)
+    @mock.patch("shutil.copyfile", side_effect=simple_return)
+    @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
+    def test_main_run_concurrency_min(self,
+                                      prediag_mock,
+                                      main_log_handler_mock,
+                                      debug_log_handler_mock,
+                                      mkdir_mock,
+                                      copyfile_mock,
+                                      chdir_mock,
+                                      write_config_mock,
+                                      parallel_run_mock):
+        """Test that concurrency is set to 1 when specificed as less than 1"""
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+        path_to_ec2rl = os.path.abspath("ec2rl")
+        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
+        sys.argv = [test_path, "run", "--concurrency=0"]
+        module_path = os.path.join(self.callpath, "test/modules/single_diagnose/")
+        ec2rl_run_test = ec2rlcore.main.Main(debug=True, full_init=True)
+        ec2rl_run_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
+
+        # We don't need to run pre/post modules for this test
+        ec2rl_run_test._prediags = []
+        ec2rl_run_test._postdiags = []
+
+        # Minimum concurrency = 1
+        with contextlib.redirect_stdout(self.output):
+            self.assertTrue(ec2rl_run_test())
+        parallel_run_mock.assert_called_with(ec2rl_run_test.modules,
+                                             ec2rl_run_test.directories["LOGDIR"],
+                                             concurrency=1,
+                                             options=ec2rl_run_test.options)
+
+        self.assertTrue(prediag_mock.called)
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(mkdir_mock.called)
+        self.assertTrue(copyfile_mock.called)
+        self.assertTrue(chdir_mock.called)
+        self.assertTrue(write_config_mock.called)
+
+    @responses.activate
+    @mock.patch("ec2rlcore.paralleldiagnostics.parallel_run")
+    @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
+    @mock.patch("os.chdir", side_effect=simple_return)
+    @mock.patch("shutil.copyfile", side_effect=simple_return)
+    @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
+    def test_main_run_concurrency_max(self,
+                                      prediag_mock,
+                                      main_log_handler_mock,
+                                      debug_log_handler_mock,
+                                      mkdir_mock,
+                                      copyfile_mock,
+                                      chdir_mock,
+                                      write_config_mock,
+                                      parallel_run_mock):
+        """Test that concurrency is set to 100 when specificed as greater than 100"""
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+        path_to_ec2rl = os.path.abspath("ec2rl")
+        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
+        sys.argv = [test_path, "run", "--concurrency=1000"]
+        module_path = os.path.join(self.callpath, "test/modules/single_diagnose/")
+        ec2rl_run_test = ec2rlcore.main.Main(debug=True, full_init=True)
+        ec2rl_run_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
+
+        # We don't need to run pre/post modules for this test
+        ec2rl_run_test._prediags = []
+        ec2rl_run_test._postdiags = []
+
+        # Maximum concurrency = 100
+        with contextlib.redirect_stdout(self.output):
+            self.assertTrue(ec2rl_run_test())
+        parallel_run_mock.assert_called_with(ec2rl_run_test.modules,
+                                             ec2rl_run_test.directories["LOGDIR"],
+                                             concurrency=100,
+                                             options=ec2rl_run_test.options)
+
+        self.assertTrue(prediag_mock.called)
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(mkdir_mock.called)
+        self.assertTrue(copyfile_mock.called)
+        self.assertTrue(chdir_mock.called)
+        self.assertTrue(write_config_mock.called)
+
     @mock.patch("shutil.copyfile", side_effect=OSError())
     def test_main_run_copy_error(self, mock_side_effect_function):
         """Test running the instance of Main when os.shutil fails to copy functions.bash."""
