@@ -162,7 +162,7 @@ class TestProgramVersion(unittest.TestCase):
 
     def test_programversion_print_release(self):
         """
-        Test that ProgramVersion.__repr__ returns the expected string representation of the ProgramVersion whose
+        Test that ProgramVersion.__str__ returns the expected string representation of the ProgramVersion whose
         release type is 'release'.
         """
         version_string = "1.0.0"
@@ -171,7 +171,7 @@ class TestProgramVersion(unittest.TestCase):
 
     def test_programversion_print_beta(self):
         """
-        Test that ProgramVersion.__repr__ returns the expected string representation of the ProgramVersion whose
+        Test that ProgramVersion.__str__ returns the expected string representation of the ProgramVersion whose
         release type is 'beta'.
         """
         version_string = "1.0.0b1"
@@ -180,7 +180,7 @@ class TestProgramVersion(unittest.TestCase):
 
     def test_programversion_print_alpha(self):
         """
-        Test that ProgramVersion.__repr__ returns the expected string representation of the ProgramVersion whose
+        Test that ProgramVersion.__str__ returns the expected string representation of the ProgramVersion whose
         release type is 'alpha'.
         """
         version_string = "1.0.0a1"
@@ -189,12 +189,21 @@ class TestProgramVersion(unittest.TestCase):
 
     def test_programversion_print_rc(self):
         """
-        Test that ProgramVersion.__repr__ returns the expected string representation of the ProgramVersion whose
+        Test that ProgramVersion.__str__ returns the expected string representation of the ProgramVersion whose
         release type is 'candidate'.
         """
         version_string = "1.0.0rc1"
         version_object = ec2rlcore.programversion.ProgramVersion(version_string)
         self.assertEqual(str(version_object), version_string)
+
+    def test_programversion_repr(self):
+        """
+        Test that ProgramVersion.__repr__ returns the expected string representations of the ProgramVersion instances.
+        """
+        version_object = ec2rlcore.programversion.ProgramVersion("1.0.0rc1")
+        self.assertEqual(repr(version_object), 'ProgramVersion("1.0.0rc1")')
+        version_object = ec2rlcore.programversion.ProgramVersion("1.0.0")
+        self.assertEqual(repr(version_object), 'ProgramVersion("1.0.0")')
 
     def test_programversion_len(self):
         """
