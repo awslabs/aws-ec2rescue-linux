@@ -274,6 +274,8 @@ class TestMain(unittest.TestCase):
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
         self.assertTrue(mkdir_mock.called)
+        # Directory must be created without permissions for group and other.
+        mkdir_mock.assert_called_with(self.ec2rl.directories["RUNDIR"], 0o700)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
