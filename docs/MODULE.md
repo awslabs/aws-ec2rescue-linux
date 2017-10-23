@@ -94,6 +94,8 @@ constraint:
 ```
 # Additional Details
 ## Available Environment Variables
+#### EC2RL_CALLPATH
+The path to ec2rl.py. This path can be used to locate the lib directory and utilize vendored Python modules.
 #### EC2RL_WORKDIR
 The main tmp directory for the diagnostic tool. By default, /var/tmp/ec2rl
 #### EC2RL_RUNDIR
@@ -151,12 +153,25 @@ arg3 = Grep arguments (optional)
    * Detail messages are included in the run summary that is printed to standard output and are most useful when running the tool manually.
    * Detail messages must immediately follow the status message.
    * Detail messages must be prefixed with "--".
+### Security Requirements
+1. Avoid insecure practices such as Python's eval(), exec(), and subprocess with shell=True.
+2. Modules cannot contain hard-coded sensitive information such as usernames or passwords.
+3. Modules must not expose sensitive data. An example would be copying a sensitive file to a world readable location such as /tmp.
 ### Gather Module Requirements
 1. Prefer copying a file rather than reading it.
 2. Create a dir in $EC2RL_GATHEREDIR/modulename - e.g. $EC2RL_GATHEREDDIR/messages and copy the files into it.
 ### Python Module Requirements
 1. Code must be compatible with and tested with both Python 2.7.9+ and 3.2+.
-2. Code must only use the standard library.
+2. Code must be limited to the standard library and modules vendored inside the lib directory. Modules can build a path to the lib directory using the EC2RL_CALLPATH environment variable.
+The following modules can be found in the lib directory:
+   * boto3 1.4.4
+   * botocore 1.5.7
+   * dateutil 2.6.0
+   * jmespath 0.9.1
+   * requests 2.14.2
+   * s3transfer 0.1.10
+   * six 1.10.0
+   * yaml 3.12
 
 ## Module Run Order
 Modules will run in the following order:
