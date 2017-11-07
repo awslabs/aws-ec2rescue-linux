@@ -42,6 +42,11 @@ content: !!str |
 
   echo "Determining if ixgbevf version is below recommend value"
 
+  if [ "$EC2RL_VIRT_TYPE" = "hvm" ]; then
+        echo "[SUCCESS] This platform is Elastic Network Adapter only."
+        exit 0
+  fi
+
   if [ "$EC2RL_NET_DRIVER" != "ixgbevf" ]; then
       echo "[SUCCESS] Not using ixgbevf driver."
       exit 0

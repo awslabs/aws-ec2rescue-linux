@@ -39,6 +39,11 @@ content: !!str |
 
   echo "I will collect details on xen features from this $EC2RL_DISTRO box."
 
+  if [ "$EC2RL_VIRT_TYPE" = "hvm" ]; then
+        echo "This is not a Xen based platform. Not possible to detect Xen features."
+        exit 0
+  fi
+
   dmesg | egrep 'Xen version|spinlocks|HVM callback|balloon|DMI|vcpuop|Booting|netfront|blkfront'
 constraint:
   requires_ec2: !!str False
