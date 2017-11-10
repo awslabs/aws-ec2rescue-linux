@@ -34,7 +34,19 @@ Kernel panic can be detected through checking the net.ipv4.tcp_tw_recycle kernel
 sysctl net.ipv4.tcp_tw_recycle |grep "= 1"
 ```
 
-## Resolution
+## Resolving with EC2 Rescue for Linux
+
+```commandline
+$ sudo ./ec2rl run --only-modules=tcprecycle --remediate
+```
+
+Passing output:
+```commandline
+----------[Diagnostic Results]----------
+module run/tcprecycle       [SUCCESS] Aggressive TCP recycling is disabled after remediation.
+```
+
+## Resolving Manually
 
 This setting can be disabled on a temporary or permanent basis.
 

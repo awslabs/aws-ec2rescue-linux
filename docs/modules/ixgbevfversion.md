@@ -30,7 +30,7 @@ module run/ixgbevfversion       [WARN] You are running $VERSION which is older t
 
 ## Detecting Manually
 
-This can also be detected manually via greping the output of ethtool as follows
+This can also be detected manually via grepping the output of ethtool as follows
 
 ```commandline
 $ ethtool -i eth0 | grep version

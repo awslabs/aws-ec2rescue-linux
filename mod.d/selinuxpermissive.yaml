@@ -1,0 +1,151 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str selinuxpermissive
+path: !!str
+version: !!str 1.0
+title: !!str Sets selinux to permissive mode
+helptext: !!str |
+  Sets selinux to permissive mode
+  Requires --selinuxpermissive and --remediate
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+content: !!str |
+  """
+  Sets selinux to permissive mode.
+
+  Functions:
+      readfile: Reads the selinux config file
+      detect: Determines if selinux is in a mode besides permissive
+      backup: Creates a backup of the selinux config file
+      fix: Sets selinux to permissive mode
+      run: Runs the above functions
+  """
+  from __future__ import print_function
+  import re
+  import sys
+  import os
+  import shutil
+
+
+  def readfile():
+      """
+      Reads the selinux config file
+
+      Returns:
+          filecontents: The contents of the selinux config file
+      """
+      try:
+          with open("/etc/selinux/config", "r") as f:
+              filecontents = f.read()
+          return filecontents
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to read conents of /etc/selinux/config")
+          sys.exit(0)
+
+  def detect():
+      """
+      Determines if selinux is in a mode besides permissive
+
+      Returns:
+          True: If selinux is in enforcing mode
+      """
+      if not os.path.isfile('/etc/selinux/config'):
+          print("[SUCCESS] No /etc/selinux/config found.")
+          sys.exit(0)
+      else:
+          filecontents = readfile()
+          print("/etc/selinux/config found, continuing.")
+          if re.search("SELINUX=enforcing", filecontents):
+              return True
+          else:
+              print("[SUCCESS] selinux not in enforcing mode.")
+              sys.exit(0)
+
+  def backup():
+      """
+      Creates a backup of the config file
+
+      Returns:
+          True: If backup is successful
+      """
+      try:
+          shutil.copyfile("/etc/selinux/config", "/etc/selinux/config.bak")
+          print("Backed up as /etc/selinux/config.bak")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to backup /etc/selinux/config. Aborting")
+          sys.exit(0)
+
+  def fix():
+      """
+      Sets selinux to permissive mode by writing to the config file
+
+      Returns:
+          True: If write was successful
+      """
+      try:
+          filecontents = readfile()
+          filecontents = re.sub("SELINUX=enforcing", "SELINUX=permissive", filecontents)
+          with open("/etc/selinux/config", "w") as f:
+              f.write(filecontents)
+          print("[SUCCESS] selinux set to permissive")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to replace contents of /etc/selinux/config")
+          sys.exit(0)
+
+  def run():
+      """
+      Runs the above functions.
+
+      Returns:
+          True: If remediation is successful.
+      """
+      try:
+          print("Determining if selinux is in enforcing mode")
+          if detect():
+              print("SELinux in enforcing mode, attempting to set permissive.")
+              print("Backing up /etc/selinux/config first")
+              if backup() and fix():
+                  print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/"
+                        "modules/selinuxpermissive.md for further details")
+                  return True
+      except Exception as ex:
+          print(ex)
+      print("[WARN] module generated an exception and exited abnormally. "
+            "Review the logs to determine the cause of the issue.")
+      sys.exit(0)
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str selinuxpermissive remediate
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

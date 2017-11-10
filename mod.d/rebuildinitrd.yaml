@@ -1,0 +1,252 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str rebuildinitrd
+path: !!str
+version: !!str 1.0
+title: !!str Rebuilds the system initial ramdisk
+helptext: !!str |
+  Rebuilds the system initial ramdisk
+  Requires --rebuildinitrd and --remediate
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+content: !!str |
+  """
+  Rebuilds the system initial ramdisk
+
+  Functions:
+      getboot: Gets a list of files in /boot
+      mountboot: Attempts to mount /boot if it appears to not be mounted
+      getinitrd: Gets a list of initial ramdisk files from the output of getboot
+      rebuildalami: Rebuilds initial ramdisk for an Amazon Linux AMI based system
+      rebuildubuntu: Rebuilds initial ramdisk for an Ubuntu based system
+      rebuildrhel: Rebuilds initial ramdisk for a RHEL based system
+      rebuildsuse: Rebuilds initial ramdisk for a SUSE based system
+      run: Runs the above functions
+  """
+  from __future__ import print_function
+  import re
+  import subprocess
+  import sys
+  import os
+  import shutil
+
+
+  def getboot():
+      """
+      Gets a list of files in /boot
+
+      Returns:
+          bootfiles: A list of the directory contents
+      """
+      bootfiles = os.listdir('/boot')
+      return bootfiles
+
+
+  def mountboot():
+      """
+      Attempts to mount /boot if it appears to be unmounted.
+
+      Returns:
+          True: If mounting is successful.
+      """
+      try:
+          with open("/etc/fstab", "r") as f:
+              if re.search("/boot", f.read()):
+                  print("Attempting to mount /boot")
+                  subprocess.check_output(["mount", "/boot"]).decode('utf-8')
+                  return True
+              else:
+                  print("[WARN] No /boot in /etc/fstab and /boot empty. Cannot proceed")
+                  sys.exit(0)
+      except Exception as ex:
+          print(ex)
+          print("[WARN] /boot empty. Cannot proceed.")
+          sys.exit(0)
+
+
+  def getinitrd():
+      """
+      Gets a list of initial ramdisk files.
+
+      Returns:
+          initrdfiles: A list of the initial ramdisk files.
+      """
+      bootfiles = getboot()
+      initrdfiles = [x for x in bootfiles if "init" in x and not re.search('(bak|rescue|initrd$)', x)]
+      return initrdfiles
+
+
+  def rebuildalami():
+      """
+      Attempts to rebuild the initial ramdisk for an Amazon Linux AMI based system.
+
+      Returns:
+          True: If successful in rebuilding.
+      """
+      initrdfiles = getinitrd()
+      print("Rebuilding initial ramdisk for alami system")
+      for x in initrdfiles:
+          print("Creating a backup of " + x + "in /boot")
+          try:
+              shutil.copyfile("/boot/" + x, "/boot/" + x + ".bak")
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Backup of initial ramdisk failed.")
+              sys.exit(0)
+          y = re.search(r'[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn1\.x86_64', x).group(0)
+          try:
+              print("Creating new initial ramdisk for " + y)
+              subprocess.check_output(["dracut", "-f", "/boot/initramfs-" + y + ".img"]).decode('utf-8')
+              return True
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Rebuild of initial ramdisk failed.")
+              sys.exit(0)
+
+
+  def rebuildubuntu():
+      """
+      Attempts to rebuild the initial ramdisk for an Ubuntu based system.
+
+      Returns:
+          True: If successful in rebuilding.
+      """
+      initrdfiles = getinitrd()
+      print("Rebuilding initial ramdisk for ubuntu system")
+      for x in initrdfiles:
+          print("Creating a backup of " + x)
+          try:
+              shutil.copyfile("/boot/" + x, "/boot/" + x + ".bak")
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Backup of initial ramdisk failed.")
+              sys.exit(0)
+          y = re.search(r'[0-9]\.[0-9]+\.[0-9]+-[0-9]+(.*)+-(aws|generic)', x).group(0)
+          try:
+              print("Creating new initial ramdisk for " + y)
+              subprocess.check_output(["update-initramfs", "-c", "-k", y]).decode('utf-8')
+              return True
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Rebuild of initial ramdisk failed.")
+              sys.exit(0)
+
+
+  def rebuildrhel():
+      """
+      Attempts to rebuild the initial ramdisk for a RHEL based system.
+
+      Returns:
+          True: If successful in rebuilding.
+      """
+      initrdfiles = getinitrd()
+      print("Rebuilding initial ramdisk for rhel system")
+      for x in initrdfiles:
+          print("Creating a backup of " + x)
+          try:
+              shutil.copyfile("/boot/" + x, "/boot/" + x + ".bak")
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Backup of initial ramdisk failed.")
+              sys.exit(0)
+          y = re.search(r'[0-9]\.[0-9]+\.[0-9]+-[0-9]+(.*).el7\.x86_64', x).group(0)
+          try:
+              print("Creating new initial ramdisk for " + y)
+              subprocess.check_output(["dracut", "-f", "/boot/initramfs-" + y + ".img"]).decode('utf-8')
+              return True
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Rebuild of initial ramdisk failed.")
+              sys.exit(0)
+
+
+  def rebuildsuse():
+      """
+      Attempts to rebuild the initial ramdisk for a SUSE based system.
+
+      Returns:
+          True: If successful in rebuilding.
+      """
+      initrdfiles = getinitrd()
+      print("Rebuilding initial ramdisk for suse system")
+      for x in initrdfiles:
+          print("Creating a backup of " + x)
+          try:
+              shutil.copyfile("/boot/" + x, "/boot/" + x + ".bak")
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Backup of initial ramdisk failed.")
+              sys.exit(0)
+          y = re.search(r'[0-9]\.[0-9]+\.[0-9]+-[0-9]+-default', x).group(0)
+          try:
+              print("Creating new initial ramdisk for " + y)
+              subprocess.check_output(["dracut", "-f", "/boot/initrd-" + y]).decode('utf-8')
+              return True
+          except Exception as ex:
+              print(ex)
+              print("[WARN] Rebuild of initial ramdisk failed.")
+              sys.exit(0)
+
+
+  def run():
+      """
+      Runs the above functions.
+
+      Returns:
+          True: If rebuild is successful.
+      """
+      try:
+          if getboot():
+              print("/boot has contents")
+          else:
+              print("/boot has no contents. Is it unmounted?")
+              mountboot()
+          if os.environ["EC2RL_DISTRO"] == "alami":
+              rebuildalami()
+          elif os.environ["EC2RL_DISTRO"] == "ubuntu":
+              rebuildubuntu()
+          elif os.environ["EC2RL_DISTRO"] == "rhel":
+              rebuildrhel()
+          elif os.environ["EC2RL_DISTRO"] == "suse":
+              rebuildsuse()
+          print("[SUCCESS] initial ramdisk rebuilt")
+          print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/rebuildinitrd.md "
+                "for further details")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          sys.exit(0)
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str rebuildinitrd remediate
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

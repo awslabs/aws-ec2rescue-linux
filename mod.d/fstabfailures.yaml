@@ -1,0 +1,229 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str fstabfailures
+path: !!str
+version: !!str 1.0
+title: !!str Disables fsck and sets nofail in /etc/fstab for all volumes
+helptext: !!str |
+  Disables fsck and sets nofail in /etc/fstab for all volumes
+  Requires --fstabfailures and --remediate
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+content: !!str |
+  """
+  Disables fsck and sets nofail in /etc/fstab for all volumes.
+
+  Functions:
+      defaultfstab: Creates a default fstab
+      checkfstabexists: Determines if /etc/fstab exists
+      parsefstab: Parses fstab into a list of dictionary values
+      backupfstab: Creates a backup copy of the existing fstab
+      checkfsck: Checks to see if fsck is enabled for any volume
+      checknofail: Checks to see if nofail is enabled for any volume
+      rewritefstab: Disables fsck, enables nofail, writes values to /etc/fstab
+      run: Runs the above functions
+  """
+  from __future__ import print_function
+  import re
+  import sys
+  import os
+  import shutil
+
+
+  def defaultfstab():
+      """
+      Creates a sane default fstab
+      """
+      try:
+          with open("/etc/fstab", "w") as f:
+              if os.environ.get("EC2RL_DISTRO") == "alami":
+                  f.write("LABEL=/     /           ext4    defaults,noatime,nofail  0   0\n")
+                  f.write("tmpfs       /dev/shm    tmpfs   defaults,nofail        0   0\n")
+                  f.write("devpts      /dev/pts    devpts  gid=5,mode=620,nofail  0   0\n")
+                  f.write("sysfs       /sys        sysfs   defaults,nofail        0   0\n")
+                  f.write("proc        /proc       proc    defaults,nofail        0   0\n")
+              elif os.environ.get("EC2RL_DISTRO") == "suse":
+                  f.write("/dev/disk/by-label/ROOT     /    ext4 defaults,nofail 0 0\n")
+              elif os.environ.get("EC2RL_DISTRO") == "rhel":
+                  f.write("/dev/xvda2     /     xfs     defaults,nofail     0 0\n")
+              elif os.environ.get("EC2RL_DISTRO") == "ubuntu":
+                  f.write("LABEL=cloudimg-rootfs    /    ext4    defaults,discard,nofail   	0 0\n")
+              else:
+                  print("[WARN] Unable to determine distribution. Unable to continue.")
+                  sys.exit(0)
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to write default /etc/fstab, aborting.")
+          sys.exit(0)
+
+
+  def checkfstabexists():
+      """
+      Checks if fstab exists
+
+      Returns:
+          True: Based on result of check
+      """
+      if not os.path.isfile('/etc/fstab'):
+          print("No /etc/fstab, creating one with sane defaults")
+          defaultfstab()
+          return True
+      else:
+          print("/etc/fstab found, continuing.")
+          return True
+
+
+  def parsefstab():
+      """
+      Parses /etc/fstab into a list of dictionaries
+
+      Returns:
+          fstab: List of dictionaries
+      """
+      try:
+          fstab = []
+          fstabkeyname = ["Filesystem", "Mountpoint", "FSType", "Options", "Dump", "fsck"]
+          with open("/etc/fstab", "r") as f:
+              for line in f:
+                  if line.startswith("#"):
+                      continue
+                  entry = {}
+                  for value, key in zip(line.split(), fstabkeyname):
+                      entry[key] = value
+                  if len(entry.keys()) == 4:
+                      entry[fstabkeyname[4]] = "0"
+                      entry[fstabkeyname[5]] = "0"
+                  elif len(entry.keys()) == 5:
+                      entry[fstabkeyname[5]] = "0"
+                  fstab.append(entry)
+          return fstab
+      except Exception as ex:
+          print(ex)
+          print("Unable to parse /etc/fstab. Invalid fstab? Backing it up and writing one with sane defaults")
+          backupfstab()
+          defaultfstab()
+          return True
+
+
+  def backupfstab():
+      """
+      Copies /etc/fstab to /etc/fstab.bak
+
+      Returns:
+          True: Upon successful copy
+      """
+      try:
+          shutil.copyfile("/etc/fstab", "/etc/fstab.bak")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to backup /etc/fstab, aborting.")
+          sys.exit(0)
+
+
+  def checkfsck(fstab):
+      """
+      Checks for fsck being enabled on a volume
+
+      Returns:
+          True: If fsck is enabled
+      """
+      print("Checking for volumes with fsck enabled")
+      for i in fstab:
+          for key, value in i.items():
+              if key == "fsck" and value == "1":
+                  i[key] = 0
+                  return True
+
+
+  def checknofail(fstab):
+      """
+      Checks for nofail being enabled on a volume
+
+      Returns:
+          True: If nofail was missing from a volume
+      """
+      print("Checking for volumes without nofail")
+      for i in fstab:
+          for key, value in i.items():
+              if key == "Options" and not re.search("nofail", value):
+                  i[key] += ",nofail"
+                  return True
+
+
+  def rewritefstab(fstab):
+      """
+      Rewrites /etc/fstab with new fixed values
+
+      Returns:
+          True: If successful in rewrite
+      """
+      try:
+          with open("/etc/fstab", "w") as f:
+              for i in fstab:
+                  f.write(i["Filesystem"] + "    " + i["Mountpoint"] + "    " + i["FSType"] + "     "
+                          + i["Options"] + "     " + i["Dump"] + " " + i["fsck"] + "\n")
+          print("[SUCCESS] /etc/fstab rewritten/")
+          print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/fstabfailures.md "
+                "for further details")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] Unable to write new /etc/fstab. Please review logs to determine the cause of the issue.")
+          sys.exit(0)
+
+
+  def run():
+      """
+      Runs the above functions.
+
+      Returns:
+          True: If successful in running
+      """
+      try:
+          checkfstabexists()
+          fstab = parsefstab()
+          if checknofail(fstab) or checkfsck(fstab):
+              backupfstab()
+              rewritefstab(fstab)
+          else:
+              print("[SUCCESS] /etc/fstab has nofail set and is not set to fsck.")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          sys.exit(0)
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str fstabfailures remediate
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str
