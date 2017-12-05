@@ -28,6 +28,9 @@ Functions:
     which: determine where in PATH a command is located
     get_net_driver: determine the network device driver for the first interface
     get_virt_type: determine the virtualization type of the running instance
+    print_indent: a wrapper for print() that also takes a two-space indention level arg.
+    backup: creates a backup copy of a file or directory
+    restore: restores a backup copy of a file or directory
 
 Classes:
     None
@@ -38,6 +41,7 @@ Exceptions:
 from __future__ import print_function
 import os
 import re
+import shutil
 import sys
 
 try:
@@ -57,18 +61,18 @@ def get_distro():
     """
 
     distro = "unknown"
+    alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
+    rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release \d\.\d")
 
     # Amazon Linux & RHEL
     if os.path.isfile("/etc/system-release"):
         with open("/etc/system-release", "r") as fp:
             # This file is a single line
             distro_str = fp.readline()
-            alami_regex = re.compile(r"^Amazon Linux AMI release [0-9]{4}\.[0-9]{2}")
-            rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release [0-9]\.[0-9]")
-            centos_regex = re.compile(r"^CentOS Linux release ([0-9])\.([0-9])\.([0-9]{4})")
             if re.match(alami_regex, distro_str):
                 distro = "alami"
-            elif re.match(rhel_regex, distro_str) or re.match(centos_regex, distro_str):
+            elif re.match(rhel_regex, distro_str) or \
+                    re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
                 distro = "rhel"
             else:
                 distro = "unknown for /etc/system-release"
@@ -78,7 +82,7 @@ def get_distro():
         with open("/etc/SuSE-release", "r") as fp:
             # This file is a single line
             distro_str = fp.readline()
-            regex = re.compile(r"^SUSE Linux Enterprise Server [0-9]{2}")
+            regex = re.compile(r"^SUSE Linux Enterprise Server \d{2}")
             if re.match(regex, distro_str):
                 distro = "suse"
             else:
@@ -88,23 +92,18 @@ def get_distro():
         with open("/etc/lsb-release", "r") as fp:
             # This file is many lines in length
             lines = fp.readlines()
-            regex = re.compile(r"DISTRIB_ID=Ubuntu")
+            distro = "unknown for /etc/lsb-release"
             for line in lines:
-                if re.match(regex, line):
+                if re.match(r"DISTRIB_ID=Ubuntu", line):
                     distro = "ubuntu"
                     break
-                else:
-                    distro = "unknown for /etc/lsb-release"
     # Older Amazon Linux & RHEL
     elif os.path.isfile("/etc/issue"):
         with open("/etc/issue", "r") as fp:
             distro_str = fp.readline()
-            alami_regex = re.compile(r"^Amazon Linux AMI release [0-9]{4}\.[0-9]{2}")
-            rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release \d\.\d+")
-            centos_regex = re.compile(r"^CentOS release \d\.\d+")
             if re.match(alami_regex, distro_str):
                 distro = "alami"
-            elif re.match(rhel_regex, distro_str) or re.match(centos_regex, distro_str):
+            elif re.match(rhel_regex, distro_str) or re.match(r"^CentOS release \d\.\d+", distro_str):
                 distro = "rhel"
             else:
                 distro = "unknown for /etc/issue"
@@ -113,15 +112,14 @@ def get_distro():
     elif os.path.isfile("/etc/os-release"):
         with open("/etc/os-release", "r") as fp:
             lines = fp.readlines()
+            distro = "unknown for /etc/os-release"
             for line in lines:
-                if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server [0-9]{2}", line):
+                if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server \d{2}", line):
                     distro = "suse"
                     break
-                elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI [0-9]{4}\.[0-9]{2}", line):
+                elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
                     distro = "alami"
                     break
-                else:
-                    distro = "unknown for /etc/os-release"
     return distro
 
 
@@ -251,6 +249,172 @@ def get_virt_type():
     return profile
 
 
+def print_indent(str_arg, level=0):
+    """Print str_arg indented two spaces per level."""
+    print("{}{}".format(level * "  ", str_arg))
+
+
+def backup(path_to_backup, backed_files, backup_dir):
+    """
+    Given a path, file_path, copy it to backup_dir, update the backed_files dict, and return the path of the new
+    backup copy. If the path has already been backed up then return the existing backup path and exit immediately
+    without copying.
+
+    PrediagTargetPathExistsError is raised if the backup destination for a directory already exists. This check is a
+    pre-screen for shutil.copytreee which raises FileExistsError if the destination path exists.
+
+    This function is intended for use within Python-based remediation modules.
+
+    Parameters:
+        path_to_backup (str): path to the file to back up
+        backed_files (dict): original path of backed up files (keys) and
+        the path to the backup copy of the file (values)
+        backup_dir (str): path to the directory containing backup file copies
+
+    Returns:
+        backup_path (str): path to the backup copy of the file
+    """
+    # If a backup copy of the file already exists, do not perform another, redundant backup operation.
+    if path_to_backup in backed_files:
+        return backed_files[path_to_backup]
+
+    backup_location_path = "".join([backup_dir, path_to_backup])
+    if os.path.exists(backup_location_path):
+        raise PrediagDestinationPathExistsError(backup_location_path)
+
+    if os.path.isdir(path_to_backup):
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir, mode=0o0700)
+
+        _do_backup_restore(source_path=path_to_backup,
+                           source_path_is_dir=True,
+                           destination_path=backup_location_path,
+                           backed_files=backed_files)
+    elif os.path.isfile(path_to_backup):
+        backup_location_parent_path = "".join([backup_dir, os.path.dirname(path_to_backup)])
+        if not os.path.exists(backup_location_parent_path):
+            os.makedirs(backup_location_parent_path, mode=0o0700)
+
+        _do_backup_restore(source_path=path_to_backup,
+                           source_path_is_dir=False,
+                           destination_path=backup_location_path,
+                           backed_files=backed_files)
+    else:
+        raise PrediagInvalidPathError(path_to_backup)
+
+    backed_files[path_to_backup] = backup_location_path
+
+    return backup_location_path
+
+
+def restore(restoration_file_path, backed_files):
+    """
+    Given a path a file to restore, restoration_file_path, lookup the location of the backup copy, and
+    copy the file to location.
+
+    This function is intended for use within Python-based remediation modules.
+
+    Parameters:
+        restoration_file_path (str): path to the file backup to be restored
+        backed_files (dict): names of backed up files (keys) and the path to the backup copy of the file (values)
+
+    Returns:
+        (bool): whether the operation was successful
+    """
+    if restoration_file_path not in backed_files:
+        return False
+    backup_copy_path = backed_files[restoration_file_path]
+    if not os.path.exists(backup_copy_path):
+        raise PrediagInvalidPathError(backup_copy_path)
+
+    _do_backup_restore(source_path=backup_copy_path,
+                       source_path_is_dir=os.path.isdir(backup_copy_path),
+                       destination_path=restoration_file_path,
+                       backed_files=backed_files)
+    return True
+
+
+def _do_backup_restore(source_path, source_path_is_dir, destination_path, backed_files):
+    """
+    Given a path a file to restore, source_path, lookup the location of the backup copy in the backup dict,
+    backed files, and copy the file to restoration location, destination_path. A regular file at destination_path
+    will be overwritten. shutil.copytree will not copy over an existing directory at destination_path and
+    FileExistsError will be raised.
+
+    Parameters:
+        source_path (str): file path to be copied
+        source_path_is_dir (bool): whether source_path is a directory
+        destination_path (str): where source_path should be copied to
+        backed_files (dict): names of backed up files (keys) and the path to the backup copy of the file (values)
+
+    Returns:
+        True (bool): if the operation was successful
+    """
+    args_valid = True
+    bad_args = list()
+    if not source_path:
+        print("Invalid source_path arg!")
+        args_valid = False
+        bad_args.append("souce_path")
+    if not isinstance(source_path_is_dir, bool):
+        print("Invalid source_path_is_dir arg!")
+        args_valid = False
+        bad_args.append("source_path_is_dir")
+    if not destination_path:
+        print("Invalid destination_path arg!")
+        args_valid = False
+        bad_args.append("destination_path")
+    if not isinstance(backed_files, dict):
+        print("Invalid backed_files arg!")
+        args_valid = False
+        bad_args.append("backed_files")
+    if not args_valid:
+        raise PrediagArgumentError(bad_args)
+
+    if source_path_is_dir:
+        shutil.copytree(source_path, destination_path)
+        seen_paths = set()
+        for root, dirs, files in os.walk(destination_path, followlinks=True):
+            # Check if this root has already been visited (avoids symlink-induced infinite looping)
+            realroot = os.path.realpath(root)
+            os.chown(realroot, os.stat(source_path).st_uid, os.stat(source_path).st_gid)
+            seen_paths.add(realroot)
+
+            for file_name in files:
+                full_file_path = os.path.join(realroot, file_name)
+                real_file_path = os.path.realpath(full_file_path)
+                this_path_key = "{}{}".format(str(os.stat(real_file_path).st_dev), str(os.stat(real_file_path).st_ino))
+                if this_path_key in seen_paths and os.path.islink(full_file_path):
+                    print_indent("Skipping previously seen symlink target: {} -> {}".format(full_file_path,
+                                                                                            real_file_path),
+                                 level=1)
+                    continue
+                else:
+                    seen_paths.add(this_path_key)
+
+                original_stat = os.stat(os.path.join(source_path, file_name))
+                os.chown(full_file_path, original_stat.st_uid, original_stat.st_gid)
+            for dir_name in dirs:
+                full_dir_path = os.path.join(realroot, dir_name)
+                real_dir_path = os.path.realpath(full_dir_path)
+                this_path_key = "{}{}".format(str(os.stat(real_dir_path).st_dev), str(os.stat(real_dir_path).st_ino))
+                if this_path_key in seen_paths and os.path.islink(full_dir_path):
+                    print_indent("Skipping previously seen symlink target: {} -> {}".format(full_dir_path,
+                                                                                            real_dir_path),
+                                 level=1)
+                    continue
+                else:
+                    seen_paths.add(this_path_key)
+
+                original_stat = os.stat(os.path.join(source_path, dir_name))
+                os.chown(full_dir_path, original_stat.st_uid, original_stat.st_gid)
+        return True
+    else:
+        shutil.copy2(source_path, destination_path)
+        os.chown(destination_path, os.stat(source_path).st_uid, os.stat(source_path).st_gid)
+        return True
+
+
 class PrediagError(Exception):
     """Base class for exceptions in this module."""
     pass
@@ -261,3 +425,24 @@ class PrediagConnectionError(PrediagError):
     def __init__(self, error_message, *args):
         message = "Connection error: {}".format(error_message)
         super(PrediagConnectionError, self).__init__(message, *args)
+
+
+class PrediagArgumentError(PrediagError):
+    """One or more arguments were missing or invalid."""
+    def __init__(self, arg_list, *args):
+        message = "Missing or invalid args: {}!".format(", ".join(arg_list))
+        super(PrediagArgumentError, self).__init__(message, *args)
+
+
+class PrediagDestinationPathExistsError(PrediagError):
+    """Destination destination directory already exists."""
+    def __init__(self, path_str, *args):
+        message = "Backup copy path already exists: {}".format(path_str)
+        super(PrediagDestinationPathExistsError, self).__init__(message, *args)
+
+
+class PrediagInvalidPathError(PrediagError):
+    """The given path is not a file or directory."""
+    def __init__(self, path_str, *args):
+        message = "Invalid path. Not a file or directory: {}".format(path_str)
+        super(PrediagInvalidPathError, self).__init__(message, *args)
