@@ -13,7 +13,7 @@
 # language governing permissions and limitations under the License.
 
 """
-Init for testing. Disable logging to speed up test execution.
+Init for modules under test.
 
 Functions:
     None
