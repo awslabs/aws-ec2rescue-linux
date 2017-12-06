@@ -34,7 +34,8 @@ def main():
         elif split_call_path_list[-1] == file_name:
             split_call_path_list = split_call_path_list[0:-1]
         else:
-            print("Error parsing call path on token {}. Aborting.".format(file_name))
+            print("Error parsing call path {} on token {}. Aborting.".format(os.sep.join(split_call_path_list),
+                                                                             file_name))
             sys.exit(1)
     call_paths.append(os.sep.join(split_call_path_list))
     for call_path in call_paths:

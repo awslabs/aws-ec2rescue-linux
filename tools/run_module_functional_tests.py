@@ -32,11 +32,14 @@ def main():
         elif split_call_path_list[-1] == file_name:
             split_call_path_list = split_call_path_list[0:-1]
         else:
-            print("Error parsing call path on token {}. Aborting.".format(file_name))
+            print("Error parsing call path {} on token {}. Aborting.".format(os.sep.join(split_call_path_list),
+                                                                             file_name))
             sys.exit(1)
     call_paths.append(os.sep.join(split_call_path_list))
     for call_path in call_paths:
         sys.path.insert(0, call_path)
+    # Setup EC2RL_CALLPATH environment variable for modules to use
+    os.environ["EC2RL_CALLPATH"] = os.sep.join(split_call_path_list)
 
     import ec2rlcore.prediag
     if not ec2rlcore.prediag.check_root():
