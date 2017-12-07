@@ -451,11 +451,17 @@ def get_module(filename_with_path):
     except yaml.scanner.ScannerError:
         raise ModuleConstraintParseError("Parsing of module {} failed. This is likely caused by a typo in the file."
                                          "".format(filename_with_path))
+
+
 # Add the YAML Module constructor so that YAML knows to use it in situations where the tag matches.
 yaml.add_constructor("!ec2rlcore.module.Module", module_constructor, Loader=Loader)
 
 
-class SkipReason:
+class SkipReason(object):
+    """
+    This class serves the same function as an enum. An enum is not used because the enum type was not added to the
+    standard library until Python 3.4. See PEP 435 for more information.
+    """
     NOT_AN_EC2_INSTANCE = "NOT_AN_EC2_INSTANCE"
     NOT_APPLICABLE_TO_DISTRO = "NOT_APPLICABLE_TO_DISTRO"
     PERFORMANCE_IMPACT = "PERFORMANCE_IMPACT"
