@@ -136,6 +136,24 @@ def verify_metadata():
         return False
 
 
+def is_an_instance():
+    """
+    Return whether the running system is an EC2 instance based on criteria in AWS EC2 documentation.
+
+    AWS EC2 documentation: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html
+    """
+    sys_hypervisor_uuid = "/sys/hypervisor/uuid"
+    try:
+        with open(sys_hypervisor_uuid) as uuid_file:
+            if not uuid_file.readline().startswith("ec2"):
+                return False
+        return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document").status_code == 200
+    except (IOError, OSError, requests.RequestException):
+        # Python2: IOError
+        # Python3: OSError -> FileNotFoundError
+        return False
+
+
 # This is shutil.which() from Python 3.5.2
 # Replicating it here allows ec2rl to utilize which() in both python 2 & 3
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):  # pragma: no cover

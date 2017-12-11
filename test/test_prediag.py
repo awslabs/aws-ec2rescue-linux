@@ -52,9 +52,7 @@ class TestPrediag(unittest.TestCase):
     @responses.activate
     def test_prediag_verify_metadata(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=200)
-
         resp = ec2rlcore.prediag.verify_metadata()
-
         self.assertTrue(resp)
 
     @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
@@ -63,19 +61,78 @@ class TestPrediag(unittest.TestCase):
         self.assertTrue(mock_get.called)
 
     @responses.activate
+    def test_prediag_is_an_instance_true(self):
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.open", side_effect=IOError("No such file or directory"))
+    def test_prediag_is_an_instance_false_no_sys_hypervisor_uuid(self, isfile_mock):
+        self.assertFalse(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(isfile_mock.called)
+
+    def test_prediag_is_an_instance_false_ec2_not_in_uuid(self):
+        open_mock = mock.mock_open(read_data="SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
+    @mock.patch("requests.get", side_effect=requests.RequestException())
+    def test_prediag_is_an_instance_false_requests_exception(self, get_mock):
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+        self.assertTrue(get_mock.called)
+
+    @responses.activate
     def test_prediag_get_virt_type(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="hvm")
-
         resp = ec2rlcore.prediag.get_virt_type()
-
         self.assertEqual(resp, "hvm")
 
     @responses.activate
     def test_prediag_get_virt_type_error(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=404, body="hvm")
-
         resp = ec2rlcore.prediag.get_virt_type()
-
         self.assertEqual(resp, "ERROR")
 
     @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
