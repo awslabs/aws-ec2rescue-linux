@@ -279,22 +279,19 @@ class Module(object):
             # If it bombs out, the stdout and return code are properties
             # within the subprocess.CalledProcessError that's raised.
             # See: https://docs.python.org/2/library/subprocess.html
-            self.processoutput = subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                                         env=envlist).decode("utf-8")
+            self.processoutput = subprocess.check_output(command,
+                                                         stderr=subprocess.STDOUT,
+                                                         env=envlist,
+                                                         universal_newlines=True)
             self._parse_output(self.processoutput)
             return self.processoutput
-        except subprocess.CalledProcessError as processError:
-            # type = bytes in Python3
-            if isinstance(processError.output, bytes):
-                self.processoutput = processError.output.decode("utf-8")
-            # type = str in Python2
-            else:
-                self.processoutput = processError.output
+        except subprocess.CalledProcessError as cpe:
+            self.processoutput = cpe.output
             error_message = "Module execution failed: {}:{}, returned {}".format(self.placement, self.name,
-                                                                                 processError.returncode)
+                                                                                 cpe.returncode)
             self.logger.debug(error_message)
-            self.logger.debug(processError.cmd)
-            self.logger.debug(processError.output)
+            self.logger.debug(cpe.cmd)
+            self.logger.debug(cpe.output)
             raise ModuleRunFailureError(error_message)
         finally:
             if "module_file" in vars():
