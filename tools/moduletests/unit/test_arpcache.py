@@ -21,7 +21,7 @@ import unittest
 
 import mock
 
-import src.arpcache
+import moduletests.src.arpcache
 
 try:
     # Python 2.x
@@ -55,84 +55,84 @@ class TestArpcache(unittest.TestCase):
     @mock.patch("subprocess.check_output")
     def test_detect_noproblem(self, check_output_mock):
         check_output_mock.return_value = b"net.ipv4.neigh.default.gc_thresh1 = 0"
-        self.assertFalse(src.arpcache.detect())
+        self.assertFalse(moduletests.src.arpcache.detect())
         self.assertTrue(check_output_mock.called)
 
     @mock.patch("subprocess.check_output")
     def test_detect_problem(self, check_output_mock):
         check_output_mock.return_value = b"net.ipv4.neigh.default.gc_thresh1 = 1"
-        self.assertTrue(src.arpcache.detect())
+        self.assertTrue(moduletests.src.arpcache.detect())
         self.assertTrue(check_output_mock.called)
 
     @mock.patch.dict(os.environ, {"EC2RL_SUDO":"True"})
     @mock.patch("subprocess.check_call")
-    @mock.patch("src.arpcache.open", mock.mock_open(read_data="stuff"))
+    @mock.patch("moduletests.src.arpcache.open", mock.mock_open(read_data="stuff"))
     def test_sudo_true(self, check_call_mock):
         check_call_mock.return_value = "True"
-        self.assertTrue(src.arpcache.fix())
+        self.assertTrue(moduletests.src.arpcache.fix())
         self.assertTrue(check_call_mock.called)
 
     @mock.patch.dict(os.environ, {"EC2RL_SUDO": "False"})
     def test_sudo_false(self):
-        self.assertFalse(src.arpcache.fix())
+        self.assertFalse(moduletests.src.arpcache.fix())
 
     @mock.patch.dict(os.environ, {"EC2RL_SUDO": "True"})
     @mock.patch("subprocess.check_call",
                 side_effect=subprocess.CalledProcessError
                     ("1", "test", "/etc/sysctl.d/55-arp-gc_thresh1.conf: no such file or directory"))
     def test_fix_cpe(self, check_call_mock):
-        self.assertRaises(Exception, src.arpcache.fix())
+        self.assertRaises(Exception, moduletests.src.arpcache.fix())
         self.assertTrue(check_call_mock.called)
 
     @mock.patch.dict(os.environ, {"EC2RL_SUDO": "True"})
     @mock.patch("subprocess.check_call")
     def test_fix_writefail(self, check_call_mock):
-        with mock.patch("src.arpcache.open", mock.mock_open, create="True") as mocked_open:
+        with mock.patch("moduletests.src.arpcache.open", mock.mock_open, create="True") as mocked_open:
             mocked_open.side_effect = IOError()
             check_call_mock.return_value = "True"
-            self.assertRaises(Exception, src.arpcache.fix())
+            self.assertRaises(Exception, moduletests.src.arpcache.fix())
             self.assertTrue(check_call_mock.called)
 
     def test_print_fixed(self):
         with contextlib.redirect_stdout(self.output):
-            src.arpcache.print_results(results="fixed")
+            moduletests.src.arpcache.print_results(results="fixed")
         self.assertEqual(len(self.output.getvalue()), 219)
 
     def test_print_else(self):
         with contextlib.redirect_stdout(self.output):
-            src.arpcache.print_results(results="else")
+            moduletests.src.arpcache.print_results(results="else")
         self.assertEqual(len(self.output.getvalue()), 174)
 
     @mock.patch.dict(os.environ, {"remediate": "True"})
-    @mock.patch("src.arpcache.detect", return_value=False)
+    @mock.patch("moduletests.src.arpcache.detect", return_value=False)
     def test_run_success(self, detect_mock):
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(src.arpcache.run())
+            self.assertTrue(moduletests.src.arpcache.run())
         self.assertEqual(len(self.output.getvalue()), 213)
 
-    @mock.patch("src.arpcache.detect", return_value=True)
+    @mock.patch("moduletests.src.arpcache.detect", return_value=True)
     def test_run_no_remediate(self, detect_mock):
-        self.assertRaises(Exception, src.arpcache.run())
+        self.assertRaises(Exception, moduletests.src.arpcache.run())
 
     @mock.patch.dict(os.environ, {"remediate": "True", "EC2RL_SUDO": "True"})
-    @mock.patch("src.arpcache.detect", return_value=(True, True))
-    @mock.patch("src.arpcache.fix", return_value=True)
+    @mock.patch("moduletests.src.arpcache.detect", return_value=(True, True))
+    @mock.patch("moduletests.src.arpcache.fix", return_value=True)
     def test_run_failure(self, detect_mock, fix_mock):
         with contextlib.redirect_stdout(self.output):
-            self.assertFalse(src.arpcache.run())
+            self.assertFalse(moduletests.src.arpcache.run())
         self.assertEqual(len(self.output.getvalue()), 523)
 
     @mock.patch.dict(os.environ, {"remediate": "True", "EC2RL_SUDO": "True"})
-    @mock.patch("src.arpcache.detect", side_effect=(True, False))
-    @mock.patch("src.arpcache.fix", return_value=True)
+    @mock.patch("moduletests.src.arpcache.detect", side_effect=(True, False))
+    @mock.patch("moduletests.src.arpcache.fix", return_value=True)
     def test_run_fix(self, detect_mock, fix_mock):
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(src.arpcache.run())
+            self.assertTrue(moduletests.src.arpcache.run())
         self.assertEqual(len(self.output.getvalue()), 271)
 
     @mock.patch.dict(os.environ, {"remediate": "True", "EC2RL_SUDO": "True"})
-    @mock.patch("src.arpcache.detect", side_effect=Exception)
+    @mock.patch("moduletests.src.arpcache.detect", side_effect=Exception)
     def test_run_exit(self, detect_mock):
         with self.assertRaises(SystemExit) as ex:
-            self.assertRaises(Exception, src.arpcache.run())
+            self.assertRaises(Exception, moduletests.src.arpcache.run())
         self.assertEqual(ex.exception.code, 0)

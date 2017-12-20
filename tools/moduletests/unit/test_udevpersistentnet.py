@@ -21,7 +21,7 @@ import unittest
 
 import mock
 
-import src.udevpersistentnet
+import moduletests.src.udevpersistentnet
 
 try:
     # Python 2.x
@@ -52,33 +52,33 @@ class Testudevpersistentnet(unittest.TestCase):
     def tearDown(self):
         self.output.close()
 
-    @mock.patch("src.udevpersistentnet.os.path.isfile", return_value=False)
+    @mock.patch("moduletests.src.udevpersistentnet.os.path.isfile", return_value=False)
     def test_detect_noproblem(self, isfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.udevpersistentnet.detect()
+            moduletests.src.udevpersistentnet.detect()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.udevpersistentnet.os.path.isfile", return_value=True)
+    @mock.patch("moduletests.src.udevpersistentnet.os.path.isfile", return_value=True)
     def test_detect_problem(self, isfile_mock):
-        self.assertTrue(src.udevpersistentnet.detect())
+        self.assertTrue(moduletests.src.udevpersistentnet.detect())
 
-    @mock.patch("src.udevpersistentnet.os.rename", return_value=True)
+    @mock.patch("moduletests.src.udevpersistentnet.os.rename", return_value=True)
     def test_fix_success(self, rename_mock):
-        self.assertTrue(src.udevpersistentnet.fix())
+        self.assertTrue(moduletests.src.udevpersistentnet.fix())
 
-    @mock.patch("src.udevpersistentnet.os.path.isfile", return_value=False)
+    @mock.patch("moduletests.src.udevpersistentnet.os.path.isfile", return_value=False)
     def test_fix_failure(self, isfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.udevpersistentnet.fix()
+            moduletests.src.udevpersistentnet.fix()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.udevpersistentnet.detect", return_value=True)
-    @mock.patch("src.udevpersistentnet.fix", return_value=True)
+    @mock.patch("moduletests.src.udevpersistentnet.detect", return_value=True)
+    @mock.patch("moduletests.src.udevpersistentnet.fix", return_value=True)
     def test_run_success(self, detect_mock, fix_mock):
-        self.assertTrue(src.udevpersistentnet.run())
+        self.assertTrue(moduletests.src.udevpersistentnet.run())
 
-    @mock.patch("src.udevpersistentnet.detect", side_effect=Exception)
+    @mock.patch("moduletests.src.udevpersistentnet.detect", side_effect=Exception)
     def test_run_failure(self, detect_mock):
         with self.assertRaises(SystemExit) as ex:
-            self.assertRaises(Exception, src.udevpersistentnet.run())
+            self.assertRaises(Exception, moduletests.src.udevpersistentnet.run())
         self.assertEqual(ex.exception.code, 0)

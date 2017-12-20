@@ -21,7 +21,7 @@ import unittest
 
 import mock
 
-import src.selinuxpermissive
+import moduletests.src.selinuxpermissive
 
 try:
     # Python 2.x
@@ -52,64 +52,64 @@ class Testselinuxpermissive(unittest.TestCase):
     def tearDown(self):
         self.output.close()
 
-    @mock.patch("src.selinuxpermissive.open", mock.mock_open(read_data="stuff"))
+    @mock.patch("moduletests.src.selinuxpermissive.open", mock.mock_open(read_data="stuff"))
     def test_readfile(self):
-        self.assertEqual(src.selinuxpermissive.readfile(), "stuff")
+        self.assertEqual(moduletests.src.selinuxpermissive.readfile(), "stuff")
 
-    @mock.patch("src.selinuxpermissive.open", side_effect=Exception)
+    @mock.patch("moduletests.src.selinuxpermissive.open", side_effect=Exception)
     def test_readfile_failure(self, isfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.selinuxpermissive.readfile()
+            moduletests.src.selinuxpermissive.readfile()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.selinuxpermissive.os.path.isfile", return_value=False)
+    @mock.patch("moduletests.src.selinuxpermissive.os.path.isfile", return_value=False)
     def test_detect_noselinux(self, readfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.selinuxpermissive.detect()
+            moduletests.src.selinuxpermissive.detect()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.selinuxpermissive.os.path.isfile", return_value=True)
-    @mock.patch("src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
+    @mock.patch("moduletests.src.selinuxpermissive.os.path.isfile", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
     def test_detect_problem(self, isfile_mock, readfile_mock):
-        self.assertTrue(src.selinuxpermissive.detect())
+        self.assertTrue(moduletests.src.selinuxpermissive.detect())
 
-    @mock.patch("src.selinuxpermissive.os.path.isfile", return_value=True)
-    @mock.patch("src.selinuxpermissive.readfile", return_value="SELINUX=permissive")
+    @mock.patch("moduletests.src.selinuxpermissive.os.path.isfile", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.readfile", return_value="SELINUX=permissive")
     def test_detect_noproblem(self, isfile_mock, readfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.selinuxpermissive.detect()
+            moduletests.src.selinuxpermissive.detect()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.selinuxpermissive.shutil.copyfile", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.shutil.copyfile", return_value=True)
     def test_backup_success(self, copy_mock):
-        self.assertTrue(src.selinuxpermissive.backup())
+        self.assertTrue(moduletests.src.selinuxpermissive.backup())
 
-    @mock.patch("src.selinuxpermissive.shutil.copyfile", side_effect=Exception)
+    @mock.patch("moduletests.src.selinuxpermissive.shutil.copyfile", side_effect=Exception)
     def test_backup_failure(self, copy_mock):
         with self.assertRaises(SystemExit) as ex:
-            self.assertRaises(Exception, src.selinuxpermissive.backup())
+            self.assertRaises(Exception, moduletests.src.selinuxpermissive.backup())
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
-    @mock.patch("src.selinuxpermissive.open", mock.mock_open(read_data="stuff"))
+    @mock.patch("moduletests.src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
+    @mock.patch("moduletests.src.selinuxpermissive.open", mock.mock_open(read_data="stuff"))
     def test_fix_success(self, readfile_mock):
-        self.assertTrue(src.selinuxpermissive.fix())
+        self.assertTrue(moduletests.src.selinuxpermissive.fix())
 
-    @mock.patch("src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
-    @mock.patch("src.selinuxpermissive.open", side_effect=Exception)
+    @mock.patch("moduletests.src.selinuxpermissive.readfile", return_value="SELINUX=enforcing")
+    @mock.patch("moduletests.src.selinuxpermissive.open", side_effect=Exception)
     def test_fix_exception(self, readfile_mock, open_mock):
         with self.assertRaises(SystemExit) as ex:
-            self.assertRaises(Exception, src.selinuxpermissive.fix())
+            self.assertRaises(Exception, moduletests.src.selinuxpermissive.fix())
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.selinuxpermissive.detect", return_value=True)
-    @mock.patch("src.selinuxpermissive.backup", return_value=True)
-    @mock.patch("src.selinuxpermissive.fix", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.detect", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.backup", return_value=True)
+    @mock.patch("moduletests.src.selinuxpermissive.fix", return_value=True)
     def test_run_success(self, detect_mock, backup_mock, fix_mock):
-        self.assertTrue(src.selinuxpermissive.run())
+        self.assertTrue(moduletests.src.selinuxpermissive.run())
 
-    @mock.patch("src.selinuxpermissive.detect", side_effect=Exception)
+    @mock.patch("moduletests.src.selinuxpermissive.detect", side_effect=Exception)
     def test_run_failure(self, detect_mock):
         with self.assertRaises(SystemExit) as ex:
-            self.assertRaises(Exception, src.selinuxpermissive.run())
+            self.assertRaises(Exception, moduletests.src.selinuxpermissive.run())
         self.assertEqual(ex.exception.code, 0)

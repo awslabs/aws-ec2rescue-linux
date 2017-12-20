@@ -21,7 +21,7 @@ import unittest
 
 import mock
 
-import src.rebuildinitrd
+import moduletests.src.rebuildinitrd
 
 try:
     # Python 2.x
@@ -54,148 +54,148 @@ class Testrebuildinitrd(unittest.TestCase):
 
     @mock.patch("os.listdir", return_value="initramfs-4.9.32-15.41.amzn1.x86_64.img")
     def test_getboot(self, listdir_mock):
-        self.assertEqual(src.rebuildinitrd.getboot(), "initramfs-4.9.32-15.41.amzn1.x86_64.img")
+        self.assertEqual(moduletests.src.rebuildinitrd.getboot(), "initramfs-4.9.32-15.41.amzn1.x86_64.img")
 
-    @mock.patch("src.rebuildinitrd.open",  mock.mock_open(read_data="/boot"))
+    @mock.patch("moduletests.src.rebuildinitrd.open",  mock.mock_open(read_data="/boot"))
     @mock.patch("subprocess.check_output", return_value=b"stuff")
     def test_mountboot(self, check_output_mock):
-        self.assertTrue(src.rebuildinitrd.mountboot())
+        self.assertTrue(moduletests.src.rebuildinitrd.mountboot())
 
-    @mock.patch("src.rebuildinitrd.open",  mock.mock_open(read_data=""))
+    @mock.patch("moduletests.src.rebuildinitrd.open",  mock.mock_open(read_data=""))
     def test_mountboot_emptyfstab(self):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.mountboot()
+            moduletests.src.rebuildinitrd.mountboot()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.open",  side_effect=Exception)
+    @mock.patch("moduletests.src.rebuildinitrd.open",  side_effect=Exception)
     def test_mountboot_exception(self, open_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.mountboot()
+            moduletests.src.rebuildinitrd.mountboot()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getboot", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img", "garbage"])
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img", "garbage"])
     def test_getinitrd(self, getboot_mock):
-        self.assertEqual(src.rebuildinitrd.getinitrd(), ["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
+        self.assertEqual(moduletests.src.rebuildinitrd.getinitrd(), ["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"stuff")
     def test_rebuildalami(self, getinitrd_mock, copyfile_mock, check_output_mock):
-        self.assertTrue(src.rebuildinitrd.rebuildalami())
+        self.assertTrue(moduletests.src.rebuildinitrd.rebuildalami())
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
     @mock.patch("shutil.copyfile", side_effect=Exception)
     def test_rebuildalami_copyfail(self, getinitrd_mock, copyfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildalami()
+            moduletests.src.rebuildinitrd.rebuildalami()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-4.9.32-15.41.amzn1.x86_64.img"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", side_effect=Exception)
     def test_rebuildalami_rebuildfail(self, getinitrd_mock, copyfile_mock, check_output_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildalami()
+            moduletests.src.rebuildinitrd.rebuildalami()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"stuff")
     def test_rebuildubuntu(self, getinitrd_mock, copyfile_mock, check_output_mock):
-        self.assertTrue(src.rebuildinitrd.rebuildubuntu())
+        self.assertTrue(moduletests.src.rebuildinitrd.rebuildubuntu())
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
     @mock.patch("shutil.copyfile", side_effect=Exception)
     def test_rebuildubuntu_copyfail(self, getinitrd_mock, copyfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildubuntu()
+            moduletests.src.rebuildinitrd.rebuildubuntu()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd.img-4.4.0-1031-aws"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", side_effect=Exception)
     def test_rebuildubuntu_rebuildfail(self, getinitrd_mock, copyfile_mock, check_output_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildubuntu()
+            moduletests.src.rebuildinitrd.rebuildubuntu()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"stuff")
     def test_rebuildrhel(self, getinitrd_mock, copyfile_mock, check_output_mock):
-        self.assertTrue(src.rebuildinitrd.rebuildrhel())
+        self.assertTrue(moduletests.src.rebuildinitrd.rebuildrhel())
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
     @mock.patch("shutil.copyfile", side_effect=Exception)
     def test_rebuildrhel_copyfail(self, getinitrd_mock, copyfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildrhel()
+            moduletests.src.rebuildinitrd.rebuildrhel()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initramfs-3.10.0-514.el7.x86_64.img"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", side_effect=Exception)
     def test_rebuildrhel_rebuildfail(self, getinitrd_mock, copyfile_mock, check_output_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildrhel()
+            moduletests.src.rebuildinitrd.rebuildrhel()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"stuff")
     def test_rebuildsuse(self, getinitrd_mock, copyfile_mock, check_output_mock):
-        self.assertTrue(src.rebuildinitrd.rebuildsuse())
+        self.assertTrue(moduletests.src.rebuildinitrd.rebuildsuse())
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
     @mock.patch("shutil.copyfile", side_effect=Exception)
     def test_rebuildsuse_copyfail(self, getinitrd_mock, copyfile_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildsuse()
+            moduletests.src.rebuildinitrd.rebuildsuse()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
+    @mock.patch("moduletests.src.rebuildinitrd.getinitrd", return_value=["initrd-4.4.21-69-default"])
     @mock.patch("shutil.copyfile", return_value=True)
     @mock.patch("subprocess.check_output", side_effect=Exception)
     def test_rebuildsuse_rebuildfail(self, getinitrd_mock, copyfile_mock, check_output_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.rebuildsuse()
+            moduletests.src.rebuildinitrd.rebuildsuse()
         self.assertEqual(ex.exception.code, 0)
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "alami"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=False)
-    @mock.patch("src.rebuildinitrd.mountboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildalami", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=False)
+    @mock.patch("moduletests.src.rebuildinitrd.mountboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildalami", return_value=True)
     def test_run_mount_alami(self, getboot_mock, mountboot_mock, rebuildalami_mock):
-        self.assertTrue(src.rebuildinitrd.run())
+        self.assertTrue(moduletests.src.rebuildinitrd.run())
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "alami"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildalami", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildalami", return_value=True)
     def test_run_nomount_alami(self, getboot_mock, rebuildalami_mock):
-        self.assertTrue(src.rebuildinitrd.run())
+        self.assertTrue(moduletests.src.rebuildinitrd.run())
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "ubuntu"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildubuntu", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildubuntu", return_value=True)
     def test_run_nomount_ubuntu(self, getboot_mock, rebuildalami_mock):
-        self.assertTrue(src.rebuildinitrd.run())
+        self.assertTrue(moduletests.src.rebuildinitrd.run())
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "rhel"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildrhel", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildrhel", return_value=True)
     def test_run_nomount_rhel(self, getboot_mock, rebuildalami_mock):
-        self.assertTrue(src.rebuildinitrd.run())
+        self.assertTrue(moduletests.src.rebuildinitrd.run())
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "suse"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildsuse", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildsuse", return_value=True)
     def test_run_nomount_suse(self, getboot_mock, rebuildalami_mock):
-        self.assertTrue(src.rebuildinitrd.run())
+        self.assertTrue(moduletests.src.rebuildinitrd.run())
 
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "alami"})
-    @mock.patch("src.rebuildinitrd.getboot", return_value=True)
-    @mock.patch("src.rebuildinitrd.rebuildalami", side_effect=Exception)
+    @mock.patch("moduletests.src.rebuildinitrd.getboot", return_value=True)
+    @mock.patch("moduletests.src.rebuildinitrd.rebuildalami", side_effect=Exception)
     def test_run_nomount_alami_exception(self, getboot_mock, rebuildalami_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.rebuildinitrd.run()
+            moduletests.src.rebuildinitrd.run()
         self.assertEqual(ex.exception.code, 0)

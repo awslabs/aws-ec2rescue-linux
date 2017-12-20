@@ -21,7 +21,7 @@ import unittest
 
 import mock
 
-import src.fstabfailures
+import moduletests.src.fstabfailures
 
 try:
     # Python 2.x
@@ -52,53 +52,53 @@ class Testfstabfailures(unittest.TestCase):
     def tearDown(self):
         self.output.close()
 
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
                                                                    "defaults,noatime,nofail  0   0\n"))
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "alami"})
     def test_alami_defaultfstab(self):
-        self.assertTrue(src.fstabfailures.defaultfstab())
+        self.assertTrue(moduletests.src.fstabfailures.defaultfstab())
 
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
                                                                     "defaults,noatime,nofail  0   0\n"))
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "suse"})
     def test_suse_defaultfstab(self):
-        self.assertTrue(src.fstabfailures.defaultfstab())
+        self.assertTrue(moduletests.src.fstabfailures.defaultfstab())
 
 
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
                                                                    "defaults,noatime,nofail  0   0\n"))
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "rhel"})
     def test_rhel_defaultfstab(self):
-        self.assertTrue(src.fstabfailures.defaultfstab())
+        self.assertTrue(moduletests.src.fstabfailures.defaultfstab())
 
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
                                                                    "defaults,noatime,nofail  0   0\n"))
     @mock.patch.dict(os.environ, {"EC2RL_DISTRO": "ubuntu"})
     def test_ubuntu_defaultfstab(self):
-        self.assertTrue(src.fstabfailures.defaultfstab())
+        self.assertTrue(moduletests.src.fstabfailures.defaultfstab())
 
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="LABEL=/     /           ext4    "
                                                                    "defaults,noatime,nofail  0   0\n"))
     def test_nodistro_defaultfstab(self):
         with self.assertRaises(SystemExit) as ex:
-            src.fstabfailures.defaultfstab()
+            moduletests.src.fstabfailures.defaultfstab()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.fstabfailures.open", side_effect=Exception)
+    @mock.patch("moduletests.src.fstabfailures.open", side_effect=Exception)
     def test_exception_defaultfstab(self, open_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.fstabfailures.defaultfstab()
+            moduletests.src.fstabfailures.defaultfstab()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.fstabfailures.defaultfstab", return_value=True)
-    @mock.patch("src.fstabfailures.os.path.isfile", return_value=False)
+    @mock.patch("moduletests.src.fstabfailures.defaultfstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.os.path.isfile", return_value=False)
     def test_nofstab_fstabexists(self, defaultfstab_mock, isfile_mock):
-        self.assertTrue(src.fstabfailures.checkfstabexists())
+        self.assertTrue(moduletests.src.fstabfailures.checkfstabexists())
 
-    @mock.patch("src.fstabfailures.defaultfstab", return_value=True)
-    @mock.patch("src.fstabfailures.os.path.isfile", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.defaultfstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.os.path.isfile", return_value=True)
     def test_fstab_fstabexists(self, defaultfstab_mock, isfile_mock):
-        self.assertTrue(src.fstabfailures.checkfstabexists())
+        self.assertTrue(moduletests.src.fstabfailures.checkfstabexists())
 
     def test_full_parsefstab(self):
         open_mock = mock.mock_open(read_data="LABEL=/ / ext4 defaults,noatime,nofail 0 0\n")
@@ -113,8 +113,8 @@ class Testfstabfailures(unittest.TestCase):
 
         if sys.hexversion >= 0x3000000:
             open_mock.return_value.__next__ = py3_next_func
-        with mock.patch("src.fstabfailures.open", open_mock):
-            self.assertEqual(src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+        with mock.patch("moduletests.src.fstabfailures.open", open_mock):
+            self.assertEqual(moduletests.src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
                 'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
 
     def test_5entry_parsefstab(self):
@@ -130,8 +130,8 @@ class Testfstabfailures(unittest.TestCase):
 
         if sys.hexversion >= 0x3000000:
             open_mock.return_value.__next__ = py3_next_func
-        with mock.patch("src.fstabfailures.open", open_mock):
-            self.assertEqual(src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+        with mock.patch("moduletests.src.fstabfailures.open", open_mock):
+            self.assertEqual(moduletests.src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
                 'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
 
     def test_4entry_parsefstab(self):
@@ -147,8 +147,8 @@ class Testfstabfailures(unittest.TestCase):
 
         if sys.hexversion >= 0x3000000:
             open_mock.return_value.__next__ = py3_next_func
-        with mock.patch("src.fstabfailures.open", open_mock):
-            self.assertEqual(src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+        with mock.patch("moduletests.src.fstabfailures.open", open_mock):
+            self.assertEqual(moduletests.src.fstabfailures.parsefstab(), [{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
                 'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
 
     def test_comment_parsefstab(self):
@@ -164,84 +164,84 @@ class Testfstabfailures(unittest.TestCase):
 
         if sys.hexversion >= 0x3000000:
             open_mock.return_value.__next__ = py3_next_func
-        with mock.patch("src.fstabfailures.open", open_mock):
-            self.assertEqual(src.fstabfailures.parsefstab(), [])
+        with mock.patch("moduletests.src.fstabfailures.open", open_mock):
+            self.assertEqual(moduletests.src.fstabfailures.parsefstab(), [])
 
-    @mock.patch("src.fstabfailures.defaultfstab", return_value=True)
-    @mock.patch("src.fstabfailures.backupfstab", return_value=True)
-    @mock.patch("src.fstabfailures.open", side_effect=Exception)
+    @mock.patch("moduletests.src.fstabfailures.defaultfstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.backupfstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.open", side_effect=Exception)
     def test_exception_parsefstab(self, defaultfstab_mock, backupfstab_mock, open_mock):
-        self.assertTrue(src.fstabfailures.parsefstab())
+        self.assertTrue(moduletests.src.fstabfailures.parsefstab())
 
-    @mock.patch("src.fstabfailures.shutil.copyfile", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.shutil.copyfile", return_value=True)
     def test_success_backupfstab(self, copyfile_mock):
-        self.assertTrue(src.fstabfailures.backupfstab())
+        self.assertTrue(moduletests.src.fstabfailures.backupfstab())
 
-    @mock.patch("src.fstabfailures.shutil.copyfile", side_effect=Exception)
+    @mock.patch("moduletests.src.fstabfailures.shutil.copyfile", side_effect=Exception)
     def test_exception_backupfstab(self, open_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.fstabfailures.backupfstab()
+            moduletests.src.fstabfailures.backupfstab()
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
     def test_nofsck_checkfsck(self, parsefstab_mock):
-        fstab = src.fstabfailures.parsefstab()
-        self.assertFalse(src.fstabfailures.checkfsck(fstab))
+        fstab = moduletests.src.fstabfailures.parsefstab()
+        self.assertFalse(moduletests.src.fstabfailures.checkfsck(fstab))
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '1'}])
     def test_nofsck_checkfsck(self, parsefstab_mock):
-        fstab = src.fstabfailures.parsefstab()
-        self.assertTrue(src.fstabfailures.checkfsck(fstab))
+        fstab = moduletests.src.fstabfailures.parsefstab()
+        self.assertTrue(moduletests.src.fstabfailures.checkfsck(fstab))
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
     def test_nofail_checknofail(self, parsefstab_mock):
-        fstab = src.fstabfailures.parsefstab()
-        self.assertFalse(src.fstabfailures.checknofail(fstab))
+        fstab = moduletests.src.fstabfailures.parsefstab()
+        self.assertFalse(moduletests.src.fstabfailures.checknofail(fstab))
 
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime', 'Dump': '0', 'fsck': '0'}])
     def test_fail_checknofail(self, parsefstab_mock):
-        fstab = src.fstabfailures.parsefstab()
-        self.assertTrue(src.fstabfailures.checknofail(fstab))
+        fstab = moduletests.src.fstabfailures.parsefstab()
+        self.assertTrue(moduletests.src.fstabfailures.checknofail(fstab))
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
-    @mock.patch("src.fstabfailures.open", mock.mock_open(read_data="stuff"))
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(read_data="stuff"))
     def test_success_rewritefstab(self, parsefstab_mock):
-        fstab = src.fstabfailures.parsefstab()
-        self.assertTrue(src.fstabfailures.rewritefstab(fstab))
+        fstab = moduletests.src.fstabfailures.parsefstab()
+        self.assertTrue(moduletests.src.fstabfailures.rewritefstab(fstab))
 
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
-    @mock.patch("src.fstabfailures.open", side_effect=Exception)
+    @mock.patch("moduletests.src.fstabfailures.open", side_effect=Exception)
     def test_exception_rewritefstab(self, parsefstab_mock, open_mock):
-        fstab = src.fstabfailures.parsefstab()
+        fstab = moduletests.src.fstabfailures.parsefstab()
         with self.assertRaises(SystemExit) as ex:
-            src.fstabfailures.rewritefstab(fstab)
+            moduletests.src.fstabfailures.rewritefstab(fstab)
         self.assertEqual(ex.exception.code, 0)
 
-    @mock.patch("src.fstabfailures.checkfstabexists", return_value=True)
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.checkfstabexists", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
-    @mock.patch("src.fstabfailures.backupfstab", return_value=True)
-    @mock.patch("src.fstabfailures.rewritefstab", return_value=True)
-    @mock.patch("src.fstabfailures.checknofail", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.backupfstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.rewritefstab", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.checknofail", return_value=True)
     def test_rewrite_run(self, checkfstabexists_mock, parsefstab_mock, backupfstab_mock, rewritefstab_mock,
                          checknofail_mock):
-        self.assertTrue(src.fstabfailures.run())
+        self.assertTrue(moduletests.src.fstabfailures.run())
 
-    @mock.patch("src.fstabfailures.checkfstabexists", return_value=True)
-    @mock.patch("src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
+    @mock.patch("moduletests.src.fstabfailures.checkfstabexists", return_value=True)
+    @mock.patch("moduletests.src.fstabfailures.parsefstab", return_value=[{'Filesystem': 'LABEL=/', 'Mountpoint': '/', 'FSType':
         'ext4', 'Options': 'defaults,noatime,nofail', 'Dump': '0', 'fsck': '0'}])
     def test_norewrite_run(self, checkfstabexists_mock, parsefstab_mock):
-        self.assertTrue(src.fstabfailures.run())
+        self.assertTrue(moduletests.src.fstabfailures.run())
 
-    @mock.patch("src.fstabfailures.checkfstabexists", side_effect=Exception)
+    @mock.patch("moduletests.src.fstabfailures.checkfstabexists", side_effect=Exception)
     def test_exception_run(self, checkfstabexists_mock):
         with self.assertRaises(SystemExit) as ex:
-            src.fstabfailures.run()
+            moduletests.src.fstabfailures.run()
         self.assertEqual(ex.exception.code, 0)
