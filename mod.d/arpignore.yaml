@@ -1,0 +1,200 @@
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str arpignore
+path: !!str
+version: !!str 1.0
+title: !!str Determines if any interfaces have been set to ignore arp requests
+helptext: !!str |
+  Determines if any interfaces have been set to ignore arp requests
+  These being disabled can cause networking issues or result in an instance failing status checks
+  Sudo is required for remediation
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+content: !!str |
+  """
+  Determines if any interfaces have been set to ignore arp requests. These can cause networking issues
+  or result in instances failing status checks.
+
+  Functions:
+      sysctlget: Gets the output of sysctl
+      detect: Determines if arpignore is enabled on any interface
+      fix: Runs sysctlfix() and writefix()
+      sysctlfix: Disables arpignore for interfaces on running system
+      writefix: Writes disablement of arpignore to conf file to persist across reboots
+      print_results: Prints the results of the diagnostic
+      run: Runs the above functions
+  """
+  from __future__ import print_function
+  import sys
+  import os
+  import subprocess
+  import re
+
+  def sysctlget():
+      """
+      Gets the output of sysctl
+
+      Returns:
+          sysctlout: List containing the output of sysctl
+      """
+      sysctlout = subprocess.check_output(["sysctl", "net.ipv4.conf"]).decode("utf-8")
+      sysctlout = sysctlout.split("\n")
+      return sysctlout
+
+  def detect():
+      """
+      Determines if arpignore is enabled on any interface
+
+      Returns:
+          True/False: True if arpignore is detected
+      """
+      sysctlout = sysctlget()
+      detected = False
+      for i in sysctlout:
+          if re.search(r"arp_ignore = [1-9]", i):
+              print(i)
+              detected = True
+      if detected:
+          return True
+      else:
+          return False
+
+  def fix():
+      """
+      Runs sysctlfix() and writefix(). Bails out if missing sudo.
+
+      Returns:
+          False: If sudo is disabled
+      """
+      # Requires root/sudo privs to fix, so check for that.
+      if os.environ["EC2RL_SUDO"] == "True":
+          print("We have sudo, continuing")
+          print("Attempting to set arp_ignore to 0 for all interfaces it is enabled on.")
+          sysctlout = sysctlget()
+          for i in sysctlout:
+              try:
+                  sysctlfix(eth=i)
+              except Exception as ex:
+                  print(ex)
+                  print("[UNFIXED] unable to set " + i + " for running system.")
+                  sys.exit(0)
+              try:
+                  writefix(eth=i)
+              except Exception as ex:
+                  print(ex)
+                  print("[UNFIXED] Unable to open /etc/sysctl.d/55-arp-ignore.conf and write to it.")
+                  print("-- " + i + " remains. Unable to continue")
+                  sys.exit(0)
+      else:
+          print("[UNFIXED] Remediation impossible without sudo.")
+          return False
+
+  def sysctlfix(eth=""):
+      """
+      Disables arpignore for interfaces on running system
+
+      Returns:
+          True: If fix is successful
+      """
+      if re.search(r"arp_ignore = [1-9]", eth):
+          fixed_arp = re.sub("arp_ignore = [0-9]", "arp_ignore=0", eth)
+          print("[FIXED] " + fixed_arp + " for running system.")
+          return True
+
+  def writefix(eth=""):
+      """
+      Writes disablement of arpignore to conf file to persist across reboots
+
+      Returns:
+          True: If fix is successful
+      """
+      if re.search(r"arp_ignore = [1-9]", eth):
+          fixed_arp = re.sub("arp_ignore = [0-9]", "arp_ignore=0", eth)
+          print("Attempting to write to /etc/sysctl.d/55-arp-ignore.conf")
+          with open("/etc/sysctl.d/55-arp-ignore.conf", "a+") as f:
+              f.write("\n" + fixed_arp + "\n")
+          print("[FIXED] " + fixed_arp + " written.")
+          return True
+
+  def print_results(results=""):
+      """
+      Prints the results of the diagnostic.
+      """
+      if results == "success":
+          print("[SUCCESS] arp ignore is disabled for all interfaces.")
+      elif results == "fixed":
+          print("[SUCCESS] arp ignore is disabled for all interfaces after remediation.")
+      elif results == "failure":
+          print("[FAILURE] arp ignore is enabled for one or more interfaces. Please see the module log")
+          print("-- You can check for which interfaces are affected with \'sysctl net.ipv4.conf | "
+                "grep \"arp_ignore = 0\"\'")
+          print("-- Then you can fix it by running \'sudo sysctl -w net.ipv4.conf.eth#.arp_ignore=0")
+          print("-- Fixing it for next reboot can be done with \'echo \"net.ipv4.conf.eth#.arp_ignore = 0\" | "
+                "sudo tee /etc/sysctl.d/55-arp-ignore.conf\'")
+          print("-- Replace ethX in these commands with the interface # seen in the detection.")
+      else:
+          print("[WARN] Unable to determine results. Please see module log.")
+      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/arpignore.md "
+            "for further details")
+
+  def run():
+      """
+      Runs the above functions.
+
+      Returns:
+          True/False: Based on success of remediation
+      """
+      try:
+          print("Determining if any interfaces are set to ignore arp requests")
+          if detect():
+              if os.environ.get("remediate"):
+                  fix()
+                  if detect():
+                      print_results(results="failure")
+                      return False
+                  else:
+                      print_results(results="fixed")
+              else:
+                  print("No --remediate flag passed, no remediation will be attempted.")
+                  print_results(results="failure")
+                  return False
+          else:
+              print_results(results="success")
+          return True
+
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          sys.exit(0)
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str False
+  domain: !!str net
+  class: !!str diagnose
+  distro: !!str alami ubuntu rhel suse
+  required: !!str
+  optional: !!str
+  software: !!str
+  sudo: !!str False
+  perfimpact: !!str False
+  parallelexclusive: !!str

@@ -16,39 +16,132 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str arpcache
 path: !!str
-version: !!str 2.0
+version: !!str 3.0
 title: !!str Determines if aggressive arp caching is enabled
 helptext: !!str |
   Determines if aggressive arp caching is enabled.
   This can cause problems communicating with same subnet resources
+  Sudo is required for remediation
 placement: !!str run
 package: 
   - !!str
 language: !!str python
 content: !!str |
+  """
+  Determines if aggressive arp caching is enabled. This can cause problems communicating with same subnet resources
+  Sudo is required for remediation.
+
+  Functions:
+      detect: Detects if aggressive arp caching is enabled
+      fix: Disables aggressive arp caching
+      print_results: Prints the results of the module running
+      run: Runs the detect, fix, and print_results functions
+  """
   from __future__ import print_function
   import re
   import subprocess
   import sys
+  import os
 
-  try:
-      print("Determining if agressive ARP caching is is enabled")
+  def detect():
+      """
+      Detects if aggressive arp caching is enabled.
+
+      Returns:
+          True/False: Result of detection
+      """
       arpstatus = subprocess.check_output(["sysctl", "net.ipv4.neigh.default.gc_thresh1"]).decode("utf-8")
       if re.match(r"net.ipv4.neigh.default.gc_thresh1\ =\ 0", arpstatus):
-           print("[SUCCESS] Aggressive arp caching is disabled.")
+          return False
       else:
+          return True
+
+  def fix():
+      """
+      Performs the actual remediation. Determines if we have sudo and then uses subprocess to change it with sysctl
+      Also writes a file so the change persists.
+
+      Returns:
+          True: If remediation is successful
+      """
+      # Requires root/sudo privs to fix, so check for that.
+      if os.environ.get("EC2RL_SUDO") == "True":
+          print("We have sudo, continuing")
+          print("Setting net.ipv4.neigh.default.gc_thresh1 to 0")
+          try:
+              subprocess.check_call(["sudo", "sysctl", "-w", "net.ipv4.neigh.default.gc_thresh1=0"])
+              print("[FIXED] net.ipv4.neigh.default.gc_thresh=0 for running system")
+          except subprocess.CalledProcessError:
+              print("[UNFIXED] net.ipv4.neigh.default.gc_thresh=0 failed for running system")
+          try:
+              with open("/etc/sysctl.d/55-arp-gc_thresh1.conf", 'a+') as f:
+                  f.write('\nnet.ipv4.neigh.default.gc_thresh1 = 0\n')
+              print("[FIXED] net.ipv4.neigh.default.gc_thresh=0 in /etc/sysctl.d/55-arp-gc_thresh1.conf")
+              return True
+          except Exception as ex:
+              print(ex)
+              print("[UNFIXED] Failed to write config to /etc/sysctl.d/55-arp-gc_thresh1.conf")
+      else:
+          print("[UNFIXED] Remediation impossible without sudo.")
+          return False
+
+  def print_results(results=""):
+      """
+      Prints the results of the testing.
+
+      """
+      if results == "success":
+          print("[SUCCESS] Aggressive arp caching is disabled.")
+      elif results == "fixed":
+          print("[SUCCESS] Aggressive arp caching is disabled after remediation. "
+                "Please see the logs for further details")
+      elif results == "failure":
           print("[FAILURE] You have aggressive arp caching enabled. "
                 "This can cause issues communicating with instances in the same subnet")
           print("-- To disable, you can run 'sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0'")
           print("-- To disable it from re-occuring on next boot, you can run "
                 "'echo 'net.ipv4.neigh.default.gc_thresh1 = 0' | sudo tee /etc/sysctl.d/55-arp-gc_thresh1.conf'")
-      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/arpcache.md"
-          " for further details")
-  except Exception as ex:
-      print(ex)
-      print("[WARN] module generated an exception and exited abnormally. "
-            "Review the logs to determine the cause of the issue.")
-      sys.exit(0)
+      else:
+          print("[WARN] Unable to determine results. Please see module log.")
+      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/arpcache.md "
+            "for further details")
+
+  def run():
+      """
+      Runs detect, then if remediation is enabled, attempts to remediate. Then prints results.
+
+      Returns:
+          True/False: Based on if the run is successful.
+      """
+      try:
+          print("Determining if aggressive ARP caching is is enabled")
+
+          if detect():
+              if os.environ.get("remediate"):
+                  fix()
+                  if detect():
+                      print_results(results="failure")
+                      return False
+                  else:
+                      print_results(results="fixed")
+                      return True
+              else:
+                  print("No --remediate flag passed, no remediation will be attempted.")
+                  print_results(results="failure")
+          else:
+              print_results(results="success")
+              return True
+
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          sys.exit(0)
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+
 constraint:
   requires_ec2: !!str False
   domain: !!str net

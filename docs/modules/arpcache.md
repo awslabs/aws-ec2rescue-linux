@@ -28,20 +28,32 @@ module run/arpcache       [FAILURE] You have aggressive arp caching enabled.
 
 ## Detecting Manually
 
-This can also be detected manually via greping the output of sysctl as follows
+This can also be detected manually via grepping the output of sysctl as follows
 
 ```commandline
 $ /sbin/sysctl net.ipv4.neigh.default | grep 'thresh1'
 ```
 
-## Resolution
+## Resolving with EC2 Rescue for Linux
+
+```commandline
+$ sudo ./ec2rl run --only-modules=arpcache --remediate
+```
+
+Passing output:
+```commandline
+----------[Diagnostic Results]----------
+module run/arpcache       [SUCCESS] Aggressive arp caching is disabled after remediation. 
+```
+
+## Resolving Manually
 
 Several commands are needed to resolve the issue.
 
 The first will disable it for the current run
 
 ```commandline
-$ sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0'
+$ sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0
 ```
 
 The next will make it persistant across reboots
