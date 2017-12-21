@@ -62,6 +62,7 @@ def get_distro():
 
     distro = "unknown"
     alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
+    alami2_regex = re.compile(r"^Amazon Linux release \d\.\d")
     rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release \d\.\d")
 
     # Amazon Linux & RHEL
@@ -69,15 +70,7 @@ def get_distro():
         with open("/etc/system-release", "r") as fp:
             # This file is a single line
             distro_str = fp.readline()
-<<<<<<< HEAD
-            if re.match(alami_regex, distro_str):
-=======
-            alami_regex = re.compile(r"^Amazon Linux AMI release [0-9]{4}\.[0-9]{2}")
-            rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release [0-9]\.[0-9]")
-            centos_regex = re.compile(r"^CentOS Linux release ([0-9])\.([0-9])\.([0-9]{4})")
-            alami2_regex = re.compile(r"^Amazon Linux release [0-9]\.[0-9]")
             if re.match(alami_regex, distro_str) or re.match(alami2_regex, distro_str):
->>>>>>> d7df534... Add alami2 support
                 distro = "alami"
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
