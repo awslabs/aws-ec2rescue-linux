@@ -31,7 +31,7 @@ module run/arpignore       FAILURE] arp ignore is enabled for one or more interf
 This can also be detected manually via grepping the output of sysctl as follows
 
 ```commandline
-$ /sbin/sysctl net.ipv4.conf | grep 'arp_ignore'
+$ /sbin/sysctl net.ipv4.conf | grep arp_ignore
 ```
 
 ## Resolving with EC2 Rescue for Linux
@@ -43,7 +43,7 @@ $ sudo ./ec2rl run --only-modules=arpcache --remediate
 Passing output:
 ```commandline
 ----------[Diagnostic Results]----------
-module run/arpignore       [SUCCESS] arp ignore is disabled for all interfaces after remediation." 
+module run/arpignore       [SUCCESS] arp ignore is disabled for all interfaces after remediation.
 ```
 
 ## Resolving Manually
@@ -53,7 +53,7 @@ Several commands are needed to resolve the issue.
 The first will disable it for the current run. Replace the # with the interface number it is disabled on
 
 ```commandline
-$ sudo sysctl -w net.ipv4.conf.eth#.arp_ignore=0"
+$ sudo sysctl -w net.ipv4.conf.eth#.arp_ignore=0
 ```
 
 The next will make it persistant across reboots
