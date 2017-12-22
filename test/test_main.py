@@ -1220,7 +1220,7 @@ class TestMain(unittest.TestCase):
         del self.ec2rl.options.global_args["uploaddirectory"]
 
     def test_main_upload_with_invalid_unparseable_support_url(self):
-        """Test how invalid support URLs are handled in the upload subcommand."""
+        """Test that invalid, unparseable support URLs raise S3UploadUrlParsingFailure."""
         self.ec2rl.options.global_args["uploaddirectory"] = "."
         self.ec2rl.options.global_args["supporturl"] = "http://fakeurl.com/"
         with self.assertRaises(ec2rlcore.s3upload.S3UploadUrlParsingFailure):
@@ -1228,14 +1228,20 @@ class TestMain(unittest.TestCase):
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["supporturl"]
 
+    @responses.activate
     def test_main_upload_with_invalid_parseable_support_url(self):
-        """Test that valid support URLs result in success."""
+        """Test that invalid but parseable support URLs raise S3UploadGetPresignedURLError."""
         self.ec2rl.options.global_args["uploaddirectory"] = "."
         self.ec2rl.options.global_args["supporturl"] = \
             "https://aws-support-uploader.s3.amazonaws.com/uploader?account-id=123&case-id=567" \
             "&expiration=1486577795&key=789"
+        responses.add(responses.POST,
+                      "https://30yinsv8k6.execute-api.us-east-1.amazonaws.com/prod/get-signed-url",
+                      status=405)
         with self.assertRaises(ec2rlcore.s3upload.S3UploadGetPresignedURLError):
             self.ec2rl.upload()
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(responses.calls[0].response.status_code, 405)
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["supporturl"]
 
