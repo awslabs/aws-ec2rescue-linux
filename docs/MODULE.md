@@ -157,6 +157,11 @@ arg3 = Grep arguments (optional)
 1. Avoid insecure practices such as Python's eval(), exec(), and subprocess with shell=True.
 2. Modules cannot contain hard-coded sensitive information such as usernames or passwords.
 3. Modules must not expose sensitive data. An example would be copying a sensitive file to a world readable location such as /tmp.
+### Remediation Requirements
+1. Always test that the remediation procedure was successful rather than assuming it was successful.
+2. In the event the remediation procedure does not succeed, undo any changes made to the system such as file changs and system configuration settings. A remediation failure should not change the system state.
+3. If the module edits any files, create backup copies before making any changes. If the remediation steps fail to resolve the problem or an error occurs, restore the backup file copies. The functions ec2rlcore.prediag.backup and ec2rlcore.prediag.restore are provided for this purpose.
+4. Where possible, remediation modules should include functional tests in addition to unit tests.
 ### Gather Module Requirements
 1. Prefer copying a file rather than reading it.
 2. Create a dir in $EC2RL_GATHEREDIR/modulename - e.g. $EC2RL_GATHEREDDIR/messages and copy the files into it.
