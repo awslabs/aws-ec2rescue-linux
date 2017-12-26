@@ -395,7 +395,9 @@ class TestMain(unittest.TestCase):
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.help())
 
-        self.assertEqual(self.output.getvalue(), "aptlog:\nCollect apt log files\nRequires sudo: True\n")
+        self.assertEqual(self.output.getvalue(), "aptlog:\nCollect apt log files\n"
+                                                 "Requires sudo: True\n"
+                                                 "Supports remediation: False\n")
         del self.ec2rl.options.global_args["onlymodules"]
 
     @mock.patch("os.mkdir", side_effect=simple_return)
@@ -441,9 +443,9 @@ class TestMain(unittest.TestCase):
             self.assertTrue(ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 5826)
+        self.assertEqual(len(self.output.getvalue()), 6666)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
-        self.assertTrue(self.output.getvalue().endswith("ackets to drop due to discarded skbs\nRequires sudo: False\n"))
+        self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(mkdir_mock.called)
 
@@ -460,9 +462,9 @@ class TestMain(unittest.TestCase):
             self.assertTrue(ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 1777)
+        self.assertEqual(len(self.output.getvalue()), 2197)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
-        self.assertTrue(self.output.getvalue().endswith("ackets to drop due to discarded skbs\nRequires sudo: False\n"))
+        self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(mkdir_mock.called)
 
@@ -502,7 +504,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 595)
+        self.assertEqual(len(self.output.getvalue()), 623)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
         self.assertTrue(self.output.getvalue().endswith("                       specified comma delimited list\n\n\n"))
 

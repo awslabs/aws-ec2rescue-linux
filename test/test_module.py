@@ -132,7 +132,8 @@ class TestModule(unittest.TestCase):
         """Test that help doc is set."""
         helpdoc = "This module is an empty stub, used only in the development and qa of the\n" \
                   "interface between the main Automagic Diagnostics tool, and its modules.\n" \
-                  "Requires sudo: False"
+                  "Requires sudo: False\n" \
+                  "Supports remediation: False"
         self.assertEqual(self.module.helptext, helpdoc)
 
     def test_module_list(self):
@@ -145,7 +146,8 @@ class TestModule(unittest.TestCase):
         """Test that help returns formatted help message."""
         helptext = "This module is an empty stub, used only in the development and qa of the\n" \
                    "interface between the main Automagic Diagnostics tool, and its modules.\n" \
-                   "Requires sudo: False"
+                   "Requires sudo: False\n" \
+                   "Supports remediation: False"
         name = "ex"
         response = os.linesep.join(["{}:".format(name), helptext])
         self.assertEqual(self.module.help, response)

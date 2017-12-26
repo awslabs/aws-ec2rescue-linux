@@ -24,6 +24,7 @@ placement: !!str run
 package:
   - !!str
 language: !!str python
+remediation: !!str True
 content: !!str |
   """
   This module uses a DAG to represent a dependency chain of common OpenSSH-related issues.

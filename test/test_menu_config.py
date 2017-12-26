@@ -118,7 +118,8 @@ class TestMenuConfig(unittest.TestCase):
                          "Requires --times= for number of times to repeat\n"
                          "Requires --period= for length of sample period\n"
                          "Requires atop tool ( http://www.atoptool.nl/ )\n"
-                         "Requires sudo: False")
+                         "Requires sudo: False\n"
+                         "Supports remediation: False")
         self.assertEqual(menu_all_modules["atop"].header,
                          "Module 'atop' - Select an option to configure:")
         self.assertEqual(menu_all_modules["atop"].row_left,

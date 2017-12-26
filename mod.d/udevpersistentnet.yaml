@@ -26,6 +26,7 @@ placement: !!str run
 package:
   - !!str
 language: !!str python
+remediation: !!str True
 content: !!str |
   """
   Removes existing /etc/udev/rules.d/70-persistent-net.rules from use.

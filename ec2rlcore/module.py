@@ -77,11 +77,10 @@ class Module(object):
     required_module_constraints = ["domain", "sudo", "required", "perfimpact", "software", "optional", "class",
                                    "parallelexclusive", "distro", "requires_ec2"]
     temp_path = ""
-
     placement_dir_mapping = {"run": "mod.d", "postdiagnostic": "post.d", "prediagnostic": "pre.d"}
 
-    def __init__(self, name=None, version=None, title=None, helptext=None, placement=None,
-                 package=None, language=None, content=None, path=None, constraint=None):
+    def __init__(self, name=None, version=None, title=None, helptext=None, placement=None, package=None,
+                 language=None, content=None, path=None, constraint=None, remediation=False):
         """
         Perform initial configuration of the object. finish_init() needs to be called afterwards due the limitations of
         loading objects from YAML documents.
@@ -97,6 +96,7 @@ class Module(object):
             content (str): the code for the module
             path (str): the full path to the module file
             constraint (ec2rlcore.constraint.Constraint): the Constraint object for this module
+            remediation (bool): whether the module supports remediation
         """
         if not placement:
             raise ModuleConstraintParseError(
@@ -141,6 +141,10 @@ class Module(object):
         self.language = language
         self.content = content
         self.constraint = constraint
+        if remediation in {True, "True", "true"}:
+            self.remediation = True
+        else:
+            self.remediation = False
 
         self.whyskipping = ""
         self.processoutput = ""
@@ -158,7 +162,9 @@ class Module(object):
                     os.path.basename(self.path), required_constraint))
                 raise ModuleConstraintKeyError(os.path.basename(self.path), required_constraint)
 
-        self.helptext = os.linesep.join((helptext, "Requires sudo: {}".format(self.constraint["sudo"][0])))
+        self.helptext = os.linesep.join((helptext,
+                                         "Requires sudo: {}".format(self.constraint["sudo"][0]),
+                                         "Supports remediation: {}".format(self.remediation)))
 
         return
 

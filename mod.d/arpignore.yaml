@@ -26,6 +26,7 @@ placement: !!str run
 package:
   - !!str
 language: !!str python
+remediation: !!str True
 content: !!str |
   """
   Determines if any interfaces have been set to ignore arp requests. These can cause networking issues

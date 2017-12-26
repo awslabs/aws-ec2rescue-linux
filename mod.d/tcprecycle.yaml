@@ -26,6 +26,7 @@ placement: !!str run
 package:
   - !!str
 language: !!str python
+remediation: !!str True
 content: !!str |
   """
   Determines if aggressive TCP recycling is enabled. This can cause problems communicating with same subnet

@@ -21,6 +21,8 @@ helptext: !!str |
 The stage in which the module should be run. Valid values include "prediagnostic", "run", and "postdiagnostic".
 #### language
 The language in which the module code is written. BASH and Python are supported. Python code must be compatible with both Python 2.7.9+ and Python 3.2+.
+#### remediation
+Indicates whether the module supports remediation. Set to either True or False. The module will default to False if this is absent, making it an optional attribute for those modules that do not support remediation.
 #### content
 The entirety of the script code.
 #### constraint
@@ -71,6 +73,7 @@ placement: !!str run
 package: 
   - !!str atop http://www.atoptool.nl/
 language: !!str bash
+remediation: !!str False
 content: !!str |
   # read-in shared function
   source functions.bash
