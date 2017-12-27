@@ -45,6 +45,7 @@ import ec2rlcore
 import ec2rlcore.console_out
 import ec2rlcore.constraint
 import ec2rlcore.logutil
+import ec2rlcore.module
 import ec2rlcore.moduledir
 import ec2rlcore.options
 import ec2rlcore.paralleldiagnostics
@@ -407,18 +408,20 @@ class Main(object):
         """
         self.logger.debug("ec2rlcore.Main.list()")
         print("Here is a list of available modules that apply to the current host:\n")
-        print("\033[4m" + "  " + "{:20.18}{:10.8}{:13.11}{:77.75}".format("Module Name", "Class", "Domain",
-                                                                          "Description") + "\033[0m")
+        print(ec2rlcore.module.Module.list_header)
         for mod in self.modules:
             if mod.applicable \
                     and set(mod.constraint["domain"]).intersection(self.options.domains_to_run) \
                     and set(mod.constraint["class"]).intersection(self.options.classes_to_run):
-                print(mod.list)
-        print("\n *Requires sudo/root to run")
-        print("\n +Requires --perfimpact=true to run (Can potentially cause performance impact)")
-        print("\n Classes come in three types: Diagnose, with success/fail/warn conditions determined by module.")
-        print("\n Gather, which creates a copy of a local file for inspection. Collect, which collects command output")
-        print("\n Domains are defined per module and refer to the general area of investigation for the module.")
+                print(mod)
+        print("\nS: Requires sudo/root to run")
+        print("P: Requires --perfimpact=true to run (can potentially cause performance impact)")
+        print("R: Supports remediation if --remediate is given")
+        print("\nClasses refer to the type of task the module performs")
+        print(" Diagnose: success/fail/warn conditions determined by module.")
+        print(" Gather: create a copy of a local file for inspection.")
+        print(" Collect: collect command output")
+        print("\nDomains are defined per module and refer to the general area of investigation for the module.")
         print("\nTo see module help, you can run:\n")
         print("ec2rl help [MODULEa ... MODULEx]")
         print("ec2rl help [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]")

@@ -363,7 +363,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.list())
         self.assertTrue(self.output.getvalue().startswith("Here is a list of available modules that apply to the curr"))
         self.assertTrue(self.output.getvalue().endswith("=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]\n"))
-        self.assertEqual(len(self.output.getvalue()), 14533)
+        self.assertEqual(len(self.output.getvalue()), 14361)
 
     def test_main_list_nonapplicable_modules(self):
         """
@@ -378,7 +378,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("Here is a list of available modules that apply to the curr"))
         self.assertTrue(self.output.getvalue().endswith("=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]\n"))
         self.assertFalse(re.search(r"xennetrocket", self.output.getvalue()))
-        self.assertEqual(len(self.output.getvalue()), 14410)
+        self.assertEqual(len(self.output.getvalue()), 14240)
 
     def test_main_help(self):
         """Test that help returns True and get_help's output matches the expected length."""

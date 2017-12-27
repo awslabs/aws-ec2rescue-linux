@@ -136,11 +136,11 @@ class TestModule(unittest.TestCase):
                   "Supports remediation: False"
         self.assertEqual(self.module.helptext, helpdoc)
 
-    def test_module_list(self):
-        """Test that list returns formatted descripton."""
-        response = "  ex                  collect   os           sanity-check of basic module functions" \
-                   "                                       "
-        self.assertEqual(self.module.list, response)
+    def test_module_str(self):
+        """Test that __str__ returns the formatted descripton."""
+        str_representation = "      ex                  collect   os           sanity-check of basic module functions" \
+                             "                                 "
+        self.assertEqual(str(self.module), str_representation)
 
     def test_module_help(self):
         """Test that help returns formatted help message."""

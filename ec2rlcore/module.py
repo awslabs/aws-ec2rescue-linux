@@ -78,6 +78,13 @@ class Module(object):
                                    "parallelexclusive", "distro", "requires_ec2"]
     temp_path = ""
     placement_dir_mapping = {"run": "mod.d", "postdiagnostic": "post.d", "prediagnostic": "pre.d"}
+    list_header = "\033[4m" + "{:2.1}{:2.1}{:2.1}{:20.18}{:10.8}{:13.11}{:71}".format("S",
+                                                                                      "P",
+                                                                                      "R",
+                                                                                      "Module Name",
+                                                                                      "Class",
+                                                                                      "Domain",
+                                                                                      "Description") + "\033[0m"
 
     def __init__(self, name=None, version=None, title=None, helptext=None, placement=None, package=None,
                  language=None, content=None, path=None, constraint=None, remediation=False):
@@ -168,23 +175,24 @@ class Module(object):
 
         return
 
-    @property
-    def list(self):
+    def __str__(self):
         """
-        Return the formatted description line.
+        Return the formatted string summarizing the module's attribute values.
+
+        The formatting of this string must match Module.list_header.
 
         Returns:
-            (str): the formatted list message
+            (str): the formatted string representation
         """
-        self.logger.debug("module.Module.list()")
+        self.logger.debug("module.Module.__str__()")
         # Print these values in using fixed widths with two space padding
-        return "{:>1.1}{:>1.1}{:20.18}{:10.8}{:13.11}{:77.75}".format(
+        # return "{:>1.1}{:>1.1}{:20.18}{:10.8}{:13.11}{:77.75}".format(
+        return "{:2.1}{:2.1}{:2.1}{:20.18}{:10.8}{:13.11}{:71.69}".format(
             "*" if self.constraint["sudo"][0] == "True" else "",
-            "+" if self.constraint["perfimpact"][0] == "True"
-            else "",
+            "*" if self.constraint["perfimpact"][0] == "True" else "",
+            "*" if self.remediation else "",
             self.name,
-            ",".join(module_class
-                     for module_class in self.constraint["class"]),
+            ",".join(module_class for module_class in self.constraint["class"]),
             ",".join(module_domain for module_domain in self.constraint["domain"]),
             self.title)
 
