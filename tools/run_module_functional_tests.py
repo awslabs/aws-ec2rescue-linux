@@ -25,21 +25,23 @@ def main():
     # Add the root program directory and the module tests directory to sys.path
     call_paths = list()
     split_call_path_list = os.path.abspath(sys.argv[0]).split(os.sep)
-    for file_name in [__file__, "tools"]:
+    split_call_path_list[0] = "/"
+    this_files_name = os.path.split(__file__)[-1]
+    for file_name in [this_files_name, "tools"]:
         if split_call_path_list[-1] == file_name and file_name == "tools":
-            call_paths.append(os.sep.join(split_call_path_list))
+            call_paths.append(os.path.join(*split_call_path_list))
             split_call_path_list = split_call_path_list[0:-1]
         elif split_call_path_list[-1] == file_name:
             split_call_path_list = split_call_path_list[0:-1]
         else:
-            print("Error parsing call path {} on token {}. Aborting.".format(os.sep.join(split_call_path_list),
+            print("Error parsing call path {} on token {}. Aborting.".format(os.path.join(*split_call_path_list),
                                                                              file_name))
             sys.exit(1)
-    call_paths.append(os.sep.join(split_call_path_list))
+    call_paths.append(os.path.join(*split_call_path_list))
     for call_path in call_paths:
         sys.path.insert(0, call_path)
     # Setup EC2RL_CALLPATH environment variable for modules to use
-    os.environ["EC2RL_CALLPATH"] = os.sep.join(split_call_path_list)
+    os.environ["EC2RL_CALLPATH"] = os.path.join(*split_call_path_list)
 
     import ec2rlcore.prediag
     if not ec2rlcore.prediag.check_root():
@@ -48,7 +50,7 @@ def main():
     try:
         import moduletests.functional
         print("Running tests...")
-        tests = unittest.TestLoader().discover(os.sep.join([os.getcwd(), "moduletests", "functional"]))
+        tests = unittest.TestLoader().discover(os.path.join(os.getcwd(), "moduletests", "functional"))
         # Due to the nature of the functional tests, failfast=True is set in order to limit the potential damage to
         # the system configuration in the event of bugs, test failures, etc.
         results = unittest.runner.TextTestRunner(failfast=True).run(tests)

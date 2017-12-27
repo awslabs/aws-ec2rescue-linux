@@ -24,9 +24,29 @@ Classes:
 """
 from __future__ import print_function
 import os
+import sys
+
+# Add the vendored lib directory to sys.path and change the working directory to the moduletest directory.
+call_paths = list()
+split_call_path_list = os.path.abspath(sys.argv[0]).split(os.sep)
+split_call_path_list[0] = "/"
+this_files_name = os.path.split(__file__)[-1]
+for file_name in [this_files_name, "moduletests", "tools"]:
+    if split_call_path_list[-1] == file_name and file_name == this_files_name:
+        split_call_path_list = split_call_path_list[0:-1]
+        os.chdir(os.path.join(*split_call_path_list))
+    elif split_call_path_list[-1] == file_name:
+        split_call_path_list = split_call_path_list[0:-1]
+    else:
+        print("Error parsing call path '{}' on token '{}'. Aborting.".format(os.path.join(*split_call_path_list),
+                                                                             file_name))
+        sys.exit(1)
+root_ec2rl_dir = os.path.join(*split_call_path_list)
+sys.path.insert(0, root_ec2rl_dir)
 import yaml
 
-class modloader(yaml.SafeLoader):
+
+class ModLoader(yaml.SafeLoader):
     """
     Class from yaml.SafeLoader used for overriding the need to parse the yaml tag.
 
@@ -42,38 +62,36 @@ class modloader(yaml.SafeLoader):
         """
         return self.construct_mapping(node)
 
-def convert():
+
+def main():
     """
-    Converts python modules from ec2rl/mod.d/ from their yaml form to .py files for unit testing
+    Convert Python modules from ec2rl/mod.d/ from their yaml form to .py files for unit testing
 
     Returns:
         True (bool)
     """
-    modloader.add_constructor(
-        u'!ec2rlcore.module.Module',
-        modloader.ignoretag)
+    ModLoader.add_constructor("!ec2rlcore.module.Module", ModLoader.ignoretag)
 
-    directory = "src/"
+    mod_src_dir = os.path.join(os.getcwd(), "src")
     try:
-        os.stat(directory)
-    except:
-        os.mkdir(directory)
+        os.stat(mod_src_dir)
+    except Exception:
+        os.mkdir(mod_src_dir)
 
     try:
-        for i in os.listdir("../../mod.d"):
-            with open ("../../mod.d/" + i, "r") as yamlfile:
-                module = yaml.load(yamlfile, Loader=modloader)
-                language = module["language"]
-                name = module["name"]
-                content = module["content"]
-                if language == "python":
-                    with open (directory + name + ".py", "w") as pyfile:
-                        pyfile.write(content)
-                    print(directory + name + ".py")
+        for mod_file_name in os.listdir(os.path.join(root_ec2rl_dir, "mod.d")):
+            with open(os.path.join(root_ec2rl_dir, "mod.d", mod_file_name), "r") as yamlfile:
+                module = yaml.load(yamlfile, Loader=ModLoader)
+                if module["language"] == "python":
+                    mod_src_path = os.path.join(mod_src_dir, "{}.py".format(module["name"]))
+                    with open(mod_src_path, "w") as pyfile:
+                        pyfile.write(module["content"])
+                    print("Wrote: {}".format(mod_src_path))
         print("Conversion complete.")
     except Exception as ex:
         print(ex)
         print("Conversion failed. Please review the exception to resolve")
 
-convert()
 
+if __name__ == "__main__":
+    main()

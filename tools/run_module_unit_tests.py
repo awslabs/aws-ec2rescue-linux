@@ -27,17 +27,19 @@ def main():
     # Add the root program directory and the module tests directory to sys.path
     call_paths = list()
     split_call_path_list = os.path.abspath(sys.argv[0]).split(os.sep)
-    for file_name in [__file__, "tools"]:
+    split_call_path_list[0] = "/"
+    this_files_name = os.path.split(__file__)[-1]
+    for file_name in [this_files_name, "tools"]:
         if split_call_path_list[-1] == file_name and file_name == "tools":
-            call_paths.append(os.sep.join(split_call_path_list))
+            call_paths.append(os.path.join(*split_call_path_list))
             split_call_path_list = split_call_path_list[0:-1]
         elif split_call_path_list[-1] == file_name:
             split_call_path_list = split_call_path_list[0:-1]
         else:
-            print("Error parsing call path {} on token {}. Aborting.".format(os.sep.join(split_call_path_list),
+            print("Error parsing call path {} on token {}. Aborting.".format(os.path.join(*split_call_path_list),
                                                                              file_name))
             sys.exit(1)
-    call_paths.append(os.sep.join(split_call_path_list))
+    call_paths.append(os.path.join(*split_call_path_list))
     for call_path in call_paths:
         sys.path.insert(0, call_path)
 
@@ -45,7 +47,7 @@ def main():
         print("Running tests...")
         code_coverage = coverage.Coverage(branch=True, source=["moduletests/src/"])
         code_coverage.start()
-        tests = unittest.TestLoader().discover(os.sep.join([os.getcwd(), "moduletests", "unit"]))
+        tests = unittest.TestLoader().discover(os.path.join(os.getcwd(), "moduletests", "unit"))
         results = unittest.runner.TextTestRunner().run(tests)
         if not results.wasSuccessful():
             sys.exit(1)
