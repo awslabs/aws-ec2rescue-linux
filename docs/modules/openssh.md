@@ -32,7 +32,7 @@ Enable remediation of detected problems.
 
 2. --inject_key
 
-Inject a new public key into the authorized_keys file for each user whose home directory is in /home. The new key is obtained from the metadata of the running instance. Alternatively, the key can be specified via the new_ssh_key parameter. This action is performed prior to The inject_key parameter is dependent upon the remediation parameter.
+Inject a new public key into the authorized_keys file for each user whose home directory is in /home. The new key is obtained from the metadata of the running instance. Alternatively, the key can be specified via the new_ssh_key parameter. This action is performed prior to any problem checking and remediation steps. The inject_key parameter is dependent upon the remediation parameter.
 
 3. --new_ssh_key="new key value"
 
