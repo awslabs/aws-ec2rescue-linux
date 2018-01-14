@@ -80,6 +80,8 @@ def main():
 
     try:
         for mod_file_name in os.listdir(os.path.join(root_ec2rl_dir, "mod.d")):
+            if mod_file_name == "ex_remediation.yaml":
+                continue
             with open(os.path.join(root_ec2rl_dir, "mod.d", mod_file_name), "r") as yamlfile:
                 module = yaml.load(yamlfile, Loader=ModLoader)
                 if module["language"] == "python":
