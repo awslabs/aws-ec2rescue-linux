@@ -26,49 +26,72 @@ package:
   - !!str
 language: !!str python
 content: !!str |
+  """
+  Determines if any filesystems share a UUID.
+
+  Functions:
+      get_fs_uuid_dict: parses output from blkid and returns a dict representing UUIDs and the source devices
+      run: get the uuid dict and determine if a duplicate exists
+  """
+
   from __future__ import print_function
   import os
-  import re
   import subprocess
-  import sys
 
-  try:
-      inside_quotes = re.compile('"[^"]*"')
 
+  def get_fs_uuid_dict():
+      """
+      Obtain the filesystem UUID mappings from blkid and create and return a dict representing this data.
+
+      Returns:
+          fs_uuids_dict (dict): representation of filesystem UUIDs (keys) and the source devices (values)
+      """
       fs_uuids_dict = {}
       for line in subprocess.check_output(["blkid", "-s", "UUID"],
-                                          stderr=subprocess.STDOUT).decode("utf-8").strip().split("\n"):
+                                          stderr=subprocess.STDOUT,
+                                          universal_newlines=True):
           # Example line: /dev/xvda1: UUID="84691ef1-f2b5-467a-adf6-ddccbacdd703"
-          tokens = line.split(":")
+          line = line.replace("\"", "").strip()
+          tokens = line.split(": UUID=")
           device_file = os.path.realpath(tokens[0])
-          fs_uuid = ""
-          for token in tokens[1:]:
-              token = token.strip()
-              arg, value = token.split("=")
-              if arg == "UUID" and inside_quotes.findall(value):
-                  fs_uuid = value[1:-1]
-                  break
-          if fs_uuid not in fs_uuids_dict.keys():
-              fs_uuids_dict[fs_uuid] = []
-          if fs_uuid and device_file not in fs_uuids_dict[fs_uuid]:
+          fs_uuid = tokens[1]
+          try:
               fs_uuids_dict[fs_uuid].append(device_file)
+          except KeyError:
+              fs_uuids_dict[fs_uuid] = [device_file]
+      return fs_uuids_dict
 
-      fs_uuid_success = True
-      for fs_uuid in fs_uuids_dict.keys():
-          if len(fs_uuids_dict[fs_uuid]) > 1:
-              fs_uuid_success = False
-              fs_devs_str = ", ".join(fs_uuids_dict[fs_uuid])
-              print(
-                  "[FAILURE] Duplicate UUID, {}, found on the following filesystems: {}".format(fs_uuid, fs_devs_str))
-      if fs_uuid_success:
-          print("[SUCCESS] No duplicate filesystem UUIDs found.")
-      print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/duplicatefsuuid.md"
-            "for further details")
-  except Exception as ex:
-      print(ex)
-      print("[WARN] module generated an exception and exited abnormally. "
-            "Review the logs to determine the cause of the issue.")
-      sys.exit(0)
+
+  def run():
+      """
+      Get the UUID dict and determine if a duplicate exists.
+
+      Returns:
+          (bool): whether the check completed successfully
+      """
+      try:
+          fs_uuid_dict = get_fs_uuid_dict()
+          fs_uuid_success = True
+          for fs_uuid in fs_uuid_dict.keys():
+              if len(fs_uuid_dict[fs_uuid]) > 1:
+                  fs_uuid_success = False
+                  print("[FAILURE] Duplicate UUID, {}, found on the following filesystems: {}".format(
+                      fs_uuid, ", ".join(fs_uuid_dict[fs_uuid])))
+          if fs_uuid_success:
+              print("[SUCCESS] No duplicate filesystem UUIDs found.")
+          print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/duplicatefsuuid.md"
+                "for further details")
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          return False
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
 constraint:
   requires_ec2: !!str False
   domain: !!str os

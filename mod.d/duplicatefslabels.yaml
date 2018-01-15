@@ -14,24 +14,24 @@
 
 --- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
-name: !!str duplicatepartuuid
+name: !!str duplicatefslabels
 path: !!str
 version: !!str 1.0
-title: !!str Find duplicate partition UUIDs
+title: !!str Search for duplicate filesystem labels.
 helptext: !!str |
-  Identifies which partitions have duplicate UUIDs
+  Identifies which file systems have duplicate labels
   Requires blkid, commonly provided by util-linux package
 placement: !!str run
-package:
+package: 
   - !!str
 language: !!str python
 content: !!str |
   """
-  Determines if any partitions share a UUID.
+  Determines if any filesystems share a label.
 
   Functions:
-      get_part_uuid_dict: parses output from blkid and returns a dict representing partition UUIDs and the source devices
-      run: get the UUID dict and determine if a duplicate exists
+      get_label_dict: parses output from blkid and returns a dict representing filesystem labels and the source devices
+      run: get the label dict and determine if a duplicate exists
   """
 
   from __future__ import print_function
@@ -39,48 +39,47 @@ content: !!str |
   import subprocess
 
 
-  def get_part_uuid_dict():
+  def get_label_dict():
       """
-      Obtain the partition UUID mappings from blkid and create and return a dict representing this data.
+      Obtain the filesystem label mappings from blkid and create and return a dict representing this data.
 
       Returns:
-          labels_dict (dict): representation of partition UUIDs (keys) and the source devices (values)
+          labels_dict (dict): representation of filesystem labels (keys) and the source devices (values)
       """
-      part_uuids_dict = {}
-      for line in subprocess.check_output(["blkid", "-s", "PARTUUID"],
+      labels_dict = {}
+      for line in subprocess.check_output(["blkid", "-s", "LABEL"],
                                           stderr=subprocess.STDOUT,
                                           universal_newlines=True):
-          # Example line: /dev/sda1: PARTUUID="1cf42dee-01"
+          # Example line: /dev/xvda1: LABEL="/"
           line = line.replace("\"", "").strip()
-          tokens = line.split(": PARTUUID=")
+          tokens = line.split(": LABEL=")
           device_file = os.path.realpath(tokens[0])
-          part_uuid = tokens[1]
+          fs_label = tokens[1]
           try:
-              part_uuids_dict[part_uuid].append(device_file)
+              labels_dict[fs_label].append(device_file)
           except KeyError:
-              part_uuids_dict[part_uuid] = [device_file]
-      return part_uuids_dict
+              labels_dict[fs_label] = [device_file]
+      return labels_dict
 
 
   def run():
       """
-      Get the UUID dict and determine if a duplicate exists.
+      Get the label dict and determine if a duplicate exists.
 
       Returns:
           (bool): whether the check completed successfully
       """
       try:
-          part_uuids_dict = get_part_uuid_dict()
-          part_uuid_success = True
-          for part_uuid in part_uuids_dict.keys():
-              if len(part_uuids_dict[part_uuid]) > 1:
-                  part_uuid_success = False
-                  print(
-                      "[FAILURE] Duplicate UUID, {}, found on the following partitions: {}".format(
-                          part_uuid, ", ".join(part_uuids_dict[part_uuid])))
-          if part_uuid_success:
-              print("[SUCCESS] No duplicate partition UUIDs found.")
-          print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/duplicatepartuuid.md"
+          labels_dict = get_label_dict()
+          label_success = True
+          for label in labels_dict.keys():
+              if len(labels_dict[label]) > 1:
+                  label_success = False
+                  print("[FAILURE] Duplicate label, {}, found on the following filesystems: {}".format(
+                      label, ", ".join(labels_dict[label])))
+          if label_success:
+              print("[SUCCESS] No duplicate filesystem labels found.")
+          print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/duplicatelabels.md"
                 "for further details")
           return True
       except Exception as ex:
