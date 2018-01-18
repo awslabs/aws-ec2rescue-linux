@@ -46,9 +46,9 @@ class Testduplicatefslabels(unittest.TestCase):
     @mock.patch("moduletests.src.duplicatefslabels.subprocess.check_output")
     def test_duplicatefslabels_get_label_dict(self, subprocess_mock):
         """Test that given sample blkid output, get_label_dict() returns the expected dict."""
-        subprocess_mock.return_value = ["/dev/xvda1: LABEL=\"/\"",
-                                        "/dev/xvdf1: LABEL=\"/\"",
-                                        "/dev/xvdg1: LABEL=\"TEST\""]
+        subprocess_mock.return_value = "/dev/xvda1: LABEL=\"/\"\n" \
+                                       "/dev/xvdf1: LABEL=\"/\"\n" \
+                                       "/dev/xvdg1: LABEL=\"TEST\""
         fs_uuid_dict = moduletests.src.duplicatefslabels.get_label_dict()
         expected_fs_uuid_dict = {"/": ["/dev/xvda1", "/dev/xvdf1"],
                                  "TEST": ["/dev/xvdg1"]}

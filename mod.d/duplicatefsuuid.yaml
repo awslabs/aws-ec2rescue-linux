@@ -49,7 +49,7 @@ content: !!str |
       fs_uuids_dict = {}
       for line in subprocess.check_output(["blkid", "-s", "UUID"],
                                           stderr=subprocess.STDOUT,
-                                          universal_newlines=True):
+                                          universal_newlines=True).splitlines():
           # Example line: /dev/xvda1: UUID="84691ef1-f2b5-467a-adf6-ddccbacdd703"
           line = line.replace("\"", "").strip()
           tokens = line.split(": UUID=")

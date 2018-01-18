@@ -46,9 +46,9 @@ class Testduplicatepartuuid(unittest.TestCase):
     @mock.patch("moduletests.src.duplicatepartuuid.subprocess.check_output")
     def test_duplicatepartuuid_get_part_uuid_dict(self, subprocess_mock):
         """Test that given sample blkid output, get_part_uuid_dict() returns the expected dict."""
-        subprocess_mock.return_value = ["/dev/xvda1: PARTUUID=\"1cf42dee-01\"",
-                                        "/dev/xvdf1: PARTUUID=\"1cf42dee-01\"",
-                                        "/dev/xvdg1: PARTUUID=\"51f86dbf-01\""]
+        subprocess_mock.return_value = "/dev/xvda1: PARTUUID=\"1cf42dee-01\"\n" \
+                                       "/dev/xvdf1: PARTUUID=\"1cf42dee-01\"\n" \
+                                       "/dev/xvdg1: PARTUUID=\"51f86dbf-01\""
         fs_uuid_dict = moduletests.src.duplicatepartuuid.get_part_uuid_dict()
         expected_fs_uuid_dict = {"1cf42dee-01": ["/dev/xvda1", "/dev/xvdf1"],
                                  "51f86dbf-01": ["/dev/xvdg1"]}

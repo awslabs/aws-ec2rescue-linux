@@ -49,7 +49,7 @@ content: !!str |
       part_uuids_dict = {}
       for line in subprocess.check_output(["blkid", "-s", "PARTUUID"],
                                           stderr=subprocess.STDOUT,
-                                          universal_newlines=True):
+                                          universal_newlines=True).splitlines():
           # Example line: /dev/sda1: PARTUUID="1cf42dee-01"
           line = line.replace("\"", "").strip()
           tokens = line.split(": PARTUUID=")

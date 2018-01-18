@@ -46,9 +46,9 @@ class Testduplicatefsuuid(unittest.TestCase):
     @mock.patch("moduletests.src.duplicatefsuuid.subprocess.check_output")
     def test_duplicatefsuuid_get_fs_uuid_dict(self, subprocess_mock):
         """Test that given sample blkid output, get_fs_uuid_dict() returns the expected dict."""
-        subprocess_mock.return_value = ["/dev/xvda1: UUID=\"84691ef1-f2b5-467a-adf6-ddccbacdd703\"",
-                                        "/dev/xvdf1: UUID=\"84691ef1-f2b5-467a-adf6-ddccbacdd703\"",
-                                        "/dev/xvdg1: UUID=\"0f2878a3-1465-4961-9323-d4769c28e995\""]
+        subprocess_mock.return_value = "/dev/xvda1: UUID=\"84691ef1-f2b5-467a-adf6-ddccbacdd703\"\n" \
+                                       "/dev/xvdf1: UUID=\"84691ef1-f2b5-467a-adf6-ddccbacdd703\"\n" \
+                                       "/dev/xvdg1: UUID=\"0f2878a3-1465-4961-9323-d4769c28e995\""
         fs_uuid_dict = moduletests.src.duplicatefsuuid.get_fs_uuid_dict()
         expected_fs_uuid_dict = {"84691ef1-f2b5-467a-adf6-ddccbacdd703": ["/dev/xvda1", "/dev/xvdf1"],
                                  "0f2878a3-1465-4961-9323-d4769c28e995": ["/dev/xvdg1"]}

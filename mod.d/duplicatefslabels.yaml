@@ -49,7 +49,7 @@ content: !!str |
       labels_dict = {}
       for line in subprocess.check_output(["blkid", "-s", "LABEL"],
                                           stderr=subprocess.STDOUT,
-                                          universal_newlines=True):
+                                          universal_newlines=True).splitlines():
           # Example line: /dev/xvda1: LABEL="/"
           line = line.replace("\"", "").strip()
           tokens = line.split(": LABEL=")
