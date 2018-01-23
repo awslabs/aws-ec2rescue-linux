@@ -77,21 +77,8 @@ class TestParallelDiagnostics(unittest.TestCase):
         self.output.close()
 
     def setUp(self):
-
-        for x in ("EC2RL_WORKDIR",
-                  "EC2RL_RUNDIR",
-                  "EC2RL_LOGDIR",
-                  "EC2RL_GATHEREDDIR",
-                  "EC2RL_DISTRO",
-                  "EC2RL_NET_DRIVER",
-                  "EC2RL_VIRT_TYPE",
-                  "EC2RL_SUDO",
-                  "EC2RL_PERFIMPACT",
-                  "EC2RL_CALLPATH"):
-            os.environ[x] = "test"
         sys.argv = ["ec2rl"]
         self.options = ec2rlcore.options.Options(subcommands=["run"])
-
         self.work_queue = Queue.Queue()
         self.workers = []
         self.output = StringIO()
@@ -166,6 +153,16 @@ class TestParallelDiagnostics(unittest.TestCase):
                                  "arptable.yaml", "bccbiolatency.yaml", "bccbiosnoop.yaml"],
                                 [[0], [1, 3, 4], [2], [5]])
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("logging.FileHandler")
     def test_paralleldiagnostics_worker_runs_module(self, logging_fh_mock, os_makedirs_mock):
@@ -182,6 +179,16 @@ class TestParallelDiagnostics(unittest.TestCase):
         self.assertTrue(logging_fh_mock.called)
         self.assertTrue(os_makedirs_mock.called)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("logging.FileHandler")
     def test_paralleldiagnostics_worker_runs_module_with_failure(self, logging_fh_mock, os_makedirs_mock):

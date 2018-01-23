@@ -99,10 +99,14 @@ class TestMain(unittest.TestCase):
 
     def tearDown(self):
         sys.argv = self.argv_backup
-        del os.environ["EC2RL_SUDO"]
-        del os.environ["EC2RL_DISTRO"]
-        del os.environ["EC2RL_NET_DRIVER"]
-        del os.environ["EC2RL_VIRT_TYPE"]
+        # Prevent environment variable clobbering
+        removal_list = list()
+        for key_name in os.environ.keys():
+            if key_name.startswith("EC2RL_"):
+                removal_list.append(key_name)
+        for key_name in removal_list:
+            del os.environ[key_name]
+
         logging.shutdown()
         # Reset the global variable that tracks the first module execution
         ec2rlcore.console_out._first_module = True
