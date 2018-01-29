@@ -1,19 +1,19 @@
 %define debug_package %{nil}
 
 Name:           ec2rl
-Version:	1.0.0
+Version:	    1.1.0
 Release:        1
 Summary:        Automatic diagnostic tool for Linux
 
 Group:          Diagnostics
 License:        Apache 2
 URL:            https://github.com/awslabs/aws-ec2rescue-linux
-BuildArch:	noarch
+BuildArch:	    noarch
 Source:         ec2rl.tgz
-BuildRoot:	%{_tmppath}/%name-root-%(%{__id_u} -n)
+BuildRoot:	    %{_tmppath}/%name-root-%(%{__id_u} -n)
 
 %description
-A framework and collection of modules for diagnosing issues and collecting data.
+A framework and collection of modules for diagnosing and resolving issues and collecting data.
 
 %prep
 
@@ -43,5 +43,7 @@ rm -rf /usr/bin/ec2rl
 %dir
 
 %changelog
-* Wed Jul 18 2017 Greg Dunn <gregdunn@amazon.com - 1.0.0
-Initial release
+* Mon Jan 29 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.0
+ - Update EC2 Rescue for Linux to version 1.1.0
+* Tue Jul 18 2017 Greg Dunn <gregdunn@amazon.com - 1.0.0
+ - Initial release
