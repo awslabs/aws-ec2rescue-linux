@@ -15,13 +15,14 @@ BuildRoot:	    %{_tmppath}/%name-root-%(%{__id_u} -n)
 %description
 A framework and collection of modules for diagnosing and resolving issues and collecting data.
 
+%define _rpmdir %(pwd)/rpmbuild/
+%define _sourcedir %(pwd)
+
 %prep
 
 %setup -q
 
 %build
-pwd
-ls -alh
 
 %install
 rm -rf %{buildroot}
@@ -45,5 +46,7 @@ rm -rf /usr/bin/ec2rl
 %changelog
 * Mon Jan 29 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.0
  - Update EC2 Rescue for Linux to version 1.1.0
+ - Set RPM build dir to rpmbuild
+ - Remove extraneous output (pwd, ls)
 * Tue Jul 18 2017 Greg Dunn <gregdunn@amazon.com - 1.0.0
  - Initial release
