@@ -17,7 +17,7 @@
 name: !!str bccvfsstat
 path: !!str
 version: !!str 1.0
-title: !!str Collect output from atop for system analysis
+title: !!str Collect output from vfsstat for system analysis
 helptext: !!str |
   Collect output from vfsstat for system analysis
   Requires --times= for number of times to repeat
