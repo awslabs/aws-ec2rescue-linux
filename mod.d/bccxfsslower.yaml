@@ -44,7 +44,7 @@ content: !!str |
   echo "I will collect xfsslower output from this $EC2RL_DISTRO box $times times."
 
   if grep xfs /etc/mtab; then
-      timeout $period xfsslower
+      timeout --preserve-status $period xfsslower
       exit 0
   else
       echo "No XFS on this system"

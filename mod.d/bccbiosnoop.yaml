@@ -43,7 +43,7 @@ content: !!str |
   
   echo "I will collect biosnoop output from this $EC2RL_DISTRO box $times times."
   
-  timeout $period biosnoop
+  timeout --preserve-status $period biosnoop
   exit 0
 constraint:
   requires_ec2: !!str False

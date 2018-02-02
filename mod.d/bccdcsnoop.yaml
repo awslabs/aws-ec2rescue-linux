@@ -43,7 +43,7 @@ content: !!str |
   
   echo "I will collect dcsnoop output from this $EC2RL_DISTRO box $times times."
   
-  timeout $period dcsnoop -a
+  timeout --preserve-status $period dcsnoop -a
   exit 0
 constraint:
   requires_ec2: !!str False

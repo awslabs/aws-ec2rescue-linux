@@ -43,7 +43,7 @@ content: !!str |
 
   echo "I will collect syncsnoop output from this $EC2RL_DISTRO box $times times."
 
-  timeout $period syncsnoop
+  timeout --preserve-status $period syncsnoop
   exit 0
 constraint:
   requires_ec2: !!str False

@@ -43,7 +43,7 @@ content: !!str |
 
   echo "I will collect gethostlatency output from this $EC2RL_DISTRO box $times times."
 
-  timeout $period gethostlatency
+  timeout --preserve-status $period gethostlatency
   exit 0
 constraint:
   requires_ec2: !!str False

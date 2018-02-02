@@ -43,7 +43,7 @@ content: !!str |
 
   echo "I will collect tcpconnect output from this $EC2RL_DISTRO box $times times."
 
-  timeout $period tcpconnect -t
+  timeout --preserve-status $period tcpconnect -t
   exit 0
 constraint:
   requires_ec2: !!str False

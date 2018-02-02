@@ -42,7 +42,7 @@ content: !!str |
 
   echo "I will collect strace -cfp output from this $EC2RL_DISTRO box for $period seconds."
 
-  timeout $period strace -cfp $pid
+  timeout --preserve-status $period strace -cfp $pid
   exit 0
 constraint:
   requires_ec2: !!str False

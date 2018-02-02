@@ -42,7 +42,7 @@ content: !!str |
 
   echo "I will collect ltrace -cfp output from this $EC2RL_DISTRO box for $period seconds."
 
-  timeout $period ltrace -cfp $pid
+  timeout --preserve-status $period ltrace -cfp $pid
   exit 0
 constraint:
   requires_ec2: !!str False

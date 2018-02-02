@@ -45,7 +45,7 @@ content: !!str |
   mkdir $EC2RL_GATHEREDDIR/ltrace
 
   echo "I have attempted to copy the ltrace -fp output to ${EC2RL_GATHEREDDIR}/ltrace"
-  timeout $period ltrace -fp $pid -o $EC2RL_GATHEREDDIR/ltrace/ltrace.out
+  timeout --preserve-status $period ltrace -fp $pid -o $EC2RL_GATHEREDDIR/ltrace/ltrace.out
   exit 0
 constraint:
   requires_ec2: !!str False

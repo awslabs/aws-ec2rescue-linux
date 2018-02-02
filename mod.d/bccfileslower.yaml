@@ -43,7 +43,7 @@ content: !!str |
 
   echo "I will collect fileslower output from this $EC2RL_DISTRO box $times times."
 
-  timeout $period fileslower
+  timeout --preserve-status $period fileslower
   exit 0
 constraint:
   requires_ec2: !!str False

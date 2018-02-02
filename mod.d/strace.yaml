@@ -45,7 +45,7 @@ content: !!str |
   mkdir $EC2RL_GATHEREDDIR/strace
 
   echo "I have attempted to copy the strace -fp output to ${EC2RL_GATHEREDDIR}/strace"
-  timeout $period strace -fp $pid -o $EC2RL_GATHEREDDIR/strace/strace.out
+  timeout --preserve-status $period strace -fp $pid -o $EC2RL_GATHEREDDIR/strace/strace.out
   exit 0
 constraint:
   requires_ec2: !!str False

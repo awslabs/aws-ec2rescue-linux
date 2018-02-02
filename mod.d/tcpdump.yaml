@@ -84,7 +84,7 @@ content: !!str |
 
   mkdir $EC2RL_GATHEREDDIR/tcpdump
   echo "I have attempted to dump the tcpdump file to ${EC2RL_GATHEREDDIR}/tcpdump"
-  timeout $period tcpdump -c ${count} -w ${EC2RL_GATHEREDDIR}/tcpdump/tcpdump.pcap -i ${interface} ${protocol} ${TCPDUMPCMD}
+  timeout --preserve-status $period tcpdump -c ${count} -w ${EC2RL_GATHEREDDIR}/tcpdump/tcpdump.pcap -i ${interface} ${protocol} ${TCPDUMPCMD}
   exit 0
 constraint:
   requires_ec2: !!str False

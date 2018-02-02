@@ -43,7 +43,7 @@ content: !!str |
 
   echo "I will collect tcpconnlat output from this $EC2RL_DISTRO box $times times."
 
-  timeout $period tcpconnlat -t
+  timeout --preserve-status $period tcpconnlat -t
   exit 0
 constraint:
   requires_ec2: !!str False
