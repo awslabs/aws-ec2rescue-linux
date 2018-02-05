@@ -28,10 +28,10 @@ Functions:
     which: determine where in PATH a command is located
     get_net_driver: determine the network device driver for the first interface
     get_virt_type: determine the virtualization type of the running instance
-    print_indent: a wrapper for print() that also takes a two-space indention level arg.
+    print_indent: a wrapper for print() that also takes a two-space indention level arg
     backup: creates a backup copy of a file or directory
     restore: restores a backup copy of a file or directory
-
+    get_config_dict: create and return dictionary with all the necessary variables for module execution
 Classes:
     None
 
@@ -291,7 +291,7 @@ def backup(path_to_backup, backed_files, backup_dir):
         backup_dir (str): path to the directory containing backup file copies
 
     Returns:
-        backup_path (str): path to the backup copy of the file
+        backup_location_path (str): path to the backup copy of the file
     """
     # If a backup copy of the file already exists, do not perform another, redundant backup operation.
     if path_to_backup in backed_files:
@@ -432,6 +432,62 @@ def _do_backup_restore(source_path, source_path_is_dir, destination_path, backed
         shutil.copy2(source_path, destination_path)
         os.chown(destination_path, os.stat(source_path).st_uid, os.stat(source_path).st_gid)
         return True
+
+
+def get_config_dict(module_name):
+    """
+    Create and return dictionary with all the necessary variables for module execution.
+
+    BACKUP_DIR: directory containing file backups. When run via ec2rl, this is a subdirectory inside LOG_DIR.
+    LOG_DIR: directory containing ec2rl logs else a default location if not running through ec2rl.
+    BACKED_FILES: dict containing "original file path":"back up file copy path" key:pair values.
+    REMEDIATE: controls whether remediation is to be attempted. The default is to only perform detection.
+    SUDO: whether the module is being executed as root/with sudo privileges.
+    DISTRO: the detected distribution of Linux running on the system.
+    NOTANINSTANCE: True if running on anything but an EC2 instance.
+
+    Parameters:
+        module_name (str): name of the module requesting the configuration dict.
+
+    Returns:
+        sys_config_dict (dict): variable name and variable value pairs usable inside Python ec2rl modules.
+    """
+    sys_config_dict = {"BACKUP_DIR": "/var/tmp/ec2rl_{}/backup".format(module_name),
+                       "LOG_DIR": "/var/tmp/ec2rl_{}".format(module_name),
+                       "BACKED_FILES": dict(),
+                       "REMEDIATE": False,
+                       "SUDO": check_root(),
+                       "NOT_AN_INSTANCE": False}
+    try:
+        sys_config_dict["DISTRO"] = os.environ["EC2RL_DISTRO"]
+    except KeyError:
+        sys_config_dict["DISTRO"] = get_distro()
+
+    try:
+        if os.environ["notaninstance"] == "True":
+            sys_config_dict["NOT_AN_INSTANCE"] = True
+    except KeyError:
+        sys_config_dict["NOT_AN_INSTANCE"] = is_an_instance()
+
+    try:
+        if os.environ["remediate"] == "True":
+            sys_config_dict["REMEDIATE"] = True
+    except KeyError:
+        # Keep default of False
+        pass
+
+    try:
+        sys_config_dict["BACKUP_DIR"] = os.path.join(os.environ["EC2RL_GATHEREDDIR"], module_name)
+    except KeyError:
+        # Keep default
+        pass
+    try:
+        sys_config_dict["LOG_DIR"] = os.path.join(os.environ["EC2RL_LOGDIR"], module_name)
+    except KeyError:
+        # Keep default
+        pass
+
+    return sys_config_dict
 
 
 class PrediagError(Exception):

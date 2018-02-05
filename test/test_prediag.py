@@ -13,6 +13,7 @@
 # language governing permissions and limitations under the License.
 
 """Unit tests for "prediag" module."""
+import os
 import sys
 import unittest
 
@@ -510,3 +511,117 @@ class TestPrediag(unittest.TestCase):
                                                      backed_files=None)
                 self.assertEqual(ex, "Missing or invalid args: backed_files!")
                 self.assertEqual(self.output.getvalue(), "Invalid backed_files arg!")
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch("ec2rlcore.prediag.is_an_instance", return_value=False)
+    def test_get_config_dict_all_unset(self, isaninstance_mock, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(isaninstance_mock.called)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch("ec2rlcore.prediag.is_an_instance", return_value=False)
+    @mock.patch.dict(os.environ, {"remediate": "True"})
+    def test_get_config_dict_remediate_true(self, isaninstance_mock, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": True,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(isaninstance_mock.called)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch("ec2rlcore.prediag.is_an_instance", return_value=False)
+    @mock.patch.dict(os.environ, {"remediate": "False"})
+    def test_get_config_dict_remediate_false(self, isaninstance_mock, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(isaninstance_mock.called)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch("ec2rlcore.prediag.is_an_instance", return_value=False)
+    @mock.patch.dict(os.environ, {"EC2RL_GATHEREDDIR": "/var/tmp/test/"})
+    def test_get_config_dict_gathereddir_set(self, isaninstance_mock, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/test/test_module",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(isaninstance_mock.called)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch("ec2rlcore.prediag.is_an_instance", return_value=False)
+    @mock.patch.dict(os.environ, {"EC2RL_LOGDIR": "/var/tmp/test/"})
+    def test_get_config_dict_logdir_set(self, isaninstance_mock, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/test/test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(isaninstance_mock.called)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch.dict(os.environ, {"notaninstance": "True"})
+    def test_get_config_dict_notaninstance_set_true(self, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": True}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.check_root", return_value=True)
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="LFS")
+    @mock.patch.dict(os.environ, {"notaninstance": "False"})
+    def test_get_config_dict_notaninstance_set_false(self, get_distro_mock, check_root_mock):
+        sys_config_dict = {"BACKED_FILES": {},
+                           "BACKUP_DIR": "/var/tmp/ec2rl_test_module/backup",
+                           "LOG_DIR": "/var/tmp/ec2rl_test_module",
+                           "REMEDIATE": False,
+                           "SUDO": True,
+                           "DISTRO": "LFS",
+                           "NOT_AN_INSTANCE": False}
+        self.assertEqual(ec2rlcore.prediag.get_config_dict("test_module"), sys_config_dict)
+        self.assertTrue(get_distro_mock.called)
+        self.assertTrue(check_root_mock.called)
