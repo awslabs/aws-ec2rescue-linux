@@ -31,8 +31,7 @@ content: !!str |
   Functions:
       detect_problem: checks for the presence of the issue this module addresses on the running system
       remediate_problem: attemps to remediate the issue this module addresses
-      setup_config_dict: create and return dictionary with all the necessary variables for module execution.
-      main: the main execution body
+      run: the main execution body
 
   Classes:
       None
@@ -48,9 +47,14 @@ content: !!str |
   if __name__ == "__main__":
       sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
 
+  # Add the root program directory to sys.path so libraried functions can be imported
+  # when this module is directly invoked with the interpreter.
+  if __name__ == "__main__":  # pragma: no coverage
+      sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
+
   from ec2rlcore.prediag import backup
+  from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import restore
-  import ec2rlcore
 
 
   def detect_problem():
@@ -58,109 +62,78 @@ content: !!str |
       Detects whether the problem is present on the running systems.
 
       Returns:
-          (bool): whether the problem is present
+          (bool): True if the problem is detected.
       """
       # TODO add detection steps
       return True
 
 
-  def remediate_problem():
+  def remediate_problem(config_file_path):
       """
       Applies a series of steps to remediate the problem address in this module.
 
+      Parameters:
+          config_file_path (str): path to the configuration file used to remediate the problem.
+
       Returns:
-          (bool): whether the problem was successfully remediated
+          True (bool): if the problem was successfully remediated.
       """
       # TODO add remediation steps
       return True
+      # TODO raise exception on failure
 
 
-  def setup_config_dict():
-      """Create and return dictionary with all the necessary variables for module execution."""
-      # BACKUP_DIR: directory containing file backups. When run via ec2rl, this is a subdirectory inside LOG_DIR.
-      # LOG_DIR: directory containing ec2rl logs else a default location if not running through ec2rl.
-      # BACKED_FILES: dict containing "original file path":"back up file copy path" key:pair values.
-      sys_config_dict = {"BACKUP_DIR": "/var/tmp/ec2rl_{}/backup".format(__name__),
-                         "LOG_DIR": "/var/tmp/ec2rl_{}".format(__name__),
-                         "BACKED_FILES": dict()}
-      # REMEDIATE: controls whether remediation is to be attempted. The default is to only perform detection.
-      try:
-          if os.environ["remediate"] == "True":
-              sys_config_dict["REMEDIATE"] = True
-              print("Remediation enabled.")
-          else:
-              sys_config_dict["REMEDIATE"] = False
-              print("Remediation not enabled. To enable, rerun with the --remediate argument.")
-      except KeyError:
-          sys_config_dict["REMEDIATE"] = False
-          print("Remediation not enabled. To enable, rerun with the --remediate argument.")
+  def run():
+      """
+      The main execution logic goes in this function.
 
-      try:
-          sys_config_dict["BACKUP_DIR"] = os.path.join(os.environ["EC2RL_GATHEREDDIR"], "ssh")
-      except KeyError:
-          print("Environment variable EC2RL_GATHEREDDIR not set! Defaulting to {}".format(sys_config_dict["BACKUP_DIR"]))
-
-      try:
-          sys_config_dict["LOG_DIR"] = os.path.join(os.environ["EC2RL_LOGDIR"], "ssh")
-      except KeyError:
-          print("Environment variable EC2RL_LOGDIR not set! Defaulting to {}".format(sys_config_dict["LOG_DIR"]))
-
-      # NOT_AN_INSTANCE: indicates whether the running system is an EC2 instance.
-      # Useful if the module contains EC2-specific actions.
-      if "notaninstance" in os.environ and os.environ["notaninstance"] == "True":
-          sys_config_dict["NOT_AN_INSTANCE"] = True
-      elif "notaninstance" in os.environ and os.environ["notaninstance"] == "False":
-          sys_config_dict["NOT_AN_INSTANCE"] = False
-      else:
-          sys_config_dict["NOT_AN_INSTANCE"] = not ec2rlcore.prediag.is_an_instance()
-      if sys_config_dict["NOT_AN_INSTANCE"]:
-          print("Not running on an instance.")
-      else:
-          print("Running on an instance.")
-
-      # TODO setup any additional required variables
-
-      return sys_config_dict
-
-
-  def main():
-      """The main execution logic goes in this function."""
+      Returns:
+          (bool): True if no problem found or problem remediated.
+      """
       # TODO fill in module description
       print("My module description goes here.")
-      # TODO change URL to point to the module's documentation
-      print("See https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/mymodule.md for "
-            "further details")
-      print("")
 
-      sys_config_dict = setup_config_dict()
-      # TODO fill in messages to match the problem being address by this module
-      if detect_problem():
-          print("Problem detected")
-          if sys_config_dict["REMEDIATE"]:
-              # TODO modify path to backup files that will be edited
-              backup("/path/to/some/file", sys_config_dict["BACKED_FILES"], sys_config_dict["BACKUP_DIR"])
-              print("Remediating...")
-              if remediate_problem():
-                  print("[SUCCESS] Problem remediated.")
-              else:
-                  print("[FAILURE] Failed to remediate problem.")
-                  # TODO modify path to restore any edited files if the remediation fails
-                  restore("/path/to/some/file", sys_config_dict["BACKED_FILES"])
-          else:
-              print("[FAILURE] Problem with a system component detected.")
-              print("-- Describe manual remediation here: command to remediate goes here")
-      else:
-          print("[SUCCESS] No problem detected.")
-
-
-  if __name__ == "__main__":  # pragma: no coverage
+      # TODO modify path to the relevant configuration file, if any
+      config_file_path = "/etc/fstab"
+      sys_config_dict = {"BACKED_FILES": dict()}
+      remediation_status = False
       try:
-          main()
+          sys_config_dict = get_config_dict(__name__)
+          # TODO fill in messages to match the problem being address by this module
+          if detect_problem():
+              print("Problem detected")
+              if sys_config_dict["REMEDIATE"]:
+                  backup(config_file_path, sys_config_dict["BACKED_FILES"], sys_config_dict["BACKUP_DIR"])
+                  print("Remediating...")
+                  remediate_problem(config_file_path)
+                  if detect_problem():
+                      print("[FAILURE] Failed to remediate problem.")
+                      restore(config_file_path, sys_config_dict["BACKED_FILES"])
+                  else:
+                      print("[SUCCESS] Problem remediated.")
+                      remediation_status = True
+              else:
+                  print("[FAILURE] Problem with a system component detected.")
+                  print("-- Describe manual remediation here: command to remediate goes here")
+          else:
+              print("[SUCCESS] No problem detected.")
+              remediation_status = True
+          # TODO change URL to point to the module's documentation
+          print("See https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/mymodule.md for "
+                "further details")
+          return remediation_status
       except Exception as ex:
           print(ex)
           print("[WARN] module generated an exception and exited abnormally.")
           print("-- Review the logs to determine the cause of the issue.")
-          sys.exit(0)
+          if config_file_path in sys_config_dict["BACKED_FILES"]:
+              restore(config_file_path, sys_config_dict["BACKED_FILES"])
+          return False
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
 constraint:
   requires_ec2: !!str False
   domain: !!str os
