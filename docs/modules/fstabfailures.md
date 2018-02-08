@@ -16,14 +16,14 @@ Passing output:
 
 ```commandline
 ----------[Diagnostic Results]----------
-module run/fstabfailure       [SUCCESS] /etc/fstab rewritten/
+module run/fstabfailure       [SUCCESS] /etc/fstab rewritten
 ```
 
 ## Resolving Manually
 
 Open your /etc/fstab with your preferred text editor
 ```commandline
-$ sudo vi /etc/fstab
+$ sudo vim /etc/fstab
 ```
 
 Make sure that all volume mount points have nofail in the options list and the fsck (sixth) column set to 0.

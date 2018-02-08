@@ -31,80 +31,81 @@ content: !!str |
   Disables fsck and sets nofail in /etc/fstab for all volumes.
 
   Functions:
-      defaultfstab: Creates a default fstab
-      checkfstabexists: Determines if /etc/fstab exists
-      parsefstab: Parses fstab into a list of dictionary values
-      backupfstab: Creates a backup copy of the existing fstab
-      checkfsck: Checks to see if fsck is enabled for any volume
-      checknofail: Checks to see if nofail is enabled for any volume
-      rewritefstab: Disables fsck, enables nofail, writes values to /etc/fstab
-      run: Runs the above functions
+      write_default_fstab: Create a default fstab and return the list of dictionary values from the new fstab.
+      parse_fstab: Parse fstab into a list of dictionary values.
+      check_fsck: Check if fsck is enabled in any fstab entry.
+      check_nofail: Check if nofail is enabled in any fstab entry.
+      fix: Disable fsck, enable nofail, and write values to /etc/fstab.
+      run: Check for the presence of fsck and nofail and remediate any discovered problems.
   """
   from __future__ import print_function
+  import os
   import re
   import sys
-  import os
-  import shutil
+
+  # Add the root program directory to sys.path so libraried functions can be imported
+  # when this module is directly invoked with the interpreter.
+  if __name__ == "__main__":  # pragma: no coverage
+      sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
+
+  from ec2rlcore.prediag import backup
+  from ec2rlcore.prediag import get_config_dict
+  from ec2rlcore.prediag import restore
 
 
-  def defaultfstab():
+  def write_default_fstab(config_file_path, distro):
       """
-      Creates a sane default fstab
+      Create a sane default fstab.
+
+      Parameters:
+          config_file_path (str): path to the configuration file to be edited.
+          distro (str): the detected distribution of Linux running on the system.
+
+      Returns:
+          True (bool): if the creation of the default fstab file was successful.
       """
       try:
-          with open("/etc/fstab", "w") as f:
-              if os.environ.get("EC2RL_DISTRO") == "alami":
-                  f.write("LABEL=/     /           ext4    defaults,noatime,nofail  0   0\n")
-                  f.write("tmpfs       /dev/shm    tmpfs   defaults,nofail        0   0\n")
-                  f.write("devpts      /dev/pts    devpts  gid=5,mode=620,nofail  0   0\n")
-                  f.write("sysfs       /sys        sysfs   defaults,nofail        0   0\n")
-                  f.write("proc        /proc       proc    defaults,nofail        0   0\n")
-              elif os.environ.get("EC2RL_DISTRO") == "suse":
-                  f.write("/dev/disk/by-label/ROOT     /    ext4 defaults,nofail 0 0\n")
-              elif os.environ.get("EC2RL_DISTRO") == "rhel":
-                  f.write("/dev/xvda2     /     xfs     defaults,nofail     0 0\n")
-              elif os.environ.get("EC2RL_DISTRO") == "ubuntu":
-                  f.write("LABEL=cloudimg-rootfs    /    ext4    defaults,discard,nofail   	0 0\n")
+          with open(config_file_path, "w") as fstab_file:
+              if distro == "alami":
+                  fstab_file.write("LABEL=/     /           ext4    defaults,noatime,nofail  0   0\n")
+                  fstab_file.write("tmpfs       /dev/shm    tmpfs   defaults,nofail        0   0\n")
+                  fstab_file.write("devpts      /dev/pts    devpts  gid=5,mode=620,nofail  0   0\n")
+                  fstab_file.write("sysfs       /sys        sysfs   defaults,nofail        0   0\n")
+                  fstab_file.write("proc        /proc       proc    defaults,nofail        0   0\n")
+              elif distro == "suse":
+                  fstab_file.write("/dev/disk/by-label/ROOT     /    ext4 defaults,nofail 0 0\n")
+              elif distro == "rhel":
+                  fstab_file.write("/dev/xvda2     /     xfs     defaults,nofail     0 0\n")
+              elif distro == "ubuntu":
+                  fstab_file.write("LABEL=cloudimg-rootfs    /    ext4    defaults,discard,nofail   	0 0\n")
               else:
-                  print("[WARN] Unable to determine distribution. Unable to continue.")
-                  sys.exit(0)
+                  raise ValueError("Invalid distribution. Unable to continue.")
           return True
-      except Exception as ex:
-          print(ex)
-          print("[WARN] Unable to write default /etc/fstab, aborting.")
-          sys.exit(0)
+      except (OSError, IOError):
+          print("[WARN] Unable to write default {}, aborting.".format(config_file_path))
+          raise
 
 
-  def checkfstabexists():
+  def parse_fstab(config_file_path):
       """
-      Checks if fstab exists
+      Parse config_file_path into a list of dictionaries.
+
+      Parameters:
+          config_file_path (str): path to the configuration file to be edited.
 
       Returns:
-          True: Based on result of check
+          fstab (list): list of dicts representing the options an fstab entry.
       """
-      if not os.path.isfile('/etc/fstab'):
-          print("No /etc/fstab, creating one with sane defaults")
-          defaultfstab()
-          return True
-      else:
-          print("/etc/fstab found, continuing.")
-          return True
-
-
-  def parsefstab():
-      """
-      Parses /etc/fstab into a list of dictionaries
-
-      Returns:
-          fstab: List of dictionaries
-      """
+      fstab = []
+      fstabkeyname = ["Filesystem", "Mountpoint", "FSType", "Options", "Dump", "fsck"]
       try:
-          fstab = []
-          fstabkeyname = ["Filesystem", "Mountpoint", "FSType", "Options", "Dump", "fsck"]
-          with open("/etc/fstab", "r") as f:
+          with open(config_file_path, "r") as f:
               for line in f:
-                  if line.startswith("#"):
+                  line = line.strip()
+                  # Skip both empty lines and comment lines
+                  if not line or line.startswith("#"):
                       continue
+                  print("Parsing line: '{}'".format(line))
                   entry = {}
                   for value, key in zip(line.split(), fstabkeyname):
                       entry[key] = value
@@ -115,103 +116,120 @@ content: !!str |
                       entry[fstabkeyname[5]] = "0"
                   fstab.append(entry)
           return fstab
-      except Exception as ex:
-          print(ex)
-          print("Unable to parse /etc/fstab. Invalid fstab? Backing it up and writing one with sane defaults")
-          backupfstab()
-          defaultfstab()
-          return True
+      except (OSError, IOError):
+          print("Unable to open and parse {}. Invalid fstab?".format(config_file_path))
+          raise
 
 
-  def backupfstab():
+  def check_fsck(fstab_list):
       """
-      Copies /etc/fstab to /etc/fstab.bak
+      Check if fsck is enabled in an entry.
+
+      Parameters:
+          fstab_list (list): dict-represented lines of the fstab file.
 
       Returns:
-          True: Upon successful copy
+          (bool): True if fsck is enabled in any fstab entry.
       """
-      try:
-          shutil.copyfile("/etc/fstab", "/etc/fstab.bak")
-          return True
-      except Exception as ex:
-          print(ex)
-          print("[WARN] Unable to backup /etc/fstab, aborting.")
-          sys.exit(0)
-
-
-  def checkfsck(fstab):
-      """
-      Checks for fsck being enabled on a volume
-
-      Returns:
-          True: If fsck is enabled
-      """
+      problem_found = False
       print("Checking for volumes with fsck enabled")
-      for i in fstab:
-          for key, value in i.items():
-              if key == "fsck" and value == "1":
-                  i[key] = 0
-                  return True
+      for line_args in fstab_list:
+          if line_args["fsck"] == "1":
+              problem_found = True
+              print("\tfsck enabled: '{}'".format(line_args["Filesystem"]))
+              line_args["fsck"] = "0"
+      return problem_found
 
 
-  def checknofail(fstab):
+  def check_nofail(fstab_list):
       """
-      Checks for nofail being enabled on a volume
+      Check if nofail is enabled in an entry.
+
+      Parameters:
+          fstab_list (list): dict-represented lines of the fstab file
 
       Returns:
-          True: If nofail was missing from a volume
+          (bool): True if nofail is missing from any fstab entry.
       """
+      problem_found = False
       print("Checking for volumes without nofail")
-      for i in fstab:
-          for key, value in i.items():
-              if key == "Options" and not re.search("nofail", value):
-                  i[key] += ",nofail"
-                  return True
+      for line_args in fstab_list:
+          if not re.search("nofail", line_args["Options"]):
+              problem_found = True
+              print("\tMissing nofail: '{}'".format(line_args["Filesystem"]))
+              line_args["Options"] += ",nofail"
+      return problem_found
 
 
-  def rewritefstab(fstab):
+  def fix(fstab_list, config_file_path):
       """
       Rewrites /etc/fstab with new fixed values
 
+      Parameters:
+          fstab_list (list): dict-represented lines of the fstab file.
+          config_file_path (str): path to the configuration file to be edited.
+
       Returns:
-          True: If successful in rewrite
+          True (bool): True if the rewrite was successful.
       """
       try:
-          with open("/etc/fstab", "w") as f:
-              for i in fstab:
-                  f.write(i["Filesystem"] + "    " + i["Mountpoint"] + "    " + i["FSType"] + "     "
-                          + i["Options"] + "     " + i["Dump"] + " " + i["fsck"] + "\n")
-          print("[SUCCESS] /etc/fstab rewritten/")
+          with open(config_file_path, "w") as fstab_file:
+              for line_args in fstab_list:
+                  line = "{}\n".format("\t".join((line_args["Filesystem"],
+                                                  line_args["Mountpoint"],
+                                                  line_args["FSType"],
+                                                  line_args["Options"],
+                                                  line_args["Dump"],
+                                                  line_args["fsck"])))
+                  print("Writing line '{}'".format(line.strip()))
+                  fstab_file.write(line)
+          print("[SUCCESS] {} rewritten".format(config_file_path))
           print("Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/fstabfailures.md "
                 "for further details")
           return True
-      except Exception as ex:
-          print(ex)
-          print("[WARN] Unable to write new /etc/fstab. Please review logs to determine the cause of the issue.")
-          sys.exit(0)
+      except Exception:
+          print("[WARN] Unable to write new {}. "
+                "Please review logs to determine the cause of the issue.".format(config_file_path))
+          raise
 
 
   def run():
       """
-      Runs the above functions.
+      Check for the presence of fsck and no fail and remediate any discovered problems.
 
       Returns:
-          True: If successful in running
+          (bool): True if no problem was found or if all discovered problems were remediated.
       """
+      config_file_path = "/etc/fstab"
+      sys_config_dict = dict()
       try:
-          checkfstabexists()
-          fstab = parsefstab()
-          if checknofail(fstab) or checkfsck(fstab):
-              backupfstab()
-              rewritefstab(fstab)
+          sys_config_dict = get_config_dict("fstabfailures")
+          if not os.path.isfile(config_file_path):
+              print("Missing {}, creating one with sane defaults".format(config_file_path))
+              write_default_fstab(config_file_path, sys_config_dict["DISTRO"])
           else:
-              print("[SUCCESS] /etc/fstab has nofail set and is not set to fsck.")
+              print("{} found, continuing.".format(config_file_path))
+          backup(config_file_path, sys_config_dict["BACKED_FILES"], sys_config_dict["BACKUP_DIR"])
+          try:
+              fstab = parse_fstab(config_file_path)
+          except Exception:
+              print("Unable to parse {}. Invalid fstab? Writing one with sane defaults.".format(config_file_path))
+              write_default_fstab(config_file_path, sys_config_dict["DISTRO"])
+              fstab = parse_fstab(config_file_path)
+
+          # Equivalent of detect()
+          if any([check_nofail(fstab), check_fsck(fstab)]):
+              fix(fstab, config_file_path)
+          else:
+              print("[SUCCESS] {} has nofail set and is not set to fsck.".format(config_file_path))
           return True
       except Exception as ex:
           print(ex)
           print("[WARN] module generated an exception and exited abnormally. "
                 "Review the logs to determine the cause of the issue.")
-          sys.exit(0)
+          if "BACKED_FILES" in sys_config_dict.keys() and config_file_path in sys_config_dict["BACKED_FILES"].keys():
+              restore(config_file_path, sys_config_dict["BACKED_FILES"])
+          return False
 
 
   if __name__ == "__main__":  # pragma: no coverage
