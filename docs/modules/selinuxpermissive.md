@@ -20,7 +20,7 @@ module run/selinuxpermissive       [SUCCESS] selinux set to permissive
 
 Open /etc/selinux/config in your favorite text editor and change it to permissive mode.
 ```commandline
-$ sudo vi /etc/selinux/config
+$ sudo vim /etc/selinux/config
 ```
 
 Example:
