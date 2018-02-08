@@ -98,7 +98,8 @@ content: !!str |
       sys_config_dict = {"BACKED_FILES": dict()}
       remediation_status = False
       try:
-          sys_config_dict = get_config_dict(__name__)
+          # TODO replace "ex_remediation" with your module's name
+          sys_config_dict = get_config_dict("ex_remediation")
           # TODO fill in messages to match the problem being address by this module
           if detect_problem():
               print("Problem detected")
