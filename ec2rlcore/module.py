@@ -255,7 +255,7 @@ class Module(object):
                 for option in options.per_module_args[self.name]:
                     optionvalue = options.per_module_args[self.name][option]
                     self.logger.debug("....Found option:value option {}:{}".format(option, optionvalue))
-                    # subprocess requries all values be strings so attempt to cast any non-str values to str
+                    # subprocess requires all values be strings so attempt to cast any non-str values to str
                     if type(optionvalue) != str:
                         optionvalue = str(optionvalue)
                     envlist[option] = optionvalue

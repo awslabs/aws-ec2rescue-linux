@@ -47,7 +47,7 @@ class ProgramVersion(object):
     def __init__(self, version_string):
         """
         Parameters:
-            version_string (string): version string in the form of:
+            version_string (str): version string in the form of:
                 [major version].[minor version].[maintenance version][release type shorthand][pre-release version]
                 Example: 1.0.0a1
         """

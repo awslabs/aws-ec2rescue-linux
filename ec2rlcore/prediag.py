@@ -57,7 +57,7 @@ def get_distro():
     Return the running Linux distribution.
 
     Returns:
-        distro (string): the detected Linux distribution
+        distro (str): the detected Linux distribution
     """
 
     distro = "unknown"
