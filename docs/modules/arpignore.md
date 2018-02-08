@@ -6,7 +6,7 @@ Arpignore being set on an interface can cause networking to experience issues an
 
 ## Detecting with EC2 Rescue for Linux
 
-EC2 Rescue for Linux includes a diagnostic module which will check the arp ignore setting.  This is provided by the 'arpignore' diagnostic module.  This module will run by default, and can be run individually.
+EC2 Rescue for Linux includes a diagnostic module which will check the arp ignore setting.  This is provided by the "arpignore" diagnostic module.  This module will run by default, and can be run individually.
 
 ```commandline
 $ sudo ./ec2rl run --only-modules=arpignore
@@ -23,7 +23,7 @@ Failing output:
 
 ```commandline
 ----------[Diagnostic Results]----------
-module run/arpignore       FAILURE] arp ignore is enabled for one or more interfaces. Please see the module log
+module run/arpignore       [FAILURE] arp ignore is enabled for one or more interfaces. Please see the module log
 ```
 
 ## Detecting Manually
@@ -31,7 +31,7 @@ module run/arpignore       FAILURE] arp ignore is enabled for one or more interf
 This can also be detected manually via grepping the output of sysctl as follows
 
 ```commandline
-$ /sbin/sysctl net.ipv4.conf | grep arp_ignore
+$ /sbin/sysctl net.ipv4.conf | grep "arp_ignore = [1-9]"
 ```
 
 ## Resolving with EC2 Rescue for Linux
