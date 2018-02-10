@@ -1287,7 +1287,9 @@ class TestSSH(unittest.TestCase):
     @mock.patch("os.remove", side_effect=[True] * 2)
     @mock.patch("shutil.rmtree", side_effect=[True])
     @mock.patch("subprocess.check_call")
+    @mock.patch("moduletests.src.openssh.Problem._Problem__check_missing_host_keys", side_effect=[False])
     def test_ssh_problem_fix_create_hostkeys_fixed(self,
+                                                   check_mock,
                                                    check_call_mock,
                                                    shutil_rmtree_mock,
                                                    os_remove_mock,
@@ -1303,6 +1305,7 @@ class TestSSH(unittest.TestCase):
             self.assertTrue(os_path_isfile_mock.called)
             self.assertTrue(backup_mock.called)
             self.assertTrue(os_path_exists_mock.called)
+            self.assertTrue(check_mock.called)
 
     @mock.patch("moduletests.src.openssh.Problem._Problem__check_missing_host_keys", side_effect=[True])
     @mock.patch("os.path.exists", side_effect=[True] * 3 + [False])
