@@ -531,7 +531,8 @@ class TestMain(unittest.TestCase):
         # ec2rl 1.0.0
         # ubuntu, 4.4.0-83-generic
         # Python 3.5.2, /usr/bin/python3
-        regex_str = r"^ec2rl\ [0-9]+\.[0-9]+\.[0-9]+.*\n(ubuntu|suse|rhel|alami),\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
+        regex_str = r"^ec2rl\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
+                    r"(ubuntu|suse|rhel|alami|unknown\ for\ .*),\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
                     r"Python\ [0-9]+\.[0-9]+\.[0-9]+.*,\ /.*\n$"
 
         self.assertTrue(re.match(regex_str, self.output.getvalue()))
