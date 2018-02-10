@@ -106,3 +106,18 @@ rpm: prep python
 	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
+
+.PHONY: test
+test:
+	@coverage3  run --source=ec2rlcore --branch -m unittest discover
+	@coverage3 report -m
+
+test_modules_unit:
+	@cd tools; \
+	$(PYTHON) run_module_unit_tests.py; \
+	coverage3 report -m
+
+test_modules_functional:
+	@cd tools; \
+	$(PYTHON) run_module_functional_tests.py; \
+	coverage3 report -m
