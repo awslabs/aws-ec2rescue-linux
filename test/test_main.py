@@ -522,20 +522,21 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("ec2rl {}\nCopyright 201".format(self.PROGRAM_VERSION)))
         self.assertTrue(self.output.getvalue().endswith("TIES OR CONDITIONS OF ANY KIND, either express or implied.\n"))
 
-    def test_main_bugreport(self):
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="distro")
+    @mock.patch("ec2rlcore.main.platform.release", return_value="kernel_version")
+    @mock.patch("ec2rlcore.main.platform.python_version", return_value="python_version")
+    @mock.patch("ec2rlcore.main.sys")
+    def test_main_bugreport(self, sys_mock, version_mock, release_mock, get_distro_mock):
         """Test output from the bugreport subcommand."""
+        sys_mock.executable = "executable"
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.bug_report())
-
-        # Example output:
-        # ec2rl 1.0.0
-        # ubuntu, 4.4.0-83-generic
-        # Python 3.5.2, /usr/bin/python3
-        regex_str = r"^ec2rl\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
-                    r"(ubuntu|suse|rhel|alami|unknown\ for\ .*),\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
-                    r"Python\ [0-9]+\.[0-9]+\.[0-9]+.*,\ /.*\n$"
-
-        self.assertTrue(re.match(regex_str, self.output.getvalue()))
+        self.assertEqual(self.output.getvalue(), "ec2rl {}\n"
+                                                 "distro, kernel_version\n"
+                                                 "Python python_version, executable\n".format(self.PROGRAM_VERSION))
+        self.assertTrue(version_mock.called)
+        self.assertTrue(release_mock.called)
+        self.assertTrue(get_distro_mock.called)
 
     def test_main__setup_environ(self):
         """Test that environment variables are setup as expected."""
