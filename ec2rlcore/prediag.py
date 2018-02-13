@@ -444,7 +444,7 @@ def get_config_dict(module_name):
     REMEDIATE: controls whether remediation is to be attempted. The default is to only perform detection.
     SUDO: whether the module is being executed as root/with sudo privileges.
     DISTRO: the detected distribution of Linux running on the system.
-    NOTANINSTANCE: True if running on anything but an EC2 instance.
+    NOT_AN_INSTANCE: True if running on anything but an EC2 instance.
 
     Parameters:
         module_name (str): name of the module requesting the configuration dict.
