@@ -57,6 +57,11 @@ class Testfstabfailures(unittest.TestCase):
         self.assertTrue(moduletests.src.fstabfailures.write_default_fstab(self.config_file_path, "alami"))
 
     @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(
+        read_data="LABEL=/ / xfs defaults,noatime,nofail 0 0\n"))
+    def test_alami2_defaultfstab(self):
+        self.assertTrue(moduletests.src.fstabfailures.write_default_fstab(self.config_file_path, "alami2"))
+
+    @mock.patch("moduletests.src.fstabfailures.open", mock.mock_open(
         read_data="LABEL=/ / ext4 defaults,noatime,nofail 0 0\n"))
     def test_suse_defaultfstab(self):
         self.assertTrue(moduletests.src.fstabfailures.write_default_fstab(self.config_file_path, "suse"))
