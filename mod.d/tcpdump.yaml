@@ -90,7 +90,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str gather
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str interface count period
   optional: !!str protocol source destination sourceport destinationport
   software: !!str tcpdump

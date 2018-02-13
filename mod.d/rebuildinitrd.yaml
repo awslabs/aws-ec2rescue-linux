@@ -100,7 +100,7 @@ content: !!str |
       Returns:
           True (bool): If successful in rebuilding.
       """
-      if distro not in {"alami", "rhel", "ubuntu", "suse"}:
+      if distro not in {"alami", "alami2", "rhel", "ubuntu", "suse"}:
           raise ValueError("[FAILURE] unsupported distribution: {}".format(distro))
 
       initrd_file_names = get_initrd()
@@ -118,6 +118,9 @@ content: !!str |
 
           if distro == "alami":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn1\.x86_64", initrd_file_name).group(0)
+              subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
+          if distro == "alami2":
+              regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn2\.x86_64", initrd_file_name).group(0)
               subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
           elif distro == "rhel":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+(.*).el7\.x86_64", initrd_file_name).group(0)
@@ -177,7 +180,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str rebuildinitrd remediate
   optional: !!str
   software: !!str

@@ -72,6 +72,12 @@ content: !!str |
                   fstab_file.write("devpts      /dev/pts    devpts  gid=5,mode=620,nofail  0   0\n")
                   fstab_file.write("sysfs       /sys        sysfs   defaults,nofail        0   0\n")
                   fstab_file.write("proc        /proc       proc    defaults,nofail        0   0\n")
+              elif distro == "alami2":
+                  fstab_file.write("LABEL=/     /           xfs    defaults,noatime,nofail  0   0\n")
+                  fstab_file.write("tmpfs       /dev/shm    tmpfs   defaults,nofail        0   0\n")
+                  fstab_file.write("devpts      /dev/pts    devpts  gid=5,mode=620,nofail  0   0\n")
+                  fstab_file.write("sysfs       /sys        sysfs   defaults,nofail        0   0\n")
+                  fstab_file.write("proc        /proc       proc    defaults,nofail        0   0\n")
               elif distro == "suse":
                   fstab_file.write("/dev/disk/by-label/ROOT     /    ext4 defaults,nofail 0 0\n")
               elif distro == "rhel":
@@ -239,7 +245,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str fstabfailures remediate
   optional: !!str
   software: !!str
