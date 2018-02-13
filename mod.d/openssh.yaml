@@ -1650,8 +1650,11 @@ content: !!str |
 
           Problem.setup_run_vars(metadata_key_url=METADATA_KEY_URL)
 
-          if Problem.CONFIG_DICT["INJECT_KEY"] \
-                  and not Problem.CONFIG_DICT["REMEDIATE"]:
+          if (Problem.CONFIG_DICT["INJECT_KEY"]
+              and not Problem.CONFIG_DICT["REMEDIATE"]) \
+                  or (Problem.CONFIG_DICT["REMEDIATE"]
+                      and Problem.CONFIG_DICT["INJECT_KEY"]
+                      and not Problem.CONFIG_DICT["NEW_KEY"]):
               print("Skipping key injection because no new key available.")
           elif Problem.CONFIG_DICT["REMEDIATE"] \
                   and Problem.CONFIG_DICT["INJECT_KEY"] \
@@ -1660,10 +1663,6 @@ content: !!str |
                              Problem.CONFIG_DICT["AUTH_KEYS"],
                              Problem.CONFIG_DICT["BACKED_FILES"],
                              Problem.CONFIG_DICT["BACKUP_DIR"])
-          elif Problem.CONFIG_DICT["REMEDIATE"]\
-                  and Problem.CONFIG_DICT["INJECT_KEY"]\
-                  and not Problem.CONFIG_DICT["NEW_KEY"]:
-              print("Skipping key injection because no new key available.")
 
           PROBLEMS_DAG = get_dag(Problem.CONFIG_DICT)
           print("")
