@@ -6,7 +6,7 @@ Amazon Elastic Compute Cloud (EC2) Rescue for Linux (ec2rl) is a framework for e
 troubleshooting modules to analyze and remediate issues on Linux instances on AWS.
 
 ## The Latest Version
-The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz
+The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz  
 File integrity can be verified using the sha256 hash which can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
 
 Example:
