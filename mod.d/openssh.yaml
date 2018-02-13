@@ -409,7 +409,7 @@ content: !!str |
               cls.CONFIG_DICT["NEW_KEY"] = os.environ["new_ssh_key"]
               print("Found new key from user args.")
           except KeyError:
-              if not cls.CONFIG_DICT["NOTANINSTANCE"]:
+              if not cls.CONFIG_DICT["NOT_AN_INSTANCE"]:
                   cls.CONFIG_DICT["NEW_KEY"] = requests.get(metadata_key_url).text.strip()
                   print("Obtained new key from instance metadata.")
 
