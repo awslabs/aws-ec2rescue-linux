@@ -104,7 +104,7 @@ class Testrebuildinitrd(unittest.TestCase):
     @mock.patch("subprocess.check_output", return_value="stuff")
     def test_rebuild_alami2_success(self, check_output_mock, backup_mock, get_initrd_mock):
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(moduletests.src.rebuildinitrd.rebuild("alami", dict(), "/test/path"))
+            self.assertTrue(moduletests.src.rebuildinitrd.rebuild("alami2", dict(), "/test/path"))
         self.assertTrue(self.output.getvalue().endswith("Creating new initial ramdisk for 4.9.77-31.58.amzn2.x86_64\n"))
         self.assertTrue(check_output_mock.called)
         self.assertTrue(backup_mock.called)
