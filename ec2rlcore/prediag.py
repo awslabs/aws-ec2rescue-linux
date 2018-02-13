@@ -70,8 +70,10 @@ def get_distro():
         with open("/etc/system-release", "r") as fp:
             # This file is a single line
             distro_str = fp.readline()
-            if re.match(alami_regex, distro_str) or re.match(alami2_regex, distro_str):
+            if re.match(alami_regex, distro_str):
                 distro = "alami"
+            elif re.match(alami2_regex, distro_str):
+                distro = "alami2"
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
                 distro = "rhel"
