@@ -119,7 +119,7 @@ content: !!str |
           if distro == "alami":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn1\.x86_64", initrd_file_name).group(0)
               subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
-          if distro == "alami2":
+          elif distro == "alami2":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn2\.x86_64", initrd_file_name).group(0)
               subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
           elif distro == "rhel":
