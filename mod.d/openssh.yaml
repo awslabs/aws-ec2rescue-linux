@@ -77,9 +77,9 @@ content: !!str |
       sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
 
   from ec2rlcore.prediag import backup
-  from ec2rlcore.prediag import restore
+  from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import print_indent
-  import ec2rlcore.prediag
+  from ec2rlcore.prediag import restore
 
 
   class DirectedAcyclicGraph(object):
@@ -354,99 +354,68 @@ content: !!str |
       TYPES = ("UID", "Mode", "Config", "User", "Directory", "File")
       STATES = ("UNCHECKED", "NPF", "FAILURE", "FIXED", "FIX_FAILED", "WARN")
       # Defaults
-      VARS_DICT = {"HOSTKEYS": list(),
-                   "AUTH_KEYS": {"relative": [".ssh/authorized_keys"],
-                                 "absolute": list()},
-                   "CONFIG_PATH": "/etc/ssh/sshd_config",
-                   "CONFIG_DICT": dict(),
-                   "REMEDIATE": False,
-                   "INJECT_KEY": False,
-                   "NEW_KEY": None,
-                   "NOT_AN_INSTANCE": False,
-                   "BACKED_FILES": dict(),
-                   "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                   "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                   "PRIV_SEP_DIR": "/var/empty/sshd",
-                   # Define bitmasks for verifying permission modes
-                   # Verification is performed via bitwise AND-ing the mode and bitmask to check if
-                   # the bits of interest are set
-                   "ALL_SET_BITMASK": 0b111111111111111,
-                   "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
-                   "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO}
+      CONFIG_DICT = ({"HOSTKEYS": list(),
+                      "AUTH_KEYS": {"relative": [".ssh/authorized_keys"],
+                                    "absolute": list()},
+                      "CONFIG_PATH": "/etc/ssh/sshd_config",
+                      "CONFIG_DICT": dict(),
+                      "INJECT_KEY": False,
+                      "NEW_KEY": None,
+                      "PRIV_SEP_DIR": "/var/empty/sshd",
+                      # Define bitmasks for verifying permission modes
+                      # Verification is performed via bitwise AND-ing the mode and bitmask to check if
+                      # the bits of interest are set
+                      "ALL_SET_BITMASK": 0b111111111111111,
+                      "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
+                      "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO})
 
       @classmethod
       def setup_config_vars(cls):
-          cls.VARS_DICT["CONFIG_PATH"] = get_config_file_path()
-          cls.VARS_DICT["CONFIG_DICT"] = parse_configuration(cls.VARS_DICT["CONFIG_PATH"])
-          if "HostKey" in cls.VARS_DICT["CONFIG_DICT"]:
-              cls.VARS_DICT["HOSTKEYS"] = cls.VARS_DICT["CONFIG_DICT"]["HostKey"]
-          if "AuthorizedKeysFile" in cls.VARS_DICT["CONFIG_DICT"]:
-              cls.VARS_DICT["AUTH_KEYS"] = {"absolute": list(), "relative": list()}
-              for key_path in cls.VARS_DICT["CONFIG_DICT"]["AuthorizedKeysFile"]:
+          """
+          Update the configuration dict with information from the OpenSSH configuration. This function is not merged
+          with setup_run_vars because it may be necessary to call t his function multiple times during exeuction.
+          """
+          cls.CONFIG_DICT["CONFIG_PATH"] = get_config_file_path()
+          cls.CONFIG_DICT["CONFIG_DICT"] = parse_configuration(cls.CONFIG_DICT["CONFIG_PATH"])
+          if "HostKey" in cls.CONFIG_DICT["CONFIG_DICT"]:
+              cls.CONFIG_DICT["HOSTKEYS"] = cls.CONFIG_DICT["CONFIG_DICT"]["HostKey"]
+          if "AuthorizedKeysFile" in cls.CONFIG_DICT["CONFIG_DICT"]:
+              cls.CONFIG_DICT["AUTH_KEYS"] = {"absolute": list(), "relative": list()}
+              for key_path in cls.CONFIG_DICT["CONFIG_DICT"]["AuthorizedKeysFile"]:
                   if os.path.isabs(key_path):
-                      cls.VARS_DICT["AUTH_KEYS"]["absolute"].append(key_path)
+                      cls.CONFIG_DICT["AUTH_KEYS"]["absolute"].append(key_path)
                   else:
-                      cls.VARS_DICT["AUTH_KEYS"]["relative"].append(key_path)
+                      cls.CONFIG_DICT["AUTH_KEYS"]["relative"].append(key_path)
 
       @classmethod
       def setup_run_vars(cls, metadata_key_url):
-          """These are in a function simply for house-keeping purposes."""
-          try:
-              cls.VARS_DICT["BACKUP_DIR"] = os.path.join(os.environ["EC2RL_GATHEREDDIR"], "openssh")
-          except KeyError:
-              print("Environment variable EC2RL_GATHEREDDIR not set! Defaulting to {}".format(
-                  cls.VARS_DICT["BACKUP_DIR"]))
+          """
+          Update CONFIG_DICT with run-specific information. This function is not merged with setup_config_vars because
+          these values only need to ever be set once per execution.
+          """
+          cls.CONFIG_DICT.update(get_config_dict("openssh"))
 
           try:
-              cls.VARS_DICT["LOG_DIR"] = os.path.join(os.environ["EC2RL_LOGDIR"], "openssh")
-          except KeyError:
-              print("Environment variable EC2RL_LOGDIR not set! Defaulting to {}".format(cls.VARS_DICT["LOG_DIR"]))
-
-          try:
-              if os.environ["remediate"] == "True":
-                  cls.VARS_DICT["REMEDIATE"] = True
-                  print("Remediation enabled.")
-              else:
-                  cls.VARS_DICT["REMEDIATE"] = False
-                  print("Remediation not enabled. To enable, rerun with the --remediate argument.")
-          except KeyError:
-              cls.VARS_DICT["REMEDIATE"] = False
-              print("Remediation not enabled. To enable, rerun with the --remediate argument.")
-
-          try:
-              if cls.VARS_DICT["REMEDIATE"] and os.environ["inject_key"] == "True":
-                  cls.VARS_DICT["INJECT_KEY"] = True
+              if os.environ["inject_key"] == "True":
+                  cls.CONFIG_DICT["INJECT_KEY"] = True
                   print("Key injection enabled.")
               else:
-                  cls.VARS_DICT["INJECT_KEY"] = False
                   print("Key injection not enabled. To enable, rerun with the --inject_key argument.")
           except KeyError:
-              cls.VARS_DICT["INJECT_KEY"] = False
               print("Key injection not enabled. To enable, rerun with the --inject_key argument.")
-
-          if "notaninstance" in os.environ and os.environ["notaninstance"] == "True":
-              cls.VARS_DICT["NOT_AN_INSTANCE"] = True
-          elif "notaninstance" in os.environ and os.environ["notaninstance"] == "False":
-              cls.VARS_DICT["NOT_AN_INSTANCE"] = False
-          else:
-              cls.VARS_DICT["NOT_AN_INSTANCE"] = not ec2rlcore.prediag.is_an_instance()
-          if cls.VARS_DICT["NOT_AN_INSTANCE"]:
-              print("Not running on an instance.")
-          else:
-              print("Running on an instance.")
 
           try:
               # Prefer an explicitly given key over the key from the metadata service
-              cls.VARS_DICT["NEW_KEY"] = os.environ["new_ssh_key"]
+              cls.CONFIG_DICT["NEW_KEY"] = os.environ["new_ssh_key"]
               print("Found new key from user args.")
           except KeyError:
-              if not cls.VARS_DICT["NOT_AN_INSTANCE"]:
-                  cls.VARS_DICT["NEW_KEY"] = requests.get(metadata_key_url).text.strip()
+              if not cls.CONFIG_DICT["NOTANINSTANCE"]:
+                  cls.CONFIG_DICT["NEW_KEY"] = requests.get(metadata_key_url).text.strip()
                   print("Obtained new key from instance metadata.")
 
           priv_sep_dir = get_privilege_separation_dir()
           if priv_sep_dir:
-              cls.VARS_DICT["PRIV_SEP_DIR"] = priv_sep_dir
+              cls.CONFIG_DICT["PRIV_SEP_DIR"] = priv_sep_dir
 
       def __init__(self,
                    state,
@@ -505,8 +474,8 @@ content: !!str |
           # setup_config_vars -> get_config_file_path -> subprocess -> sshd -t
           try:
               self.setup_config_vars()
-              self.item = Path(path_str=self.VARS_DICT["CONFIG_PATH"])
-              self.value = self.VARS_DICT["CONFIG_PATH"]
+              self.item = Path(path_str=self.CONFIG_DICT["CONFIG_PATH"])
+              self.value = self.CONFIG_DICT["CONFIG_PATH"]
               return False
           except subprocess.CalledProcessError:
               # Not checking if "sshd -t" returns non-zero so long as it exists
@@ -548,7 +517,7 @@ content: !!str |
           # if (*activep && options->num_authkeys_files == 0) {
           auth_key_lines = {"line_nums": list(), "values": list()}
 
-          with open(self.VARS_DICT["CONFIG_PATH"], "r") as config_file:
+          with open(self.CONFIG_DICT["CONFIG_PATH"], "r") as config_file:
               for line_num, line in enumerate(config_file, 1):
                   tokens = line.strip().split()
                   # Skip anything that is not a key/value pair
@@ -562,7 +531,7 @@ content: !!str |
                       auth_key_lines["line_nums"].append(line_num)
                       auth_key_lines["values"].append(tokens[1])
 
-          self.item = Path(path_str=self.VARS_DICT["CONFIG_PATH"])
+          self.item = Path(path_str=self.CONFIG_DICT["CONFIG_PATH"])
           self.value = auth_key_lines
           if len(auth_key_lines["line_nums"]) > 1:
               return True
@@ -582,7 +551,9 @@ content: !!str |
           Returns:
               bool: whether the problem was fixed
           """
-          backed_up_cfg_path = backup(self.item.path_str, self.VARS_DICT["BACKED_FILES"], self.VARS_DICT["BACKUP_DIR"])
+          backed_up_cfg_path = backup(self.item.path_str,
+                                      self.CONFIG_DICT["BACKED_FILES"],
+                                      self.CONFIG_DICT["BACKUP_DIR"])
           print_indent("Backed up {} to {}".format(self.item, backed_up_cfg_path), level=2)
           # Multiple paths one on one line is supported in OpenSSH >= 5.9
           print_indent("Merging duplicate AuthorizedKeysFile lines in {}".format(self.item), level=2)
@@ -608,7 +579,7 @@ content: !!str |
               os.chown(self.item.path_str, os.stat(backed_up_cfg_path).st_uid, os.stat(backed_up_cfg_path).st_gid)
 
           if self.__check_dupe_keyfile_lines():
-              restore(self.item.path_str, self.VARS_DICT["CONFIG_PATH"])
+              restore(self.item.path_str, self.CONFIG_DICT["CONFIG_PATH"])
               return False
           else:
               # The sshd config file was modified so update the dict
@@ -619,12 +590,12 @@ content: !!str |
       def get_dupe_keyfile_lines_problem(cls):
           return Problem(state="UNCHECKED",
                          item_type="Config",
-                         item=cls.VARS_DICT["CONFIG_PATH"],
+                         item=cls.CONFIG_DICT["CONFIG_PATH"],
                          value=None,
                          value_str=None,
                          info_msg="sshd configuration file contains duplicate AuthorizedKeysFile lines",
                          check=cls.__check_dupe_keyfile_lines,
-                         check_msg="{} for duplicate AuthorizedKeysFile lines".format(cls.VARS_DICT["CONFIG_PATH"]),
+                         check_msg="{} for duplicate AuthorizedKeysFile lines".format(cls.CONFIG_DICT["CONFIG_PATH"]),
                          fix_msg="Remove duplicate AuthorizedKeysFile lines.",
                          fix=cls.__fix_dup_keyfile_lines)
 
@@ -636,9 +607,9 @@ content: !!str |
           if path.mode & path.v_bitmask != 0b0:
               # Calculate the new permission mode
               if path.isdir:
-                  path.e_mode = (path.mode | 0b111000000) & (path.v_bitmask ^ self.VARS_DICT["ALL_SET_BITMASK"])
+                  path.e_mode = (path.mode | 0b111000000) & (path.v_bitmask ^ self.CONFIG_DICT["ALL_SET_BITMASK"])
               else:
-                  path.e_mode = (path.mode & 0b110111111) & (path.v_bitmask ^ self.VARS_DICT["ALL_SET_BITMASK"])
+                  path.e_mode = (path.mode & 0b110111111) & (path.v_bitmask ^ self.CONFIG_DICT["ALL_SET_BITMASK"])
               self.fix_msg = "{:22.19}sudo chmod {} {}".format("Adjust permissions:",
                                                                oct(path.e_mode)[-3:],
                                                                path)
@@ -666,7 +637,7 @@ content: !!str |
 
       @classmethod
       def get_mode_problem(cls, this_path):
-          if this_path.v_bitmask == cls.VARS_DICT["G_O_ALL_CHECKING_BITMASK"]:
+          if this_path.v_bitmask == cls.CONFIG_DICT["G_O_ALL_CHECKING_BITMASK"]:
               info_msg = "Permission mode includes permissions for groups and/or other users"
           # The only other checking bitmask is for write checking
           else:
@@ -734,7 +705,7 @@ content: !!str |
           except subprocess.CalledProcessError as cpe:
               error_lines = cpe.output.splitlines()
               if len(error_lines) == 1 and error_lines[0] == "{}: No such file or directory".format(
-                      self.VARS_DICT["CONFIG_PATH"]):
+                      self.CONFIG_DICT["CONFIG_PATH"]):
                   # Handles missing server config file. Reference main() L1583 -> load_server_config() L1869 servconf.c:
                   # perror(filename);
                   return True
@@ -777,13 +748,13 @@ content: !!str |
       def get_missing_config_file_problem(cls):
           return Problem(state="UNCHECKED",
                          item_type="File",
-                         item=Path(path_str=cls.VARS_DICT["CONFIG_PATH"]),
-                         value=cls.VARS_DICT["CONFIG_PATH"],
+                         item=Path(path_str=cls.CONFIG_DICT["CONFIG_PATH"]),
+                         value=cls.CONFIG_DICT["CONFIG_PATH"],
                          value_str="Missing",
                          info_msg="Missing configuration file",
                          check=cls.__check_missing_config_file,
-                         check_msg="existence of {}".format(cls.VARS_DICT["CONFIG_PATH"]),
-                         fix_msg="{:22.19}{}".format("Create config file:", cls.VARS_DICT["CONFIG_PATH"]),
+                         check_msg="existence of {}".format(cls.CONFIG_DICT["CONFIG_PATH"]),
+                         fix_msg="{:22.19}{}".format("Create config file:", cls.CONFIG_DICT["CONFIG_PATH"]),
                          fix=cls.__fix_write_default_config)
 
       def __check_bad_config_options(self):
@@ -828,7 +799,7 @@ content: !!str |
                   self.value = lines_sorted
                   self.value_str = ",".join(str(num) for num in lines_sorted)
                   self.fix_msg = "{:22.19}{} in {}".format(
-                      "Remove/fix lines:", self.value_str, self.VARS_DICT["CONFIG_PATH"])
+                      "Remove/fix lines:", self.value_str, self.CONFIG_DICT["CONFIG_PATH"])
                   return True
               return False
           return False
@@ -847,7 +818,9 @@ content: !!str |
           Returns:
               bool: whether the problem was fixed
           """
-          backed_up_cfg_path = backup(self.item.path_str, self.VARS_DICT["BACKED_FILES"], self.VARS_DICT["BACKUP_DIR"])
+          backed_up_cfg_path = backup(self.item.path_str,
+                                      self.CONFIG_DICT["BACKED_FILES"],
+                                      self.CONFIG_DICT["BACKUP_DIR"])
           print_indent("Backed up {} to {}".format(self.item, backed_up_cfg_path), level=2)
           print_indent("Commenting out malformed lines in {}".format(self.item), level=2)
           # Default mode is "wb"
@@ -868,7 +841,7 @@ content: !!str |
               os.chown(self.item.path_str, os.stat(backed_up_cfg_path).st_uid, os.stat(backed_up_cfg_path).st_gid)
 
           if self.__check_bad_config_options():
-              restore(self.item.path_str, self.VARS_DICT["BACKUP_DIR"])
+              restore(self.item.path_str, self.CONFIG_DICT["BACKUP_DIR"])
               return False
           else:
               # The sshd config file was modified so update the dict
@@ -879,12 +852,12 @@ content: !!str |
       def get_bad_config_options_problem(cls):
           return Problem(state="UNCHECKED",
                          item_type="Config",
-                         item=Path(path_str=cls.VARS_DICT["CONFIG_PATH"]),
+                         item=Path(path_str=cls.CONFIG_DICT["CONFIG_PATH"]),
                          value=None,
                          value_str=None,
                          info_msg="Bad lines in configuration file",
                          check=cls.__check_bad_config_options,
-                         check_msg="validity of {}".format(cls.VARS_DICT["CONFIG_PATH"]),
+                         check_msg="validity of {}".format(cls.CONFIG_DICT["CONFIG_PATH"]),
                          fix_msg=None,
                          fix=cls.__fix_comment_bad_config_lines)
 
@@ -981,8 +954,8 @@ content: !!str |
                   print_indent("{} host key".format(key_type.upper()), level=2)
                   if os.path.exists(key_path):
                       print_indent("Backed up {} to {}".format(key_path, backup(key_path,
-                                                                                self.VARS_DICT["BACKED_FILES"],
-                                                                                self.VARS_DICT["BACKUP_DIR"])),
+                                                                                self.CONFIG_DICT["BACKED_FILES"],
+                                                                                self.CONFIG_DICT["BACKUP_DIR"])),
                                    level=3)
                       if os.path.isfile(key_path):
                           os.remove(key_path)
@@ -1046,13 +1019,13 @@ content: !!str |
                   subprocess.check_call(shlex.split("useradd -s /sbin/nologin "
                                                     "-r -m "
                                                     "-c 'Privilege-separated SSH' "
-                                                    "-d {} {}".format(Problem.VARS_DICT["PRIV_SEP_DIR"], self.item)),
+                                                    "-d {} {}".format(Problem.CONFIG_DICT["PRIV_SEP_DIR"], self.item)),
                                         stdout=devnull,
                                         stderr=devnull)
                   # -m / --create-home ensures the directory exists
-                  os.chmod(Problem.VARS_DICT["PRIV_SEP_DIR"],
-                           (os.stat(Problem.VARS_DICT["PRIV_SEP_DIR"]).st_mode | 0b111000000) &
-                           (self.VARS_DICT["G_O_WRITE_CHECKING_BITMASK"] ^ self.VARS_DICT["ALL_SET_BITMASK"]))
+                  os.chmod(Problem.CONFIG_DICT["PRIV_SEP_DIR"],
+                           (os.stat(Problem.CONFIG_DICT["PRIV_SEP_DIR"]).st_mode | 0b111000000) &
+                           (self.CONFIG_DICT["G_O_WRITE_CHECKING_BITMASK"] ^ self.CONFIG_DICT["ALL_SET_BITMASK"]))
           except Exception:
               return False
 
@@ -1084,7 +1057,7 @@ content: !!str |
           Returns:
               bool: whether the problem was fixed
           """
-          self.item.e_mode = 0b111000000 & (self.item.v_bitmask ^ self.VARS_DICT["ALL_SET_BITMASK"])
+          self.item.e_mode = 0b111000000 & (self.item.v_bitmask ^ self.CONFIG_DICT["ALL_SET_BITMASK"])
           try:
               os.makedirs(self.item.path_str, mode=self.item.e_mode)
               os.chown(self.item.path_str, self.item.e_uid, self.item.e_uid)
@@ -1123,7 +1096,7 @@ content: !!str |
               print_indent("Creating new, empty authorized keys file", level=2)
               os.mknod(self.item.path_str, stat.S_IFREG | self.item.e_mode)
               os.chown(self.item.path_str, self.item.e_uid, self.item.e_uid)
-              inject_key_single(self.VARS_DICT["NEW_KEY"], self.item.path_str)
+              inject_key_single(self.CONFIG_DICT["NEW_KEY"], self.item.path_str)
           except Exception:
               return False
 
@@ -1314,7 +1287,7 @@ content: !!str |
       return parsed_config
 
 
-  def get_dag(vars_dict):
+  def get_dag(config_dict):
       """
       Create and return a directed acyclic graph (DAG) representing the following potential SSH-related problems:
 
@@ -1353,13 +1326,13 @@ content: !!str |
                                        e_mode=0o0700,
                                        e_uid=0,
                                        e_gid=0,
-                                       v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+                                       v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
               else:
                   this_key_path = Path(path_str=current_path,
                                        e_mode=0o0700,
                                        e_uid=uid,
                                        e_gid=gid,
-                                       v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+                                       v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
 
               missing_dir_vertex = Vertex("missing_dir_{}".format(this_key_path),
                                           Problem.get_missing_dir_problem(this_key_path))
@@ -1382,7 +1355,7 @@ content: !!str |
                                e_mode=0o0600,
                                e_uid=uid,
                                e_gid=gid,
-                               v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+                               v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
 
           missing_key_vertex = Vertex("missing_key_{}".format(this_key_path),
                                       Problem.get_missing_key_problem(this_key_path))
@@ -1451,7 +1424,7 @@ content: !!str |
               # pwd.getpwnam raises KeyError when the arg does not match a user in the password database
               print_indent("Skipping home directory with no matching user account: {}".format(user_path), level=1)
               continue
-          for key_path in vars_dict["AUTH_KEYS"]["relative"]:
+          for key_path in config_dict["AUTH_KEYS"]["relative"]:
               full_path_auth_keys = os.path.join(file, key_path)
 
               # Verify the directory paths
@@ -1462,7 +1435,7 @@ content: !!str |
 
       # 5.  Existence of the pieces of the absolute authorized_key paths.
       # 6.  Mode and UID of the absolute authorized_key paths.
-      for key_path in vars_dict["AUTH_KEYS"]["absolute"]:
+      for key_path in config_dict["AUTH_KEYS"]["absolute"]:
           full_path_auth_keys = os.path.realpath(key_path)
 
           # Verify this file is a directory
@@ -1476,10 +1449,10 @@ content: !!str |
                                gid=0)
 
       # 7.  Mode and UID of the chroot directory used for privilege separation.
-      this_path = Path(path_str=Problem.VARS_DICT["PRIV_SEP_DIR"],
+      this_path = Path(path_str=config_dict["PRIV_SEP_DIR"],
                        e_uid=0,
                        e_gid=0,
-                       v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+                       v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
       bad_mode = Vertex("bad_mode_{}".format(this_path), Problem.get_mode_problem(this_path))
       problem_dag.add_vertex(bad_mode)
       problem_dag.add_edge(start=missing_priv_sep_dir.label, end=bad_mode.label)
@@ -1489,7 +1462,7 @@ content: !!str |
       problem_dag.add_edge(start=missing_priv_sep_dir.label, end=bad_uid.label)
 
       # 8.  Mode and UID of /etc/ssh and its contents.
-      etcsshpath = Path(path_str="/etc/ssh", e_uid=0, e_gid=0, v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+      etcsshpath = Path(path_str="/etc/ssh", e_uid=0, e_gid=0, v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
 
       bad_mode = Vertex("bad_mode_{}".format(etcsshpath), Problem.get_mode_problem(etcsshpath))
       problem_dag.add_vertex(bad_mode)
@@ -1520,10 +1493,10 @@ content: !!str |
 
               if this_path.path_str.endswith("_key"):
                   # Private keys cannot have any group/other bits set
-                  this_path.v_bitmask = vars_dict["G_O_ALL_CHECKING_BITMASK"]
+                  this_path.v_bitmask = config_dict["G_O_ALL_CHECKING_BITMASK"]
               else:
                   # Other files should not have group/other write bits set
-                  this_path.v_bitmask = vars_dict["G_O_WRITE_CHECKING_BITMASK"]
+                  this_path.v_bitmask = config_dict["G_O_WRITE_CHECKING_BITMASK"]
 
               bad_mode = Vertex("bad_mode_{}".format(this_path), Problem.get_mode_problem(this_path))
               problem_dag.add_vertex(bad_mode)
@@ -1544,7 +1517,7 @@ content: !!str |
               this_path = Path(path_str=real_dir_path,
                                e_uid=0,
                                e_gid=0,
-                               v_bitmask=vars_dict["G_O_WRITE_CHECKING_BITMASK"])
+                               v_bitmask=config_dict["G_O_WRITE_CHECKING_BITMASK"])
 
               bad_mode = Vertex("bad_mode_{}".format(this_path), Problem.get_mode_problem(this_path))
               problem_dag.add_vertex(bad_mode)
@@ -1553,7 +1526,7 @@ content: !!str |
               problem_dag.add_vertex(bad_uid)
 
       # 9.  Mode and UID of any host keys defined in sshd_config that have not been previously checked.
-      for hostkey_path in vars_dict["HOSTKEYS"]:
+      for hostkey_path in config_dict["HOSTKEYS"]:
           real_hostkey_path = os.path.realpath(hostkey_path)
           if not os.path.isfile(real_hostkey_path):
               continue
@@ -1564,7 +1537,10 @@ content: !!str |
           else:
               seen_paths.add(this_path_key)
 
-          this_path = Path(path_str=real_hostkey_path, e_uid=0, e_gid=0, v_bitmask=vars_dict["G_O_ALL_CHECKING_BITMASK"])
+          this_path = Path(path_str=real_hostkey_path,
+                           e_uid=0,
+                           e_gid=0,
+                           v_bitmask=config_dict["G_O_ALL_CHECKING_BITMASK"])
 
           bad_mode = Vertex("bad_mode_{}".format(this_path), Problem.get_mode_problem(this_path))
           problem_dag.add_vertex(bad_mode)
@@ -1674,24 +1650,32 @@ content: !!str |
 
           Problem.setup_run_vars(metadata_key_url=METADATA_KEY_URL)
 
-          if Problem.VARS_DICT["INJECT_KEY"] and Problem.VARS_DICT["NEW_KEY"]:
-              inject_key_all(Problem.VARS_DICT["NEW_KEY"],
-                             Problem.VARS_DICT["AUTH_KEYS"],
-                             Problem.VARS_DICT["BACKED_FILES"],
-                             Problem.VARS_DICT["BACKUP_DIR"])
-          elif Problem.VARS_DICT["INJECT_KEY"] and not Problem.VARS_DICT["NEW_KEY"]:
+          if Problem.CONFIG_DICT["INJECT_KEY"] \
+                  and not Problem.CONFIG_DICT["REMEDIATE"]:
+              print("Skipping key injection because no new key available.")
+          elif Problem.CONFIG_DICT["REMEDIATE"] \
+                  and Problem.CONFIG_DICT["INJECT_KEY"] \
+                  and Problem.CONFIG_DICT["NEW_KEY"]:
+              inject_key_all(Problem.CONFIG_DICT["NEW_KEY"],
+                             Problem.CONFIG_DICT["AUTH_KEYS"],
+                             Problem.CONFIG_DICT["BACKED_FILES"],
+                             Problem.CONFIG_DICT["BACKUP_DIR"])
+          elif Problem.CONFIG_DICT["REMEDIATE"]\
+                  and Problem.CONFIG_DICT["INJECT_KEY"]\
+                  and not Problem.CONFIG_DICT["NEW_KEY"]:
               print("Skipping key injection because no new key available.")
 
-          PROBLEMS_DAG = get_dag(Problem.VARS_DICT)
+          PROBLEMS_DAG = get_dag(Problem.CONFIG_DICT)
           print("")
-          PROBLEMS_DAG.topological_solve(Problem.VARS_DICT["REMEDIATE"])
+          PROBLEMS_DAG.topological_solve(Problem.CONFIG_DICT["REMEDIATE"])
           print("")
-          print(get_output_status(Problem.VARS_DICT["LOG_DIR"], PROBLEMS_DAG))
+          print(get_output_status(Problem.CONFIG_DICT["LOG_DIR"], PROBLEMS_DAG))
       except Exception as ex:
           print(ex)
           print("[WARN] module generated an exception and exited abnormally.")
           print("-- Review the logs to determine the cause of the issue.")
           sys.exit(0)
+
 constraint:
   requires_ec2: !!str False
   domain: !!str os

@@ -393,7 +393,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
 
         ec2rlcore.prediag.backup(test_path, self.backed_files, self.backup_dir_path)
         try:
@@ -422,7 +422,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         output_messages = list()
         output_messages.append("-- FIXED       Missing authorized key file")
 
@@ -450,7 +450,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         output_messages = list()
         output_messages.append("FAILURE     Not owned by user {}: {}".format(self.username, test_path))
 
@@ -475,7 +475,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         output_messages = list()
         output_messages.append("-- FIXED       Not owned by user {}: {}".format(self.username, test_path))
 
@@ -502,7 +502,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         output_messages = list()
         output_messages.append("-- FAILURE     Permission mode includes write for groups and/or other users: {}".format(
             test_path))
@@ -528,7 +528,7 @@ class TestSSH(unittest.TestCase):
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
-                                 moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                 moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         output_messages = list()
         output_messages.append("-- FIXED       Permission mode includes write for groups and/or other users: {}".format(
             test_path))
@@ -1027,7 +1027,7 @@ class TestSSH(unittest.TestCase):
         sshd_config_path = self.config_file_path
         auth_keys_path = os.sep.join(["/home",
                                       self.username,
-                                      moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"]["relative"][0]])
+                                      moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"][0]])
         priv_sep_dir_path = moduletests.src.openssh.get_privilege_separation_dir()
         output_messages = list()
         output_messages.append("-- FIXED       Bad lines in configuration file: {}".format(sshd_config_path))

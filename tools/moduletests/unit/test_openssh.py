@@ -60,24 +60,6 @@ class TestSSH(unittest.TestCase):
         return False
 
     def setUp(self):
-        moduletests.src.openssh.Problem.VARS_DICT = {"HOSTKEYS": [],
-                                                     "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                                                "/usr/secrets/file2"],
-                                                                   "relative": [".ssh/authorized_keys",
-                                                                                ".keyfile1"]},
-                                                     "CONFIG_PATH": "/etc/ssh/sshd_config",
-                                                     "CONFIG_DICT": dict(),
-                                                     "REMEDIATE": False,
-                                                     "INJECT_KEY": False,
-                                                     "NEW_KEY": None,
-                                                     "NOT_AN_INSTANCE": False,
-                                                     "BACKED_FILES": dict(),
-                                                     "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                                                     "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                                                     "PRIV_SEP_DIR": "/var/empty/sshd",
-                                                     "ALL_SET_BITMASK": 0b111111111111111,
-                                                     "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
-                                                     "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO}
         self.path = moduletests.src.openssh.Path(
             path_str="/tmp", e_uid=0, e_gid=0, v_bitmask=(stat.S_IWGRP | stat.S_IWOTH))
 
@@ -91,7 +73,24 @@ class TestSSH(unittest.TestCase):
                                                              check_msg="validity of configuration",
                                                              fix_msg=None,
                                                              fix=self.return_true)
-
+        moduletests.src.openssh.Problem.CONFIG_DICT = {"HOSTKEYS": [],
+                                                       "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
+                                                                                  "/usr/secrets/file2"],
+                                                                     "relative": [".ssh/authorized_keys",
+                                                                                  ".keyfile1"]},
+                                                       "CONFIG_PATH": "/etc/ssh/sshd_config",
+                                                       "CONFIG_DICT": dict(),
+                                                       "REMEDIATE": False,
+                                                       "INJECT_KEY": False,
+                                                       "NEW_KEY": None,
+                                                       "NOT_AN_INSTANCE": False,
+                                                       "BACKED_FILES": dict(),
+                                                       "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
+                                                       "LOG_DIR": "/var/tmp/ec2rl_ssh",
+                                                       "PRIV_SEP_DIR": "/var/empty/sshd",
+                                                       "ALL_SET_BITMASK": 0b111111111111111,
+                                                       "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
+                                                       "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO}
         self.vertex = moduletests.src.openssh.Vertex("example vertex", [1, 2, 3])
         self.dag = moduletests.src.openssh.DirectedAcyclicGraph()
 
@@ -370,12 +369,12 @@ class TestSSH(unittest.TestCase):
                               "AuthorizedKeysFile": [".ssh/authorized_keys"]}])
     def test_ssh_problem_setup_config_vars_relative_auth_keys(self, parse_mock, get_path_mock):
         moduletests.src.openssh.Problem.setup_config_vars()
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_PATH"], "test")
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_DICT"],
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_PATH"], "test")
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_DICT"],
                          {"HostKey": ["/etc/ssh/ssh_host_rsa_key"],
                           "AuthorizedKeysFile": [".ssh/authorized_keys"]})
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["HOSTKEYS"], ["/etc/ssh/ssh_host_rsa_key"])
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"],
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["HOSTKEYS"], ["/etc/ssh/ssh_host_rsa_key"])
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"],
                          {"relative": [".ssh/authorized_keys"], "absolute": []})
         self.assertTrue(parse_mock.called)
         self.assertTrue(get_path_mock.called)
@@ -386,247 +385,125 @@ class TestSSH(unittest.TestCase):
                               "AuthorizedKeysFile": ["/var/secrets/key"]}])
     def test_ssh_problem_setup_config_vars_absolute_auth_keys(self, parse_mock, get_path_mock):
         moduletests.src.openssh.Problem.setup_config_vars()
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_PATH"], "test")
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_DICT"],
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_PATH"], "test")
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_DICT"],
                          {"HostKey": ["/etc/ssh/ssh_host_rsa_key"],
                           "AuthorizedKeysFile": ["/var/secrets/key"]})
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["HOSTKEYS"], ["/etc/ssh/ssh_host_rsa_key"])
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["AUTH_KEYS"],
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["HOSTKEYS"], ["/etc/ssh/ssh_host_rsa_key"])
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"],
                          {"relative": [], "absolute": ["/var/secrets/key"]})
         self.assertTrue(parse_mock.called)
         self.assertTrue(get_path_mock.called)
 
     @mock.patch("moduletests.src.openssh.get_config_file_path", side_effect=["test"])
     @mock.patch("moduletests.src.openssh.parse_configuration", side_effect=[{}])
-    def test_ssh_problem_setup_config_vars_dict_empty(self, parse_mock, get_path_mock):
+    def test_ssh_problem_setup_config_config_dict_empty(self, parse_mock, get_path_mock):
         moduletests.src.openssh.Problem.setup_config_vars()
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_PATH"], "test")
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT["CONFIG_DICT"], {})
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_PATH"], "test")
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT["CONFIG_DICT"], {})
         self.assertTrue(parse_mock.called)
         self.assertTrue(get_path_mock.called)
 
     # noinspection PyUnresolvedReferences
-    @mock.patch.dict(os.environ, {"EC2RL_GATHEREDDIR": "test_gathereddir",
-                                  "EC2RL_LOGDIR": "test_logdir",
-                                  "remediate": "True",
-                                  "inject_key": "True",
-                                  "notaninstance": "True",
+    @mock.patch.dict(os.environ, {"inject_key": "True",
                                   "new_ssh_key": "test_key"})
+    @mock.patch("moduletests.src.openssh.get_config_dict", return_value={"REMEDIATE": True,
+                                                                         "NOT_AN_INSTANCE": False,
+                                                                         "INJECT_KEY": False,
+                                                                         "PRIV_SEP_DIR": "/var/empty/sshd"})
     @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_set(self, get_priv_sep_dir_mock):
+    def test_ssh_problem_setup_run_vars_set(self, get_priv_sep_dir_mock, get_config_dict_mock):
+        moduletests.src.openssh.Problem.CONFIG_DICT = dict()
         with contextlib.redirect_stdout(StringIO()):
             moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.maxDiff = None
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "test_gathereddir/openssh",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": True,
-                          "LOG_DIR": "test_logdir/openssh",
-                          "NEW_KEY": "test_key",
-                          "NOT_AN_INSTANCE": True,
-                          "PRIV_SEP_DIR": "/var/empty/sshd",
-                          "REMEDIATE": True})
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT, {"REMEDIATE": True,
+                                                                       "NOT_AN_INSTANCE": False,
+                                                                       "INJECT_KEY": True,
+                                                                       "NEW_KEY": "test_key",
+                                                                       "PRIV_SEP_DIR": "/var/empty/sshd"})
         self.assertTrue(get_priv_sep_dir_mock.called)
+        self.assertTrue(get_config_dict_mock.called)
+
+    # noinspection PyUnresolvedReferences
+    @mock.patch.dict(os.environ, {"inject_key": "unexpected",
+                                  "new_ssh_key": "test_key"})
+    @mock.patch("moduletests.src.openssh.get_config_dict", return_value={"REMEDIATE": True,
+                                                                         "NOT_AN_INSTANCE": False,
+                                                                         "INJECT_KEY": False,
+                                                                         "PRIV_SEP_DIR": "/var/empty/sshd"})
+    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
+    def test_ssh_problem_setup_run_vars_set_inject_key(self, get_priv_sep_dir_mock, get_config_dict_mock):
+        moduletests.src.openssh.Problem.CONFIG_DICT = dict()
+        with contextlib.redirect_stdout(StringIO()):
+            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT, {"REMEDIATE": True,
+                                                                       "NOT_AN_INSTANCE": False,
+                                                                       "INJECT_KEY": False,
+                                                                       "NEW_KEY": "test_key",
+                                                                       "PRIV_SEP_DIR": "/var/empty/sshd"})
+        self.assertTrue(get_priv_sep_dir_mock.called)
+        self.assertTrue(get_config_dict_mock.called)
 
     # noinspection PyUnresolvedReferences
     @responses.activate
     @mock.patch.dict(os.environ, {})
-    @mock.patch("ec2rlcore.prediag.is_an_instance", side_effect=[True])
+    @mock.patch("moduletests.src.openssh.get_config_dict", return_value={"REMEDIATE": True,
+                                                                         "NOT_AN_INSTANCE": False,
+                                                                         "INJECT_KEY": False,
+                                                                         "PRIV_SEP_DIR": "/var/empty/sshd"})
     @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_unset(self, get_priv_sep_dir_mock, is_an_instance_mock):
+    def test_ssh_problem_setup_run_vars_unset(self, get_priv_sep_dir_mock, get_config_dict_mock):
+        moduletests.src.openssh.Problem.CONFIG_DICT = dict()
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key",
                       status=200,
                       body="test_key")
         with contextlib.redirect_stdout(StringIO()):
             moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                          "NEW_KEY": "test_key",
-                          "NOT_AN_INSTANCE": False,
-                          "PRIV_SEP_DIR": "/var/empty/sshd",
-                          "REMEDIATE": False})
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT, {"REMEDIATE": True,
+                                                                       "NOT_AN_INSTANCE": False,
+                                                                       "INJECT_KEY": False,
+                                                                       "NEW_KEY": "test_key",
+                                                                       "PRIV_SEP_DIR": "/var/empty/sshd"})
         self.assertTrue(get_priv_sep_dir_mock.called)
-        self.assertTrue(is_an_instance_mock.called)
+        self.assertTrue(get_config_dict_mock.called)
+
+    # noinspection PyUnresolvedReferences
+    @mock.patch.dict(os.environ, {})
+    @mock.patch("moduletests.src.openssh.get_config_dict", return_value={"REMEDIATE": True,
+                                                                         "NOT_AN_INSTANCE": True,
+                                                                         "INJECT_KEY": False,
+                                                                         "PRIV_SEP_DIR": "/var/empty/sshd"})
+    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
+    def test_ssh_problem_setup_run_vars_unset_notaninstance(self, get_priv_sep_dir_mock, get_config_dict_mock):
+        moduletests.src.openssh.Problem.CONFIG_DICT = dict()
+        with contextlib.redirect_stdout(StringIO()):
+            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
+        self.assertTrue("NEW_KEY" not in moduletests.src.openssh.Problem.CONFIG_DICT)
+        self.assertTrue(get_priv_sep_dir_mock.called)
+        self.assertTrue(get_config_dict_mock.called)
 
     # noinspection PyUnresolvedReferences
     @responses.activate
     @mock.patch.dict(os.environ, {})
-    @mock.patch("ec2rlcore.prediag.is_an_instance", side_effect=[True])
-    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=["test_priv_sep_dir"])
-    def test_ssh_problem_setup_run_vars_unset_set_priv_sep_dir(self, get_priv_sep_dir_mock, is_an_instance_mock):
+    @mock.patch("moduletests.src.openssh.get_config_dict", return_value={"REMEDIATE": True,
+                                                                         "NOT_AN_INSTANCE": False,
+                                                                         "INJECT_KEY": False,
+                                                                         "PRIV_SEP_DIR": "/var/empty/sshd"})
+    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", return_value="test_priv_sep_dir")
+    def test_ssh_problem_setup_run_vars_unset_set_priv_sep_dir(self, get_priv_sep_dir_mock, get_config_dict_mock):
+        moduletests.src.openssh.Problem.CONFIG_DICT = dict()
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key",
                       status=200,
                       body="test_key")
         with contextlib.redirect_stdout(StringIO()):
             moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                          "NEW_KEY": "test_key",
-                          "NOT_AN_INSTANCE": False,
-                          "PRIV_SEP_DIR": "test_priv_sep_dir",
-                          "REMEDIATE": False})
+        self.assertEqual(moduletests.src.openssh.Problem.CONFIG_DICT, {"REMEDIATE": True,
+                                                                       "NOT_AN_INSTANCE": False,
+                                                                       "INJECT_KEY": False,
+                                                                       "NEW_KEY": "test_key",
+                                                                       "PRIV_SEP_DIR": "test_priv_sep_dir"})
         self.assertTrue(get_priv_sep_dir_mock.called)
-        self.assertTrue(is_an_instance_mock.called)
-
-    # noinspection PyUnresolvedReferences
-    @responses.activate
-    @mock.patch.dict(os.environ, {})
-    @mock.patch("ec2rlcore.prediag.is_an_instance", side_effect=[True])
-    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_unset_default_priv_sep_dir(self, get_priv_sep_dir_mock, is_an_instance_mock):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key",
-                      status=200,
-                      body="test_key")
-        with contextlib.redirect_stdout(StringIO()):
-            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                          "NEW_KEY": "test_key",
-                          "NOT_AN_INSTANCE": False,
-                          "PRIV_SEP_DIR": "/var/empty/sshd",
-                          "REMEDIATE": False})
-        self.assertTrue(get_priv_sep_dir_mock.called)
-        self.assertTrue(is_an_instance_mock.called)
-
-    # noinspection PyUnresolvedReferences
-    @mock.patch.dict(os.environ, {"EC2RL_GATHEREDDIR": "test",
-                                  "EC2RL_LOGDIR": "test",
-                                  "remediate": "False",
-                                  "inject_key": "False",
-                                  "notaninstance": "False",
-                                  "new_ssh_key": "test"})
-    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_false(self, get_priv_sep_dir_mock):
-        with contextlib.redirect_stdout(StringIO()):
-            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"PRIV_SEP_DIR": "/var/empty/sshd",
-                          "ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "test/openssh",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "test/openssh",
-                          "NEW_KEY": "test",
-                          "NOT_AN_INSTANCE": False,
-                          "REMEDIATE": False})
-        self.assertTrue(get_priv_sep_dir_mock.called)
-
-    # noinspection PyUnresolvedReferences
-    @mock.patch.dict(os.environ, {"EC2RL_GATHEREDDIR": "test",
-                                  "EC2RL_LOGDIR": "test",
-                                  "remediate": "True",
-                                  "notaninstance": "False",
-                                  "new_ssh_key": "test"})
-    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_rem_no_inject_key(self, get_priv_sep_dir_mock):
-        with contextlib.redirect_stdout(StringIO()):
-            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"PRIV_SEP_DIR": "/var/empty/sshd",
-                          "ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "test/openssh",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "test/openssh",
-                          "NEW_KEY": "test",
-                          "NOT_AN_INSTANCE": False,
-                          "REMEDIATE": True})
-        self.assertTrue(get_priv_sep_dir_mock.called)
-
-    # noinspection PyUnresolvedReferences
-    @mock.patch.dict(os.environ, {"notaninstance": "True"})
-    @mock.patch("moduletests.src.openssh.get_privilege_separation_dir", side_effect=[False])
-    def test_ssh_problem_setup_run_vars_notaninstance_missing_kew_key(self, get_priv_sep_dir_mock):
-        with contextlib.redirect_stdout(StringIO()):
-            moduletests.src.openssh.Problem.setup_run_vars(metadata_key_url=self.metadata_url)
-        self.assertEqual(moduletests.src.openssh.Problem.VARS_DICT,
-                         {"PRIV_SEP_DIR": "/var/empty/sshd",
-                          "ALL_SET_BITMASK": 0b111111111111111,
-                          "AUTH_KEYS": {"absolute": ["/one/two/three/file1",
-                                                     "/usr/secrets/file2"],
-                                        "relative": [".ssh/authorized_keys",
-                                                     ".keyfile1"]},
-                          "BACKED_FILES": {},
-                          "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
-                          "CONFIG_DICT": {},
-                          "CONFIG_PATH": "/etc/ssh/sshd_config",
-                          "G_O_ALL_CHECKING_BITMASK": 0b111111,
-                          "G_O_WRITE_CHECKING_BITMASK": 0b10010,
-                          "HOSTKEYS": [],
-                          "INJECT_KEY": False,
-                          "LOG_DIR": "/var/tmp/ec2rl_ssh",
-                          "NEW_KEY": None,
-                          "NOT_AN_INSTANCE": True,
-                          "REMEDIATE": False})
-        self.assertTrue(get_priv_sep_dir_mock.called)
+        self.assertTrue(get_config_dict_mock.called)
 
     def test_ssh_problem_instantiation(self):
         self.assertEqual(self.problem.state, "UNCHECKED")
@@ -720,7 +597,7 @@ class TestSSH(unittest.TestCase):
 
     @mock.patch("moduletests.src.openssh.Problem.setup_config_vars", side_effect=[True])
     def test_ssh_problem_check_missing_sshd(self, setup_config_vars_mock):
-        self.problem.VARS_DICT["CONFIG_PATH"] = "/test"
+        self.problem.CONFIG_DICT["CONFIG_PATH"] = "/test"
         self.assertFalse(self.problem._Problem__check_missing_sshd())
         self.assertTrue(setup_config_vars_mock.called)
 
@@ -741,7 +618,7 @@ class TestSSH(unittest.TestCase):
         self.assertTrue(setup_config_vars_mock.called)
 
     def test_ssh_problem_check_dupe_keyfile_lines_found(self):
-        self.problem.VARS_DICT["CONFIG_PATH"] = "/test"
+        self.problem.CONFIG_DICT["CONFIG_PATH"] = "/test"
         open_mock = mock.mock_open(read_data="AuthorizedKeysFile a\nAuthorizedKeysFile a\n")
         # mock_open does not have support for iteration so it must be added manually
         # readline() until a blank line is reached (the sentinel)
@@ -759,7 +636,7 @@ class TestSSH(unittest.TestCase):
             self.assertTrue(self.problem._Problem__check_dupe_keyfile_lines())
 
     def test_ssh_problem_check_dupe_keyfile_lines_not_found(self):
-        self.problem.VARS_DICT["CONFIG_PATH"] = "/test"
+        self.problem.CONFIG_DICT["CONFIG_PATH"] = "/test"
         open_mock = mock.mock_open(read_data="Port 22\n# test\nAuthorizedKeysFile\n\n")
         # mock_open does not have support for iteration so it must be added manually
         # readline() until a blank line is reached (the sentinel)
@@ -1733,9 +1610,9 @@ class TestSSH(unittest.TestCase):
         os_walk_mock.return_value = (("walkroot", ("walkdir",), ("walkfile1", "walkfile2_key")),)
         pwd_getpwnam_mock.return_value = mock.Mock(pw_uid=0, pw_gid=0, pw_nam="testuser")
         glob_mock.return_value = ["/home/testuser"]
-        self.problem.VARS_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key"]
+        self.problem.CONFIG_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key"]
         with contextlib.redirect_stdout(StringIO()):
-            test_dag = moduletests.src.openssh.get_dag(self.problem.VARS_DICT)
+            test_dag = moduletests.src.openssh.get_dag(self.problem.CONFIG_DICT)
 
         vertex_dict = {"missing_sshd": ["missing_config_file",
                                         "bad_mode_/etc/ssh/ssh_host_dsa_key",
@@ -1868,11 +1745,11 @@ class TestSSH(unittest.TestCase):
         os_stat_mock.return_value = mock.Mock(st_dev=0, st_ino=1)
         os_walk_mock.return_value = (("walkroot", ("walkdir",), ("walkfile1",)),)
         glob_mock.return_value = ["/home/testuser", "/home/testuser2"]
-        self.problem.VARS_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key", "/etc/ssh/ssh_host_dsa_key"]
-        self.problem.VARS_DICT["AUTH_KEYS"]["absolute"] = []
+        self.problem.CONFIG_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key", "/etc/ssh/ssh_host_dsa_key"]
+        self.problem.CONFIG_DICT["AUTH_KEYS"]["absolute"] = []
 
         with contextlib.redirect_stdout(StringIO()):
-            test_dag = moduletests.src.openssh.get_dag(self.problem.VARS_DICT)
+            test_dag = moduletests.src.openssh.get_dag(self.problem.CONFIG_DICT)
 
         vertex_dict = {"missing_sshd": ["missing_config_file"],
                        "missing_config_file": ["bad_config_options"],
