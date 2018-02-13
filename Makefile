@@ -28,7 +28,8 @@ python: prep
 	@cp -ap post.d /tmp/$(BASENAME)
 	@cp -ap pre.d /tmp/$(BASENAME)
 	@cp -ap docs /tmp/$(BASENAME)
-	@cp -ap exampleconfigs /tmp/$(BASENAME)
+	@cp -ap example_configs /tmp/$(BASENAME)
+	@cp -ap example_modules /tmp/$(BASENAME)
 	@cp -ap ssmdocs /tmp/$(BASENAME)
 	@cp -ap functions.bash /tmp/$(BASENAME)
 	@cp -ap README.md /tmp/$(BASENAME)
@@ -54,7 +55,8 @@ binary: prep
 	--add-data "ec2rlcore/help.yaml:ec2rlcore/" \
 	--add-data "bin:bin" \
 	--add-data "docs:docs" \
-	--add-data "exampleconfigs:exampleconfigs" \
+	--add-data "example_configs:example_configs" \
+	--add-data "example_modules:example_modules" \
 	--add-data "ssmdocs:ssmdocs" \
 	--add-data "pre.d:pre.d" \
 	--add-data "mod.d:mod.d" \
