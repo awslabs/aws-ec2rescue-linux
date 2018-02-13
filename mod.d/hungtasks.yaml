@@ -48,6 +48,10 @@ content: !!str |
           HUNGTASK_MESSAGE="blocked for more than"
           HUNGTASK_LOGLOCATIONS="/var/log/messages*"
       ;;
+      alami2)
+          HUNGTASK_MESSAGE="blocked for more than"
+          HUNGTASK_LOGLOCATIONS="/var/log/messages*"
+      ;;
       ubuntu)
           HUNGTASK_MESSAGE="blocked for more than"
           HUNGTASK_LOGLOCATIONS="/var/log/syslog*"
@@ -76,7 +80,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str
   optional: !!str
   software: !!str

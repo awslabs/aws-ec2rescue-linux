@@ -49,7 +49,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str collect
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str
   optional: !!str
   software: !!str
