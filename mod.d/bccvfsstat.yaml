@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -17,7 +17,7 @@
 name: !!str bccvfsstat
 path: !!str
 version: !!str 1.0
-title: !!str Collect output from atop for system analysis
+title: !!str Collect output from vfsstat for system analysis
 helptext: !!str |
   Collect output from vfsstat for system analysis
   Requires --times= for number of times to repeat

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -32,7 +32,7 @@ _callp = sys.argv[0]
 if not os.path.isabs(_callp):
     _callp = os.path.abspath(_callp)
 CALLPATH = os.path.split(_callp)[0]
-BINPATH = os.sep.join((os.path.split(_callp)[0], "bin"))
+BINPATH = os.path.join(os.path.split(_callp)[0], "bin")
 
 all_modules = dict()
 all_modules["pre.d"] = ec2rlcore.moduledir.ModuleDir("{}/pre.d".format(CALLPATH))
@@ -40,12 +40,12 @@ all_modules["mod.d"] = ec2rlcore.moduledir.ModuleDir("{}/mod.d".format(CALLPATH)
 all_modules["post.d"] = ec2rlcore.moduledir.ModuleDir("{}/post.d".format(CALLPATH))
 
 # Build the directory structure, if needed
-if not os.path.isdir(os.sep.join((CALLPATH, "bin", "pre.d"))):
-    os.makedirs(os.sep.join((CALLPATH, "bin", "pre.d")))
-if not os.path.isdir(os.sep.join((CALLPATH, "bin", "mod.d"))):
-    os.makedirs(os.sep.join((CALLPATH, "bin", "mod.d")))
-if not os.path.isdir(os.sep.join((CALLPATH, "bin", "post.d"))):
-    os.makedirs(os.sep.join((CALLPATH, "bin", "post.d")))
+if not os.path.isdir(os.path.join(CALLPATH, "bin", "pre.d")):
+    os.makedirs(os.path.join(CALLPATH, "bin", "pre.d"))
+if not os.path.isdir(os.path.join(CALLPATH, "bin", "mod.d")):
+    os.makedirs(os.path.join(CALLPATH, "bin", "mod.d"))
+if not os.path.isdir(os.path.join(CALLPATH, "bin", "post.d")):
+    os.makedirs(os.path.join(CALLPATH, "bin", "post.d"))
 
 for module_dir_prefix in all_modules.keys():
     for module_obj in all_modules[module_dir_prefix]:
@@ -53,36 +53,43 @@ for module_dir_prefix in all_modules.keys():
             try:
                 # Replace replace the language value with "binary"
                 module_data = None
-                with open(os.sep.join((CALLPATH, module_dir_prefix, module_obj.name + ".yaml")), "r") as module_file:
+                with open(os.path.join(CALLPATH, module_dir_prefix, module_obj.name + ".yaml"), "r") as module_file:
                     module_data = module_file.read()
                     module_data = module_data.replace("language: !!str python", "language: !!str binary")
-                with open(os.sep.join((CALLPATH, module_dir_prefix, module_obj.name + ".yaml")), "w") as module_file:
+                with open(os.path.join(CALLPATH, module_dir_prefix, module_obj.name + ".yaml"), "w") as module_file:
                     module_file.write(module_data)
-                with open(os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py")), "w") as module_file:
+                with open(os.path.join(BINPATH, module_dir_prefix, module_obj.name + ".py"), "w") as module_file:
                     module_file.write(module_obj.content)
                 subprocess.check_call(["pyinstaller",
-                                       os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py"))])
+                                       os.path.join(BINPATH, module_dir_prefix, module_obj.name + ".py")])
                 # Copy the resulting files to bin/mod.d
-                # shutil.copy will overwrite which is desirable as the intention is to consolidate the compiled
+                # Both copy functions will overwrite which is desirable as the intention is to consolidate the compiled
                 # modules into a single directory.
-                for file in os.listdir(os.sep.join((CALLPATH, "dist", module_obj.name))):
-                    shutil.copy(os.sep.join((CALLPATH, "dist", module_obj.name, file)),
-                                os.sep.join((BINPATH, module_dir_prefix)))
+                for file in os.listdir(os.path.join(CALLPATH, "dist", module_obj.name)):
+                    src = os.path.join(CALLPATH, "dist", module_obj.name, file)
+                    dst = os.path.join(BINPATH, module_dir_prefix, file)
+                    print("{} -> {}".format(src, dst))
+                    if os.path.isdir(src):
+                        import distutils
+                        import distutils.dir_util
+                        distutils.dir_util.copy_tree(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
             except subprocess.CalledProcessError as cpe:
                 print(cpe.output)
                 print("Error converting module {}/{}".format(module_obj.placement, module_obj.name))
             finally:
                 # Cleanup, but check if these exist first. An exception could have occurred prior to their creation.
-                if os.path.isfile(os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py"))):
-                    os.remove(os.sep.join((BINPATH, module_dir_prefix, module_obj.name + ".py")))
-                if os.path.isfile(os.sep.join((CALLPATH, module_obj.name + ".spec"))):
-                    os.remove(os.sep.join((CALLPATH, module_obj.name + ".spec")))
-                if os.path.isdir(os.sep.join((CALLPATH, "dist", module_obj.name))):
-                    shutil.rmtree(os.sep.join((CALLPATH, "dist", module_obj.name)))
-                if os.path.isdir(os.sep.join((CALLPATH, "build", module_obj.name))):
-                    shutil.rmtree(os.sep.join((CALLPATH, "build", module_obj.name)))
+                if os.path.isfile(os.path.join(BINPATH, module_dir_prefix, module_obj.name + ".py")):
+                    os.remove(os.path.join(BINPATH, module_dir_prefix, module_obj.name + ".py"))
+                if os.path.isfile(os.path.join(CALLPATH, module_obj.name + ".spec")):
+                    os.remove(os.path.join(CALLPATH, module_obj.name + ".spec"))
+                if os.path.isdir(os.path.join(CALLPATH, "dist", module_obj.name)):
+                    shutil.rmtree(os.path.join(CALLPATH, "dist", module_obj.name))
+                if os.path.isdir(os.path.join(CALLPATH, "build", module_obj.name)):
+                    shutil.rmtree(os.path.join(CALLPATH, "build", module_obj.name))
 
             print("Converted: {}/{}".format(module_obj.placement, module_obj.name))
 
-    if os.path.isdir(os.sep.join((BINPATH, module_dir_prefix, "__pycache__"))):
-        shutil.rmtree(os.sep.join((BINPATH, module_dir_prefix, "__pycache__")))
+    if os.path.isdir(os.path.join(BINPATH, module_dir_prefix, "__pycache__")):
+        shutil.rmtree(os.path.join(BINPATH, module_dir_prefix, "__pycache__"))

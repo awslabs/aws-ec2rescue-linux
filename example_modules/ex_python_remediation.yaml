@@ -1,0 +1,148 @@
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str ex_remediation
+path: !!str
+version: !!str 1.0
+title: !!str Example remediation module template
+helptext: !!str |
+  This module is a template and not intended to be run.
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+content: !!str |
+  """
+  This is a remediation module template. To use this template, follow the TODOs and add the required logic.
+
+  Functions:
+      detect_problem: checks for the presence of the issue this module addresses on the running system
+      remediate_problem: attemps to remediate the issue this module addresses
+      run: the main execution body
+
+  Classes:
+      None
+
+  Exceptions:
+      None
+  """
+  import os
+  import sys
+
+  # Add the root program directory to sys.path so libraried functions can be imported
+  # when this module is directly invoked with the interpreter.
+  if __name__ == "__main__":
+      sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
+
+  # Add the root program directory to sys.path so libraried functions can be imported
+  # when this module is directly invoked with the interpreter.
+  if __name__ == "__main__":  # pragma: no coverage
+      sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
+
+  from ec2rlcore.prediag import backup
+  from ec2rlcore.prediag import get_config_dict
+  from ec2rlcore.prediag import restore
+
+
+  def detect_problem():
+      """
+      Detects whether the problem is present on the running systems.
+
+      Returns:
+          (bool): True if the problem is detected.
+      """
+      # TODO add detection steps
+      return True
+
+
+  def remediate_problem(config_file_path):
+      """
+      Applies a series of steps to remediate the problem address in this module.
+
+      Parameters:
+          config_file_path (str): path to the configuration file used to remediate the problem.
+
+      Returns:
+          True (bool): if the problem was successfully remediated.
+      """
+      # TODO add remediation steps
+      return True
+      # TODO raise exception on failure
+
+
+  def run():
+      """
+      The main execution logic goes in this function.
+
+      Returns:
+          (bool): True if no problem found or problem remediated.
+      """
+      # TODO fill in module description
+      print("My module description goes here.")
+
+      # TODO modify path to the relevant configuration file, if any
+      config_file_path = "/etc/fstab"
+      sys_config_dict = {"BACKED_FILES": dict()}
+      remediation_status = False
+      try:
+          # TODO replace "ex_remediation" with your module's name
+          sys_config_dict = get_config_dict("ex_remediation")
+          # TODO fill in messages to match the problem being address by this module
+          if detect_problem():
+              print("Problem detected")
+              if sys_config_dict["REMEDIATE"]:
+                  backup(config_file_path, sys_config_dict["BACKED_FILES"], sys_config_dict["BACKUP_DIR"])
+                  print("Remediating...")
+                  remediate_problem(config_file_path)
+                  if detect_problem():
+                      print("[FAILURE] Failed to remediate problem.")
+                      restore(config_file_path, sys_config_dict["BACKED_FILES"])
+                  else:
+                      print("[SUCCESS] Problem remediated.")
+                      remediation_status = True
+              else:
+                  print("[FAILURE] Problem with a system component detected.")
+                  print("-- Describe manual remediation here: command to remediate goes here")
+          else:
+              print("[SUCCESS] No problem detected.")
+              remediation_status = True
+          # TODO change URL to point to the module's documentation
+          print("See https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/mymodule.md for "
+                "further details")
+          return remediation_status
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally.")
+          print("-- Review the logs to determine the cause of the issue.")
+          if config_file_path in sys_config_dict["BACKED_FILES"]:
+              restore(config_file_path, sys_config_dict["BACKED_FILES"])
+          return False
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str False
+  domain: !!str os
+  class: !!str diagnose
+  distro: !!str do_not_run
+  required: !!str
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str

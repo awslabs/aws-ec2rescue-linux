@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -44,7 +44,7 @@ content: !!str |
   echo "I will collect ext4slower output from this $EC2RL_DISTRO box $times times."
 
   if grep ext4 /etc/mtab; then
-      timeout $period ext4slower
+      timeout --preserve-status $period ext4slower
       exit 0
   else
       echo "No ext4 on system."

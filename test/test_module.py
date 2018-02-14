@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -23,6 +23,8 @@ except ImportError:
 import os
 import sys
 import unittest
+
+import mock
 
 import ec2rlcore.module
 import ec2rlcore.options
@@ -54,18 +56,6 @@ class TestModule(unittest.TestCase):
         sys.argv = ["test/modules/not_a_real_file", "run", "--abc=def"]
         self.module_path = os.path.join(self.callpath, "test/modules/mod.d/ex.yaml")
         self.module = ec2rlcore.module.get_module(self.module_path)
-
-        for x in ("EC2RL_WORKDIR",
-                  "EC2RL_RUNDIR",
-                  "EC2RL_LOGDIR",
-                  "EC2RL_GATHEREDDIR",
-                  "EC2RL_DISTRO",
-                  "EC2RL_NET_DRIVER",
-                  "EC2RL_VIRT_TYPE",
-                  "EC2RL_SUDO",
-                  "EC2RL_PERFIMPACT",
-                  "EC2RL_CALLPATH"):
-            os.environ[x] = "test"
 
     def tearDown(self):
         self.output.close()
@@ -132,24 +122,36 @@ class TestModule(unittest.TestCase):
         """Test that help doc is set."""
         helpdoc = "This module is an empty stub, used only in the development and qa of the\n" \
                   "interface between the main Automagic Diagnostics tool, and its modules.\n" \
-                  "Requires sudo: False"
+                  "Requires sudo: False\n" \
+                  "Supports remediation: False"
         self.assertEqual(self.module.helptext, helpdoc)
 
-    def test_module_list(self):
-        """Test that list returns formatted descripton."""
-        response = "  ex                  collect   os           sanity-check of basic module functions" \
-                   "                                       "
-        self.assertEqual(self.module.list, response)
+    def test_module_str(self):
+        """Test that __str__ returns the formatted descripton."""
+        str_representation = "      ex                  collect   os           sanity-check of basic module functions" \
+                             "                                 "
+        self.assertEqual(str(self.module), str_representation)
 
     def test_module_help(self):
         """Test that help returns formatted help message."""
         helptext = "This module is an empty stub, used only in the development and qa of the\n" \
                    "interface between the main Automagic Diagnostics tool, and its modules.\n" \
-                   "Requires sudo: False"
+                   "Requires sudo: False\n" \
+                   "Supports remediation: False"
         name = "ex"
         response = os.linesep.join(["{}:".format(name), helptext])
         self.assertEqual(self.module.help, response)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_run_bash_unknown(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -168,6 +170,16 @@ class TestModule(unittest.TestCase):
                          module_obj.run_summary)
         self.assertEqual("UNKNOWN", module_obj.run_status)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_run_bash_failure(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -187,6 +199,16 @@ class TestModule(unittest.TestCase):
                          module_obj.run_summary)
         self.assertEqual("FAILURE", module_obj.run_status)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_run_bash_warn(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -337,6 +359,16 @@ class TestModule(unittest.TestCase):
         test_module.run(test_output)
         self.assertEqual(test_module.run_status_details, expected_detail)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_run_python_global_args(self):
         """Check that run returns process output when running a Python module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -346,6 +378,16 @@ class TestModule(unittest.TestCase):
         module_obj = ec2rlcore.module.get_module(module_path)
         self.assertEqual("Hello world\n", module_obj.run(options=my_opts))
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_run_python_per_module_args(self):
         """Check that run returns process output when running a Python module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -513,6 +555,16 @@ class TestModule(unittest.TestCase):
         with self.assertRaises(ec2rlcore.module.ModuleUnsupportedLanguageError):
             ec2rlcore.module.get_module(module_path)
 
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_unsupported_language_run(self):
         """
         Check that a UnsupportedLanguageError exception is raised when a module defines an unknown language during
@@ -525,11 +577,20 @@ class TestModule(unittest.TestCase):
             module_obj.run()
 
     # Module execution tests
+    @mock.patch.dict(os.environ, {"EC2RL_WORKDIR": "test",
+                                  "EC2RL_RUNDIR": "test",
+                                  "EC2RL_LOGDIR": "test",
+                                  "EC2RL_GATHEREDDIR": "test",
+                                  "EC2RL_DISTRO": "test",
+                                  "EC2RL_NET_DRIVER": "test",
+                                  "EC2RL_VIRT_TYPE": "test",
+                                  "EC2RL_SUDO": "test",
+                                  "EC2RL_PERFIMPACT": "test",
+                                  "EC2RL_CALLPATH": "test"})
     def test_module_execution_failure(self):
         """Check that ModuleRunFailureError is raised when a module returns non-zero."""
         module_path = os.path.join(self.callpath, "test/modules/bad_mod.d/exits_nonzero.yaml")
         module_obj = ec2rlcore.module.get_module(module_path)
-
         self.assertRaises(ec2rlcore.module.ModuleRunFailureError, module_obj.run)
 
     # NonExecutingOutputModule overrides ec2rlcore.module.Module for testing

@@ -6,7 +6,7 @@ Certain kernel versions have changed the default behavior for clearing arp cache
 
 ## Detecting with EC2 Rescue for Linux
 
-EC2 Rescue for Linux includes a diagnostic module which will check the arp caching setting.  This is provided by the 'arpcache' diagnostic module.  This module will run by default, and can be run individually.
+EC2 Rescue for Linux includes a diagnostic module which will check the arp caching setting.  This is provided by the "arpcache" diagnostic module.  This module will run by default, and can be run individually.
 
 ```commandline
 $ sudo ./ec2rl run --only-modules=arpcache
@@ -23,29 +23,41 @@ Failing output:
 
 ```commandline
 ----------[Diagnostic Results]----------
-module run/arpcache       [FAILURE] You have aggressive arp caching enabled.
+module run/arpcache       [FAILURE] Aggressive arp caching is enabled.
 ```
 
 ## Detecting Manually
 
-This can also be detected manually via greping the output of sysctl as follows
+This can also be detected manually via grepping the output of sysctl as follows
 
 ```commandline
-$ /sbin/sysctl net.ipv4.neigh.default | grep 'thresh1'
+$ /sbin/sysctl net.ipv4.neigh.default | grep "thresh1"
 ```
 
-## Resolution
+## Resolving with EC2 Rescue for Linux
+
+```commandline
+$ sudo ./ec2rl run --only-modules=arpcache --remediate
+```
+
+Passing output:
+```commandline
+----------[Diagnostic Results]----------
+module run/arpcache       [SUCCESS] Aggressive arp caching is disabled after remediation. 
+```
+
+## Resolving Manually
 
 Several commands are needed to resolve the issue.
 
 The first will disable it for the current run
 
 ```commandline
-$ sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0'
+$ sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0
 ```
 
 The next will make it persistant across reboots
 
 ```commandline
-echo 'net.ipv4.neigh.default.gc_thresh1 = 0' | sudo tee /etc/sysctl.d/55-arp-gc_thresh1.conf
+echo "net.ipv4.neigh.default.gc_thresh1 = 0" | sudo tee /etc/sysctl.d/55-arp-gc_thresh1.conf
 ```

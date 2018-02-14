@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -77,11 +77,17 @@ class Module(object):
     required_module_constraints = ["domain", "sudo", "required", "perfimpact", "software", "optional", "class",
                                    "parallelexclusive", "distro", "requires_ec2"]
     temp_path = ""
-
     placement_dir_mapping = {"run": "mod.d", "postdiagnostic": "post.d", "prediagnostic": "pre.d"}
+    list_header = "\033[4m" + "{:2.1}{:2.1}{:2.1}{:20.18}{:10.8}{:13.11}{:71}".format("S",
+                                                                                      "P",
+                                                                                      "R",
+                                                                                      "Module Name",
+                                                                                      "Class",
+                                                                                      "Domain",
+                                                                                      "Description") + "\033[0m"
 
-    def __init__(self, name=None, version=None, title=None, helptext=None, placement=None,
-                 package=None, language=None, content=None, path=None, constraint=None):
+    def __init__(self, name=None, version=None, title=None, helptext=None, placement=None, package=None,
+                 language=None, content=None, path=None, constraint=None, remediation=False):
         """
         Perform initial configuration of the object. finish_init() needs to be called afterwards due the limitations of
         loading objects from YAML documents.
@@ -97,6 +103,7 @@ class Module(object):
             content (str): the code for the module
             path (str): the full path to the module file
             constraint (ec2rlcore.constraint.Constraint): the Constraint object for this module
+            remediation (bool): whether the module supports remediation
         """
         if not placement:
             raise ModuleConstraintParseError(
@@ -141,6 +148,10 @@ class Module(object):
         self.language = language
         self.content = content
         self.constraint = constraint
+        if remediation in {True, "True", "true"}:
+            self.remediation = True
+        else:
+            self.remediation = False
 
         self.whyskipping = ""
         self.processoutput = ""
@@ -158,27 +169,30 @@ class Module(object):
                     os.path.basename(self.path), required_constraint))
                 raise ModuleConstraintKeyError(os.path.basename(self.path), required_constraint)
 
-        self.helptext = os.linesep.join((helptext, "Requires sudo: {}".format(self.constraint["sudo"][0])))
+        self.helptext = os.linesep.join((helptext,
+                                         "Requires sudo: {}".format(self.constraint["sudo"][0]),
+                                         "Supports remediation: {}".format(self.remediation)))
 
         return
 
-    @property
-    def list(self):
+    def __str__(self):
         """
-        Return the formatted description line.
+        Return the formatted string summarizing the module's attribute values.
+
+        The formatting of this string must match Module.list_header.
 
         Returns:
-            (str): the formatted list message
+            (str): the formatted string representation
         """
-        self.logger.debug("module.Module.list()")
+        self.logger.debug("module.Module.__str__()")
         # Print these values in using fixed widths with two space padding
-        return "{:>1.1}{:>1.1}{:20.18}{:10.8}{:13.11}{:77.75}".format(
+        # return "{:>1.1}{:>1.1}{:20.18}{:10.8}{:13.11}{:77.75}".format(
+        return "{:2.1}{:2.1}{:2.1}{:20.18}{:10.8}{:13.11}{:71.69}".format(
             "*" if self.constraint["sudo"][0] == "True" else "",
-            "+" if self.constraint["perfimpact"][0] == "True"
-            else "",
+            "*" if self.constraint["perfimpact"][0] == "True" else "",
+            "*" if self.remediation else "",
             self.name,
-            ",".join(module_class
-                     for module_class in self.constraint["class"]),
+            ",".join(module_class for module_class in self.constraint["class"]),
             ",".join(module_domain for module_domain in self.constraint["domain"]),
             self.title)
 
@@ -241,7 +255,7 @@ class Module(object):
                 for option in options.per_module_args[self.name]:
                     optionvalue = options.per_module_args[self.name][option]
                     self.logger.debug("....Found option:value option {}:{}".format(option, optionvalue))
-                    # subprocess requries all values be strings so attempt to cast any non-str values to str
+                    # subprocess requires all values be strings so attempt to cast any non-str values to str
                     if type(optionvalue) != str:
                         optionvalue = str(optionvalue)
                     envlist[option] = optionvalue
@@ -279,22 +293,19 @@ class Module(object):
             # If it bombs out, the stdout and return code are properties
             # within the subprocess.CalledProcessError that's raised.
             # See: https://docs.python.org/2/library/subprocess.html
-            self.processoutput = subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                                         env=envlist).decode("utf-8")
+            self.processoutput = subprocess.check_output(command,
+                                                         stderr=subprocess.STDOUT,
+                                                         env=envlist,
+                                                         universal_newlines=True)
             self._parse_output(self.processoutput)
             return self.processoutput
-        except subprocess.CalledProcessError as processError:
-            # type = bytes in Python3
-            if isinstance(processError.output, bytes):
-                self.processoutput = processError.output.decode("utf-8")
-            # type = str in Python2
-            else:
-                self.processoutput = processError.output
+        except subprocess.CalledProcessError as cpe:
+            self.processoutput = cpe.output
             error_message = "Module execution failed: {}:{}, returned {}".format(self.placement, self.name,
-                                                                                 processError.returncode)
+                                                                                 cpe.returncode)
             self.logger.debug(error_message)
-            self.logger.debug(processError.cmd)
-            self.logger.debug(processError.output)
+            self.logger.debug(cpe.cmd)
+            self.logger.debug(cpe.output)
             raise ModuleRunFailureError(error_message)
         finally:
             if "module_file" in vars():
@@ -451,11 +462,17 @@ def get_module(filename_with_path):
     except yaml.scanner.ScannerError:
         raise ModuleConstraintParseError("Parsing of module {} failed. This is likely caused by a typo in the file."
                                          "".format(filename_with_path))
+
+
 # Add the YAML Module constructor so that YAML knows to use it in situations where the tag matches.
 yaml.add_constructor("!ec2rlcore.module.Module", module_constructor, Loader=Loader)
 
 
-class SkipReason:
+class SkipReason(object):
+    """
+    This class serves the same function as an enum. An enum is not used because the enum type was not added to the
+    standard library until Python 3.4. See PEP 435 for more information.
+    """
     NOT_AN_EC2_INSTANCE = "NOT_AN_EC2_INSTANCE"
     NOT_APPLICABLE_TO_DISTRO = "NOT_APPLICABLE_TO_DISTRO"
     PERFORMANCE_IMPACT = "PERFORMANCE_IMPACT"

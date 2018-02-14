@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -303,7 +303,6 @@ class ModuleDir(list):
                         else:
                             self.logger.debug("......UNFOUND Constraint value is False (bool) or absent from "
                                               "options.per_module_args")
-                            mod.whyskipping = "missing value for required argument '{}'.".format(this_constraint_value)
                             return False
                     return False
 
@@ -326,7 +325,6 @@ class ModuleDir(list):
                         else:
                             self.logger.debug("......UNFOUND Constraint value is False (bool) or absent from "
                                               "options.global_args")
-                            mod.whyskipping = "missing value for required argument '{}'.".format(this_constraint_value)
                             return False
                     return False
 
@@ -355,7 +353,7 @@ class ModuleDir(list):
                     # nor per_module_args
                     if not constraint_retval:
                         self.logger.debug("..UNFOUND {} absent from options".format(constraint_value))
-                        mod.whyskipping = "missing required argument '{}'.".format(constraint_value)
+                        mod.whyskipping = "Missing required argument '{}'.".format(constraint_value)
 
                     self.logger.debug("..constraint_retval={}".format(constraint_retval))
                     # AND the module and constraint return values

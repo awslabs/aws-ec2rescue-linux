@@ -22,12 +22,14 @@ The following are the accepted subcommands:
 <.....>
 
 SPECIAL:
-    A small number of options that have special meaning to the ec2rl framework
-    and are not passed to modules.
+    The following options have special meaning to the ec2rl framework and are not passed to modules.
 
     OPTIONS:
         --config-file=filename     - loads a configuration file containing module-specific and global-module options
+                                     this option is usable with the 'run' subcommand
         --pdb                      - run framework inside the Python Debugger
+        --not-an-instance          - skip instance-specific items in order to run ec2rl on bare hardware
+        --debug                    - enables debug level logging
 ```
 
 The help subcommand can be run for any module or subcommand. For example:
@@ -45,13 +47,20 @@ First determine which modules you wish to run. The 'list' subcommand provides a 
 
 Here is a list of available modules that apply to the current host:
 
-  Module Name         Class     Domain       Description
-* aptlog              gather    os           Collect apt log files
-  arpcache            diagnose  net          Determines if aggressive arp caching is enabled
-  arptable            collect   net          Collect output from ip neighbor show for system analysis
+S P R Module Name         Class     Domain       Description                                                            
+*     aptlog              gather    os           Gather /var/log/apt and /var/log/dpkg.log files                        
+    * arpcache            diagnose  net          Determines if aggressive arp caching is enabled                        
+    * arpignore           diagnose  net          Determines if any interfaces have been set to ignore arp requests      
+      arptable            collect   net          Collect output from ip neighbor show for system analysis               
  
-  <....>
-  
+<....>
+
+S: Requires sudo/root to run
+P: Requires --perfimpact=true to run (can potentially cause performance impact)
+R: Supports remediation if --remediate is given
+
+<....>
+
 To see module  help, you can run:
 
 ec2rl help [MODULEa ... MODULEx]
@@ -69,6 +78,7 @@ Assumes that the port is listening
 Requires --destination= for destination IP or hostname/FQDN
 Requires --port= for destination port
 Requires sudo: False
+Supports remediation: False
 ```
 
 When running this module the destination address and port are required. Below is an example of running this module with these parameters.

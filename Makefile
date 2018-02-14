@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -13,29 +13,33 @@
 # language governing permissions and limitations under the License.
 PYTHON:=python3
 SHELL:=/bin/bash
+VERSION:=1.1.0
+BASENAME=ec2rl-$(VERSION)
 
 python: prep
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
-	rm -f ec2rl.tgz
+	rm -f $(BASENAME).tgz
+	@mkdir /tmp/$(BASENAME)
+	@cp -ap ec2rl /tmp/$(BASENAME)
+	@cp -ap ec2rl.py /tmp/$(BASENAME)
+	@cp -ap ec2rlcore /tmp/$(BASENAME)
+	@cp -ap lib /tmp/$(BASENAME)
+	@cp -ap mod.d /tmp/$(BASENAME)
+	@cp -ap post.d /tmp/$(BASENAME)
+	@cp -ap pre.d /tmp/$(BASENAME)
+	@cp -ap docs /tmp/$(BASENAME)
+	@cp -ap example_configs /tmp/$(BASENAME)
+	@cp -ap example_modules /tmp/$(BASENAME)
+	@cp -ap ssmdocs /tmp/$(BASENAME)
+	@cp -ap functions.bash /tmp/$(BASENAME)
+	@cp -ap README.md /tmp/$(BASENAME)
+	@cp -ap requirements.txt /tmp/$(BASENAME)
+	@cp -ap LICENSE /tmp/$(BASENAME)
+	@cp -ap NOTICE /tmp/$(BASENAME)
 	@echo "Creating ec2rl.tgz..."
-	@mkdir /tmp/ec2rl
-	@cp -ap ec2rl /tmp/ec2rl
-	@cp -ap ec2rl.py /tmp/ec2rl
-	@cp -ap ec2rlcore /tmp/ec2rl
-	@cp -ap lib /tmp/ec2rl
-	@cp -ap mod.d /tmp/ec2rl
-	@cp -ap post.d /tmp/ec2rl
-	@cp -ap pre.d /tmp/ec2rl
-	@cp -ap docs /tmp/ec2rl
-	@cp -ap exampleconfigs /tmp/ec2rl
-	@cp -ap ssmdocs /tmp/ec2rl
-	@cp -ap functions.bash /tmp/ec2rl
-	@cp -ap README.md /tmp/ec2rl
-	@cp -ap requirements.txt /tmp/ec2rl
-	@cp -ap LICENSE /tmp/ec2rl
-	@cp -ap NOTICE /tmp/ec2rl
-	@tar -czf ec2rl.tgz -C /tmp ec2rl
-	@rm -rf /tmp/ec2rl
+	@tar -czf ec2rl.tgz -C /tmp $(BASENAME)
+	@sha256sum ec2rl.tgz > ec2rl.tgz.sha256
+	@rm -rf /tmp/$(BASENAME)
 	@echo "Done!"
 
 binary: prep
@@ -51,7 +55,8 @@ binary: prep
 	--add-data "ec2rlcore/help.yaml:ec2rlcore/" \
 	--add-data "bin:bin" \
 	--add-data "docs:docs" \
-	--add-data "exampleconfigs:exampleconfigs" \
+	--add-data "example_configs:example_configs" \
+	--add-data "example_modules:example_modules" \
 	--add-data "ssmdocs:ssmdocs" \
 	--add-data "pre.d:pre.d" \
 	--add-data "mod.d:mod.d" \
@@ -62,8 +67,10 @@ binary: prep
 	@$(PYTHON) make_symlinks.py
 
 	@# Build the one-directory binary tarball
-	@echo "Building tarball, ec2rl-binary.tgz ..."
-	@tar -czf ec2rl-binary.tgz -C dist ec2rl
+	mv dist/ec2rl dist/$(BASENAME)
+	@echo "Creating ec2rl-binary.tgz ..."
+	@tar -czf ec2rl-binary.tgz -C dist $(BASENAME)
+	@sha256sum ec2rl-binary.tgz > ec2rl-binary.tgz.sha256
 	@echo "Done!"
 
 
@@ -80,11 +87,39 @@ menuconfig:
 prep:
 	rm -rf dist
 	rm -rf build
+	rm -rf rpmbuild/noarch
+	rm -f rpmbuild/*.rpm
 	rm -f ec2rl.spec
 	rm -rf /tmp/ec2rl
+	rm -rf /tmp/$(BASENAME)
 
 clean: prep
 	rm -f ec2rl.tgz
+	rm -f ec2rl.tgz.sha256
 	rm -f ec2rl-binary.tgz
+	rm -f ec2rl-binary.tgz.sha256
 
 all: python binary
+
+rpm: prep python
+	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
+	@echo "Building RPM..."
+	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl.spec
+	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
+	@rm -rf rpmbuild/noarch/
+	@echo "Done!"
+
+.PHONY: test
+test:
+	@coverage3  run --source=ec2rlcore --branch -m unittest discover
+	@coverage3 report -m
+
+test_modules_unit:
+	@cd tools; \
+	$(PYTHON) run_module_unit_tests.py; \
+	coverage3 report -m
+
+test_modules_functional:
+	@cd tools; \
+	$(PYTHON) run_module_functional_tests.py; \
+	coverage3 report -m

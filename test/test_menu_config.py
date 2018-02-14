@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -118,7 +118,8 @@ class TestMenuConfig(unittest.TestCase):
                          "Requires --times= for number of times to repeat\n"
                          "Requires --period= for length of sample period\n"
                          "Requires atop tool ( http://www.atoptool.nl/ )\n"
-                         "Requires sudo: False")
+                         "Requires sudo: False\n"
+                         "Supports remediation: False")
         self.assertEqual(menu_all_modules["atop"].header,
                          "Module 'atop' - Select an option to configure:")
         self.assertEqual(menu_all_modules["atop"].row_left,

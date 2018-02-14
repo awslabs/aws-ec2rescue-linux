@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -47,6 +47,10 @@ content: !!str |
           NULLDEREFERENCE_MESSAGE="kernel NULL pointer dereference"
           NULLDEREFERENCE_LOGLOCATIONS="/var/log/messages*"
       ;;
+      alami2)
+          HUNGTASK_MESSAGE="blocked for more than"
+          HUNGTASK_LOGLOCATIONS="/var/log/messages*"
+      ;;
       ubuntu)
           NULLDEREFERENCE_MESSAGE="kernel NULL pointer dereference"
           NULLDEREFERENCE_LOGLOCATIONS="/var/log/syslog*"
@@ -75,7 +79,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str
   optional: !!str
   software: !!str

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -45,6 +45,7 @@ import ec2rlcore
 import ec2rlcore.console_out
 import ec2rlcore.constraint
 import ec2rlcore.logutil
+import ec2rlcore.module
 import ec2rlcore.moduledir
 import ec2rlcore.options
 import ec2rlcore.paralleldiagnostics
@@ -107,7 +108,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.0.1")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.0")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
@@ -229,7 +230,7 @@ class Main(object):
 
         # create subdirectory for each tool run
         try:
-            os.mkdir(self.directories["RUNDIR"])
+            os.mkdir(self.directories["RUNDIR"], 0o700)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError(self.directories["RUNDIR"])
@@ -407,18 +408,20 @@ class Main(object):
         """
         self.logger.debug("ec2rlcore.Main.list()")
         print("Here is a list of available modules that apply to the current host:\n")
-        print("\033[4m" + "  " + "{:20.18}{:10.8}{:13.11}{:77.75}".format("Module Name", "Class", "Domain",
-                                                                          "Description") + "\033[0m")
+        print(ec2rlcore.module.Module.list_header)
         for mod in self.modules:
             if mod.applicable \
                     and set(mod.constraint["domain"]).intersection(self.options.domains_to_run) \
                     and set(mod.constraint["class"]).intersection(self.options.classes_to_run):
-                print(mod.list)
-        print("\n *Requires sudo/root to run")
-        print("\n +Requires --perfimpact=true to run (Can potentially cause performance impact)")
-        print("\n Classes come in three types: Diagnose, with success/fail/warn conditions determined by module.")
-        print("\n Gather, which creates a copy of a local file for inspection. Collect, which collects command output")
-        print("\n Domains are defined per module and refer to the general area of investigation for the module.")
+                print(mod)
+        print("\nS: Requires sudo/root to run")
+        print("P: Requires --perfimpact=true to run (can potentially cause performance impact)")
+        print("R: Supports remediation if --remediate is given")
+        print("\nClasses refer to the type of task the module performs")
+        print(" Diagnose: success/fail/warn conditions determined by module.")
+        print(" Gather: create a copy of a local file for inspection.")
+        print(" Collect: collect command output")
+        print("\nDomains are defined per module and refer to the general area of investigation for the module.")
         print("\nTo see module help, you can run:\n")
         print("ec2rl help [MODULEa ... MODULEx]")
         print("ec2rl help [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]")
@@ -622,7 +625,7 @@ class Main(object):
     def version(self):
         """Print the version and licensing information and return True."""
         print("ec2rl {}".format(self.PROGRAM_VERSION))
-        print("Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All rights reserved.")
+        print("Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All rights reserved.")
         print("This software is distributed under the Apache License, Version 2.0.")
         print("")
         print("This file is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, "
@@ -871,7 +874,7 @@ class Main(object):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.REQUIRES_SUDO)
         elif mod.whyskipping.startswith("Requires missing/non-executable software"):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_SOFTWARE)
-        elif mod.whyskipping.startswith("missing value for required argument"):
+        elif mod.whyskipping.startswith("Missing required argument"):
             self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_ARGUMENT)
 
         self.pruned_modules.append(mod)
@@ -958,10 +961,10 @@ class Main(object):
         Returns:
             (int): Count of modules run
         """
-        # If concurrency arg is set, is a number, and is greater than 0
+        # If concurrency arg is set and is a number
         if "concurrency" in self.options.global_args and self.options.global_args["concurrency"].isdigit():
-            # Concurrency has a minimum of 1.  If arg concurrency is less than 1, floor at 1
-            concurrency = max(1, int(self.options.global_args["concurrency"]))
+            # Concurrency has a minimum of 1 and a maximum of 100.
+            concurrency = min(max(1, int(self.options.global_args["concurrency"])), 100)
         else:
             # Default concurrency level is set here:
             concurrency = 10

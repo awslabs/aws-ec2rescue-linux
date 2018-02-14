@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -75,7 +75,7 @@ class TestMain(unittest.TestCase):
     else:
         callpath = os.path.split(_callp)[0]
     ec2rl = None
-    PROGRAM_VERSION = "1.0.0"
+    PROGRAM_VERSION = str(ec2rlcore.main.Main.PROGRAM_VERSION)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
@@ -99,10 +99,14 @@ class TestMain(unittest.TestCase):
 
     def tearDown(self):
         sys.argv = self.argv_backup
-        del os.environ["EC2RL_SUDO"]
-        del os.environ["EC2RL_DISTRO"]
-        del os.environ["EC2RL_NET_DRIVER"]
-        del os.environ["EC2RL_VIRT_TYPE"]
+        # Prevent environment variable clobbering
+        removal_list = list()
+        for key_name in os.environ.keys():
+            if key_name.startswith("EC2RL_"):
+                removal_list.append(key_name)
+        for key_name in removal_list:
+            del os.environ[key_name]
+
         logging.shutdown()
         # Reset the global variable that tracks the first module execution
         ec2rlcore.console_out._first_module = True
@@ -274,6 +278,8 @@ class TestMain(unittest.TestCase):
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
         self.assertTrue(mkdir_mock.called)
+        # Directory must be created without permissions for group and other.
+        mkdir_mock.assert_called_with(self.ec2rl.directories["RUNDIR"], 0o700)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
@@ -361,7 +367,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.list())
         self.assertTrue(self.output.getvalue().startswith("Here is a list of available modules that apply to the curr"))
         self.assertTrue(self.output.getvalue().endswith("=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]\n"))
-        self.assertEqual(len(self.output.getvalue()), 14533)
+        self.assertEqual(len(self.output.getvalue()), 14361)
 
     def test_main_list_nonapplicable_modules(self):
         """
@@ -376,7 +382,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("Here is a list of available modules that apply to the curr"))
         self.assertTrue(self.output.getvalue().endswith("=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]\n"))
         self.assertFalse(re.search(r"xennetrocket", self.output.getvalue()))
-        self.assertEqual(len(self.output.getvalue()), 14410)
+        self.assertEqual(len(self.output.getvalue()), 14240)
 
     def test_main_help(self):
         """Test that help returns True and get_help's output matches the expected length."""
@@ -393,7 +399,9 @@ class TestMain(unittest.TestCase):
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.help())
 
-        self.assertEqual(self.output.getvalue(), "aptlog:\nCollect apt log files\nRequires sudo: True\n")
+        self.assertEqual(self.output.getvalue(), "aptlog:\nCollect apt log files\n"
+                                                 "Requires sudo: True\n"
+                                                 "Supports remediation: False\n")
         del self.ec2rl.options.global_args["onlymodules"]
 
     @mock.patch("os.mkdir", side_effect=simple_return)
@@ -439,9 +447,9 @@ class TestMain(unittest.TestCase):
             self.assertTrue(ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 5826)
+        self.assertEqual(len(self.output.getvalue()), 6666)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
-        self.assertTrue(self.output.getvalue().endswith("ackets to drop due to discarded skbs\nRequires sudo: False\n"))
+        self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(mkdir_mock.called)
 
@@ -458,9 +466,9 @@ class TestMain(unittest.TestCase):
             self.assertTrue(ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 1777)
+        self.assertEqual(len(self.output.getvalue()), 2197)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
-        self.assertTrue(self.output.getvalue().endswith("ackets to drop due to discarded skbs\nRequires sudo: False\n"))
+        self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(mkdir_mock.called)
 
@@ -500,7 +508,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 595)
+        self.assertEqual(len(self.output.getvalue()), 623)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
         self.assertTrue(self.output.getvalue().endswith("                       specified comma delimited list\n\n\n"))
 
@@ -514,19 +522,21 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("ec2rl {}\nCopyright 201".format(self.PROGRAM_VERSION)))
         self.assertTrue(self.output.getvalue().endswith("TIES OR CONDITIONS OF ANY KIND, either express or implied.\n"))
 
-    def test_main_bugreport(self):
+    @mock.patch("ec2rlcore.prediag.get_distro", return_value="distro")
+    @mock.patch("ec2rlcore.main.platform.release", return_value="kernel_version")
+    @mock.patch("ec2rlcore.main.platform.python_version", return_value="python_version")
+    @mock.patch("ec2rlcore.main.sys")
+    def test_main_bugreport(self, sys_mock, version_mock, release_mock, get_distro_mock):
         """Test output from the bugreport subcommand."""
+        sys_mock.executable = "executable"
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(self.ec2rl.bug_report())
-
-        # Example output:
-        # ec2rl 1.0.0
-        # ubuntu, 4.4.0-83-generic
-        # Python 3.5.2, /usr/bin/python3
-        regex_str = r"^ec2rl\ [0-9]+\.[0-9]+\.[0-9]+.*\n(ubuntu|suse|rhel|alami),\ [0-9]+\.[0-9]+\.[0-9]+.*\n" \
-                    r"Python\ [0-9]+\.[0-9]+\.[0-9]+.*,\ /.*\n$"
-
-        self.assertTrue(re.match(regex_str, self.output.getvalue()))
+        self.assertEqual(self.output.getvalue(), "ec2rl {}\n"
+                                                 "distro, kernel_version\n"
+                                                 "Python python_version, executable\n".format(self.PROGRAM_VERSION))
+        self.assertTrue(version_mock.called)
+        self.assertTrue(release_mock.called)
+        self.assertTrue(get_distro_mock.called)
 
     def test_main__setup_environ(self):
         """Test that environment variables are setup as expected."""
@@ -1218,7 +1228,7 @@ class TestMain(unittest.TestCase):
         del self.ec2rl.options.global_args["uploaddirectory"]
 
     def test_main_upload_with_invalid_unparseable_support_url(self):
-        """Test how invalid support URLs are handled in the upload subcommand."""
+        """Test that invalid, unparseable support URLs raise S3UploadUrlParsingFailure."""
         self.ec2rl.options.global_args["uploaddirectory"] = "."
         self.ec2rl.options.global_args["supporturl"] = "http://fakeurl.com/"
         with self.assertRaises(ec2rlcore.s3upload.S3UploadUrlParsingFailure):
@@ -1226,14 +1236,20 @@ class TestMain(unittest.TestCase):
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["supporturl"]
 
+    @responses.activate
     def test_main_upload_with_invalid_parseable_support_url(self):
-        """Test that valid support URLs result in success."""
+        """Test that invalid but parseable support URLs raise S3UploadGetPresignedURLError."""
         self.ec2rl.options.global_args["uploaddirectory"] = "."
         self.ec2rl.options.global_args["supporturl"] = \
             "https://aws-support-uploader.s3.amazonaws.com/uploader?account-id=123&case-id=567" \
             "&expiration=1486577795&key=789"
+        responses.add(responses.POST,
+                      "https://30yinsv8k6.execute-api.us-east-1.amazonaws.com/prod/get-signed-url",
+                      status=405)
         with self.assertRaises(ec2rlcore.s3upload.S3UploadGetPresignedURLError):
             self.ec2rl.upload()
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(responses.calls[0].response.status_code, 405)
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["supporturl"]
 
@@ -1884,6 +1900,106 @@ class TestMain(unittest.TestCase):
         self.assertTrue(chdir_mock.called)
         self.assertTrue(write_config_mock.called)
         self.assertTrue(logging_fh_mock.called)
+
+    @responses.activate
+    @mock.patch("ec2rlcore.paralleldiagnostics.parallel_run")
+    @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
+    @mock.patch("os.chdir", side_effect=simple_return)
+    @mock.patch("shutil.copyfile", side_effect=simple_return)
+    @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
+    def test_main_run_concurrency_min(self,
+                                      prediag_mock,
+                                      main_log_handler_mock,
+                                      debug_log_handler_mock,
+                                      mkdir_mock,
+                                      copyfile_mock,
+                                      chdir_mock,
+                                      write_config_mock,
+                                      parallel_run_mock):
+        """Test that concurrency is set to 1 when specificed as less than 1"""
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+        path_to_ec2rl = os.path.abspath("ec2rl")
+        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
+        sys.argv = [test_path, "run", "--concurrency=0"]
+        module_path = os.path.join(self.callpath, "test/modules/single_diagnose/")
+        ec2rl_run_test = ec2rlcore.main.Main(debug=True, full_init=True)
+        ec2rl_run_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
+
+        # We don't need to run pre/post modules for this test
+        ec2rl_run_test._prediags = []
+        ec2rl_run_test._postdiags = []
+
+        # Minimum concurrency = 1
+        with contextlib.redirect_stdout(self.output):
+            self.assertTrue(ec2rl_run_test())
+        parallel_run_mock.assert_called_with(ec2rl_run_test.modules,
+                                             ec2rl_run_test.directories["LOGDIR"],
+                                             concurrency=1,
+                                             options=ec2rl_run_test.options)
+
+        self.assertTrue(prediag_mock.called)
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(mkdir_mock.called)
+        self.assertTrue(copyfile_mock.called)
+        self.assertTrue(chdir_mock.called)
+        self.assertTrue(write_config_mock.called)
+
+    @responses.activate
+    @mock.patch("ec2rlcore.paralleldiagnostics.parallel_run")
+    @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
+    @mock.patch("os.chdir", side_effect=simple_return)
+    @mock.patch("shutil.copyfile", side_effect=simple_return)
+    @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
+    def test_main_run_concurrency_max(self,
+                                      prediag_mock,
+                                      main_log_handler_mock,
+                                      debug_log_handler_mock,
+                                      mkdir_mock,
+                                      copyfile_mock,
+                                      chdir_mock,
+                                      write_config_mock,
+                                      parallel_run_mock):
+        """Test that concurrency is set to 100 when specificed as greater than 100"""
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+        path_to_ec2rl = os.path.abspath("ec2rl")
+        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
+        sys.argv = [test_path, "run", "--concurrency=1000"]
+        module_path = os.path.join(self.callpath, "test/modules/single_diagnose/")
+        ec2rl_run_test = ec2rlcore.main.Main(debug=True, full_init=True)
+        ec2rl_run_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
+        ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
+
+        # We don't need to run pre/post modules for this test
+        ec2rl_run_test._prediags = []
+        ec2rl_run_test._postdiags = []
+
+        # Maximum concurrency = 100
+        with contextlib.redirect_stdout(self.output):
+            self.assertTrue(ec2rl_run_test())
+        parallel_run_mock.assert_called_with(ec2rl_run_test.modules,
+                                             ec2rl_run_test.directories["LOGDIR"],
+                                             concurrency=100,
+                                             options=ec2rl_run_test.options)
+
+        self.assertTrue(prediag_mock.called)
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(mkdir_mock.called)
+        self.assertTrue(copyfile_mock.called)
+        self.assertTrue(chdir_mock.called)
+        self.assertTrue(write_config_mock.called)
 
     @mock.patch("shutil.copyfile", side_effect=OSError())
     def test_main_run_copy_error(self, mock_side_effect_function):

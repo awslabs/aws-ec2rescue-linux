@@ -1,11 +1,21 @@
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/aws-ec2rescue-linux/Lobby) [![Build Status](https://travis-ci.org/awslabs/aws-ec2rescue-linux.svg?branch=develop)](https://travis-ci.org/awslabs/aws-ec2rescue-linux)
 # Amazon Elastic Compute Cloud (EC2) Rescue for Linux
 
 ## What is it?
 Amazon Elastic Compute Cloud (EC2) Rescue for Linux (ec2rl) is a framework for executing diagnostic and
-troubleshooting modules to analyze issues on Linux instances on AWS.
+troubleshooting modules to analyze and remediate issues on Linux instances on AWS.
 
 ## The Latest Version
-The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz
+The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz  
+File integrity can be verified using the sha256 hash which can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
+
+Example:
+```commandline
+[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz
+[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
+[ec2-user@localhost ~]$ sha256sum -c ec2rl.tgz.sha256
+ec2rl.tgz: OK
+```
 
 ## Documentation
 Available in docs/ subdirectory

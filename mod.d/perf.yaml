@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -52,7 +52,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str performance
   class: !!str collect
-  distro: !!str alami ubuntu rhel suse centos
+  distro: !!str alami alami2 ubuntu rhel suse centos
   required: !!str period
   optional: !!str
   software: !!str perf

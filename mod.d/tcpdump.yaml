@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -84,13 +84,13 @@ content: !!str |
 
   mkdir $EC2RL_GATHEREDDIR/tcpdump
   echo "I have attempted to dump the tcpdump file to ${EC2RL_GATHEREDDIR}/tcpdump"
-  timeout $period tcpdump -c ${count} -w ${EC2RL_GATHEREDDIR}/tcpdump/tcpdump.pcap -i ${interface} ${protocol} ${TCPDUMPCMD}
+  timeout --preserve-status $period tcpdump -c ${count} -w ${EC2RL_GATHEREDDIR}/tcpdump/tcpdump.pcap -i ${interface} ${protocol} ${TCPDUMPCMD}
   exit 0
 constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str gather
-  distro: !!str alami ubuntu rhel suse
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str interface count period
   optional: !!str protocol source destination sourceport destinationport
   software: !!str tcpdump
