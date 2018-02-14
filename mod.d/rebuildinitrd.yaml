@@ -82,7 +82,7 @@ content: !!str |
           initrdfiles (list): the initial ramdisk filename strings.
       """
       initrdfiles = [file_name for file_name in os.listdir("/boot")
-                     if "init" in file_name and not re.search("(bak|rescue|initrd$)", file_name)]
+                     if "init" in file_name and not re.search("(plymouth|bak|rescue|initrd$)", file_name)]
       if not initrdfiles:
           raise ValueError("initrd list is empty! Did not find any initrd files!")
       return initrdfiles
