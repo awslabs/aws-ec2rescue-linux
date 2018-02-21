@@ -219,11 +219,13 @@ class Main(object):
         # Getting the datetime_str for compression purposes
         self.directories["SPECDIR"] = datetime_str
 
-        # create working directory if it doesn't exist
+        # Create working directory if it doesn't exist
         try:
             # Ensure the file is read/writeable by all users.
             # Prevents permission issues when executed by root/sudo then a regular user
-            os.mkdir(self.directories["WORKDIR"], 0o777)
+            os.mkdir(self.directories["WORKDIR"])
+            # chmod is necessary as os.mkdir does not reliably set the permission mode
+            os.chmod(self.directories["WORKDIR"], 0o777)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise MainDirectoryError(self.directories["WORKDIR"])

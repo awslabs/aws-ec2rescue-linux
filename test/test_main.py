@@ -78,9 +78,10 @@ class TestMain(unittest.TestCase):
     PROGRAM_VERSION = str(ec2rlcore.main.Main.PROGRAM_VERSION)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def setUp(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def setUp(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         sys.argv = ["test/modules/not_a_real_file", "run", "--abc=def"]
         os.chdir(self.callpath)
         os.environ["EC2RL_SUDO"] = "False"
@@ -93,6 +94,7 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(debug_log_handler_mock.called)
         self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
         self.output = StringIO()
@@ -159,7 +161,8 @@ class TestMain(unittest.TestCase):
         self.assertEqual(self.ec2rl.subcommand, "run")
 
     @mock.patch("os.mkdir", side_effect=simple_return)
-    def test_main__setup_paths_absolute_path(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_absolute_path(self, chmod_mock, mkdir_mock):
         """Test _setup_paths when the path in sys.argv is an absolute path."""
         sys.argv = [""]
         callpath = sys.argv[0]
@@ -169,6 +172,7 @@ class TestMain(unittest.TestCase):
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
 
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[OSError(os.errno.EEXIST, "message"),
@@ -182,6 +186,7 @@ class TestMain(unittest.TestCase):
         """"Test behavior when attempting to create WORKDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -191,10 +196,13 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return])
-    def test_main__setup_paths_rundir_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_rundir_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create RUNDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -204,10 +212,13 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return])
-    def test_main__setup_paths_logdir_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_logdir_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create LOGDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -217,10 +228,13 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return])
-    def test_main__setup_paths_prediag_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_prediag_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the prediagnostic LOGDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -230,10 +244,13 @@ class TestMain(unittest.TestCase):
                                          OSError(os.errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return])
-    def test_main__setup_paths_run_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_run_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the run LOGDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -243,10 +260,12 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          OSError(os.errno.EEXIST, "message"),
                                          simple_return])
-    def test_main__setup_paths_post_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_post_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the postdiagnostic LOGDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -256,10 +275,12 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          OSError(os.errno.EEXIST, "message")])
-    def test_main__setup_paths_gather_oserror_eexist(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_gather_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create GATHEREDDIR when it already exists."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=OSError())
@@ -268,38 +289,48 @@ class TestMain(unittest.TestCase):
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          OSError()])
-    def test_main__setup_paths_rundir(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_rundir(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create RUNDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
-        self.assertTrue(mkdir_mock.called)
         # Directory must be created without permissions for group and other.
         mkdir_mock.assert_called_with(self.ec2rl.directories["RUNDIR"], 0o700)
+
+        self.assertTrue(chmod_mock.called)
+        self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
                                          OSError()])
-    def test_main__setup_paths_logdir(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_logdir(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create LOGDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
                                          simple_return,
                                          OSError()])
-    def test_main__setup_paths_prediag(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_prediag(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the prediagnostic LOGDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -307,11 +338,14 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          OSError()])
-    def test_main__setup_paths_run(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_run(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the run LOGDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -320,11 +354,14 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          OSError()])
-    def test_main__setup_paths_post(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_post(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create the postdiagnostic LOGDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -334,11 +371,14 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          OSError()])
-    def test_main__setup_paths_gather(self, mkdir_mock):
+    @mock.patch("os.chmod", side_effect=simple_return)
+    def test_main__setup_paths_gather(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create GATHEREDDIR and an unexpected error occurs."""
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         with self.assertRaises(ec2rlcore.main.MainDirectoryError):
             self.ec2rl._setup_write_paths()
+
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     def test_main_get_help_default(self):
@@ -405,9 +445,10 @@ class TestMain(unittest.TestCase):
         del self.ec2rl.options.global_args["onlymodules"]
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_onlydomain_double_add(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main_onlydomain_double_add(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that specifying the same domain twice doesn't add it to the list twice."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -415,14 +456,17 @@ class TestMain(unittest.TestCase):
         ec2rl = ec2rlcore.main.Main(debug=True, full_init=True)
 
         self.assertEqual(ec2rl.options.domains_to_run, ["net"])
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_onlyclasses_double_add(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main_onlyclasses_double_add(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that specifying the same class twice doesn't add it to the list twice."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -430,13 +474,16 @@ class TestMain(unittest.TestCase):
         ec2rl = ec2rlcore.main.Main(debug=True, full_init=True)
 
         self.assertEqual(ec2rl.options.classes_to_run, ["diagnose"])
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_help_domain(self, main_log_handler_mock, mkdir_mock):
+    def test_main_help_domain(self, main_log_handler_mock, chmod_mock, mkdir_mock):
         """Test help output for a domain of modules."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -450,12 +497,15 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(self.output.getvalue()), 6666)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
         self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
+
         self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_help_class(self, main_log_handler_mock, mkdir_mock):
+    def test_main_help_class(self, main_log_handler_mock, chmod_mock, mkdir_mock):
         """Test help output for a class of modules."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -469,13 +519,16 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(self.output.getvalue()), 2197)
         self.assertTrue(self.output.getvalue().startswith("arpcache:\nDetermines if aggressive arp caching is enabled"))
         self.assertTrue(self.output.getvalue().endswith("ed skbs\nRequires sudo: False\nSupports remediation: False\n"))
+
         self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_default_subcommand(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main_default_subcommand(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that the default subcommand is set."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -483,8 +536,10 @@ class TestMain(unittest.TestCase):
         ec2rl = ec2rlcore.main.Main(debug=True, full_init=True)
 
         self.assertEqual(ec2rl.subcommand, "default_help")
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     def test_main_help_subcommand(self):
@@ -534,6 +589,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(self.output.getvalue(), "ec2rl {}\n"
                                                  "distro, kernel_version\n"
                                                  "Python python_version, executable\n".format(self.PROGRAM_VERSION))
+
         self.assertTrue(version_mock.called)
         self.assertTrue(release_mock.called)
         self.assertTrue(get_distro_mock.called)
@@ -567,6 +623,7 @@ class TestMain(unittest.TestCase):
                                  r"/var/tmp/ec2rl/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}_[0-9]{2}_[0-9]{2}.[0-9]{6}"
                                  r"/configuration.cfg\n$",
                                  self.output.getvalue()))
+
         self.assertTrue(open_mock.called)
 
     @mock.patch("{}.open".format(builtins_name), new_callable=mock.mock_open())
@@ -622,11 +679,12 @@ class TestMain(unittest.TestCase):
                                  r"/configuration.cfg\n$",
                                  self.output.getvalue()))
         self.assertEqual(len(self.output.getvalue()), 129)
-        self.assertTrue(open_mock.called)
         self.assertEqual(self.ec2rl.options.global_args["abc"], "def")
         self.assertEqual(self.ec2rl.options.global_args["concurrency"], "2")
         self.assertEqual(self.ec2rl.options.global_args["onlyclasses"], "diagnose,gather")
         self.assertEqual(self.ec2rl.options.per_module_args["atop"]["period"], "1")
+
+        self.assertTrue(open_mock.called)
 
     @responses.activate
     @mock.patch("logging.FileHandler")
@@ -634,6 +692,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -641,6 +700,7 @@ class TestMain(unittest.TestCase):
                                   prediag_mock,
                                   main_log_handler_mock,
                                   debug_log_handler_mock,
+                                  chmod_mock,
                                   mkdir_mock,
                                   copyfile_mock,
                                   chdir_mock,
@@ -681,17 +741,18 @@ class TestMain(unittest.TestCase):
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nRunning Modules:\nxennetrocket\n\n-" in self.output.getvalue())
         self.assertEqual(len(self.output.getvalue()), 1635)
+        # The resulting subcommand should be "run"
+        self.assertEqual(ec2rl_run_test.subcommand, "run")
 
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
         self.assertTrue(write_config_mock.called)
         self.assertTrue(logging_fh_mock.called)
-        # The resulting subcommand should be "run"
-        self.assertEqual(ec2rl_run_test.subcommand, "run")
 
     @mock.patch("ec2rlcore.main.Main.save_config", side_effect=[False])
     def test_main_menu_config_save_config_failed(self, mock_side_effect_function):
@@ -700,6 +761,7 @@ class TestMain(unittest.TestCase):
         curses.ungetch("\n")
         curses.ungetch(curses.KEY_RIGHT)
         self.assertFalse(self.ec2rl.menu_config())
+
         self.assertTrue(mock_side_effect_function.called)
 
     @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
@@ -721,14 +783,17 @@ class TestMain(unittest.TestCase):
                                  self.output.getvalue()))
         self.assertEqual(len(self.ec2rl._modules), original_length)
         self.assertTrue("Global" not in self.ec2rl._modules)
+
         self.assertTrue(write_config_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__run_prunemodules_only_modules(self,
                                                  main_log_handler_mock,
                                                  debug_log_handler_mock,
+                                                 chmod_mock,
                                                  mkdir_mock):
         """Test that --only-modules=arpcache results in just that single module remaning after pruning."""
         # Test --only-modules=
@@ -747,18 +812,22 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(len(ec2rl_pruning_test._modules), 1)
         self.assertEqual(ec2rl_pruning_test._modules[0].name, "arpcache")
-        self.assertTrue(main_log_handler_mock.called)
-        self.assertTrue(debug_log_handler_mock.called)
-        self.assertTrue(mkdir_mock.called)
         self.assertEqual(len(ec2rl_pruning_test.prune_stats), 0, "Exactly 0 elements in prune stats")
 
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
+        self.assertTrue(mkdir_mock.called)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.which", side_effect=simple_return)
     def test_main__run_prunemodules_only_domains(self,
                                                  main_log_handler_mock,
                                                  debug_log_handler_mock,
+                                                 chmod_mock,
                                                  mkdir_mock,
                                                  which_mock):
         """Test that --only-domains=os results the expected number of remaining modules after pruning.
@@ -776,18 +845,22 @@ class TestMain(unittest.TestCase):
                                                                                  "requires_ec2"])
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 6)
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(which_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.which", side_effect=simple_return)
     def test_main__run_prunemodules_only_classes(self,
                                                  main_log_handler_mock,
                                                  debug_log_handler_mock,
+                                                 chmod_mock,
                                                  mkdir_mock,
                                                  which_mock):
         """Test that --only-classes=diagnose results the expected number of remaining modules after pruning.
@@ -806,17 +879,21 @@ class TestMain(unittest.TestCase):
                                                                                  "requires_ec2"])
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 6)
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(which_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__run_prunemodules_software_constraint(self,
                                                         main_log_handler_mock,
                                                         debug_log_handler_mock,
+                                                        chmod_mock,
                                                         mkdir_mock):
         """Test that modules are pruned when the software constraint is not satisfied."""
         path_to_ec2rl = os.path.abspath("ec2rl")
@@ -838,19 +915,23 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(ec2rl_pruning_test._modules), 0)
         self.assertEqual(the_module.whyskipping,
                          "Requires missing/non-executable software 'hopefully_not_a_real_program_name'.")
-        self.assertTrue(main_log_handler_mock.called)
-        self.assertTrue(debug_log_handler_mock.called)
-        self.assertTrue(mkdir_mock.called)
         self.assertEqual(len(ec2rl_pruning_test.prune_stats), 1, "Exactly 1 element in prune stats")
         self.assertEqual(ec2rl_pruning_test.prune_stats.get(ec2rlcore.module.SkipReason.MISSING_SOFTWARE, 0), 1,
                          "Prune stats counted 1 MISSING_SOFTWARE prune")
 
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
+        self.assertTrue(mkdir_mock.called)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__run_prunemodules_perfimpact_constraint(self,
                                                           main_log_handler_mock,
                                                           debug_log_handler_mock,
+                                                          chmod_mock,
                                                           mkdir_mock):
         """Test that modules are pruned when the perfimpact constraint is not satisfied."""
         path_to_ec2rl = os.path.abspath("ec2rl")
@@ -872,19 +953,23 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(ec2rl_pruning_test._modules), 0)
         self.assertEqual(the_module.whyskipping,
                          "Requires performance impact okay, but not given.")
-        self.assertTrue(main_log_handler_mock.called)
-        self.assertTrue(debug_log_handler_mock.called)
-        self.assertTrue(mkdir_mock.called)
         self.assertEqual(len(ec2rl_pruning_test.prune_stats), 1, "Exactly 1 element in prune stats")
         self.assertEqual(ec2rl_pruning_test.prune_stats.get(ec2rlcore.module.SkipReason.PERFORMANCE_IMPACT, 0), 1,
                          "Prune stats counted 1 PERFORMANCE_IMPACT prune")
 
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
+        self.assertTrue(mkdir_mock.called)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__run_prunemodules_requires_ec2_constraint(self,
                                                             main_log_handler_mock,
                                                             debug_log_handler_mock,
+                                                            chmod_mock,
                                                             mkdir_mock):
         """Test that modules are pruned when the ec2_required constraint is not satisfied."""
         path_to_ec2rl = os.path.abspath("ec2rl")
@@ -906,14 +991,17 @@ class TestMain(unittest.TestCase):
         self.assertEqual(len(ec2rl_pruning_test._modules), 0)
         self.assertEqual(the_module.whyskipping,
                          "Module requires system be an EC2 instance.")
+        self.assertEqual(len(ec2rl_pruning_test.prune_stats), 0, "Exactly 0 elements in prune stats")
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
-        self.assertEqual(len(ec2rl_pruning_test.prune_stats), 0, "Exactly 0 elements in prune stats")
 
     @mock.patch("logging.FileHandler")
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.check_root", side_effect=["True"])
@@ -929,6 +1017,7 @@ class TestMain(unittest.TestCase):
                                       check_root_mock,
                                       main_log_handler_mock,
                                       debug_log_handler_mock,
+                                      chmod_mock,
                                       mkdir_mock,
                                       makedirs_mock,
                                       logging_fh_mock):
@@ -939,6 +1028,7 @@ class TestMain(unittest.TestCase):
         ec2rl_prediag_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
         self.assertTrue(ec2rl_prediag_test._run_prediagnostics())
         self.assertNotEqual(os.environ["EC2RL_VIRT_TYPE"], "non-virtualized")
+
         self.assertTrue(verify_metadata_mock.called)
         self.assertTrue(get_virt_type_mock.called)
         self.assertTrue(get_net_driver_mock.called)
@@ -946,6 +1036,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(check_root_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(makedirs_mock.called)
         self.assertTrue(logging_fh_mock.called)
@@ -953,6 +1044,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("logging.FileHandler")
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.check_root", side_effect=["True"])
@@ -968,6 +1060,7 @@ class TestMain(unittest.TestCase):
                                               check_root_mock,
                                               main_log_handler_mock,
                                               debug_log_handler_mock,
+                                              chmod_mock,
                                               mkdir_mock,
                                               makedirs_mock,
                                               logging_fh_mock):
@@ -979,6 +1072,7 @@ class TestMain(unittest.TestCase):
         with self.assertRaises(ec2rlcore.main.MainPrediagnosticFailure):
             self.assertTrue(ec2rl_prediag_test._run_prediagnostics())
         self.assertNotEqual(os.environ["EC2RL_VIRT_TYPE"], "non-virtualized")
+
         self.assertTrue(verify_metadata_mock.called)
         self.assertTrue(get_virt_type_mock.called)
         self.assertTrue(get_net_driver_mock.called)
@@ -986,6 +1080,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(check_root_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(makedirs_mock.called)
         self.assertTrue(logging_fh_mock.called)
@@ -993,6 +1088,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("logging.FileHandler")
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.check_root", side_effect=["True"])
@@ -1004,6 +1100,7 @@ class TestMain(unittest.TestCase):
                                                     check_root_mock,
                                                     main_log_handler_mock,
                                                     debug_log_handler_mock,
+                                                    chmod_mock,
                                                     mkdir_mock,
                                                     makedirs_mock,
                                                     logging_fh_mock):
@@ -1018,16 +1115,19 @@ class TestMain(unittest.TestCase):
         ec2rl_prediag_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
         self.assertTrue(ec2rl_prediag_test._run_prediagnostics())
         self.assertEqual(os.environ["EC2RL_VIRT_TYPE"], "non-virtualized")
+
         self.assertTrue(get_net_driver_mock.called)
         self.assertTrue(get_distro_mock.called)
         self.assertTrue(check_root_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(makedirs_mock.called)
         self.assertTrue(logging_fh_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.check_root", side_effect=["True"])
@@ -1041,6 +1141,7 @@ class TestMain(unittest.TestCase):
                                                     check_root_mock,
                                                     main_log_handler_mock,
                                                     debug_log_handler_mock,
+                                                    chmod_mock,
                                                     mkdir_mock):
         """Test that _run_prediagnostics() raises MainPrediagnosticFailure when the metadata server is inaccessible."""
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
@@ -1057,9 +1158,11 @@ class TestMain(unittest.TestCase):
         self.assertTrue(check_root_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.prediag.check_root", side_effect=["False"])
@@ -1075,6 +1178,7 @@ class TestMain(unittest.TestCase):
                                                             check_root_mock,
                                                             main_log_handler_mock,
                                                             debug_log_handler_mock,
+                                                            chmod_mock,
                                                             mkdir_mock):
         """Test that _run_prediagnostics() successfully completes when the only module isn't applicable."""
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
@@ -1082,6 +1186,7 @@ class TestMain(unittest.TestCase):
         ec2rl_prediag_test._prediags = ec2rlcore.moduledir.ModuleDir(module_path)
         ec2rl_prediag_test._prediags[0].applicable = False
         self.assertTrue(ec2rl_prediag_test._run_prediagnostics())
+
         self.assertTrue(verify_metadata_mock.called)
         self.assertTrue(get_virt_type_mock.called)
         self.assertTrue(get_net_driver_mock.called)
@@ -1089,28 +1194,33 @@ class TestMain(unittest.TestCase):
         self.assertTrue(check_root_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main__run_backup_no_options(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main__run_backup_no_options(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that _run_backup() runs (doesn"t necessarily do anything though) when no backup options are set."""
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_prediag_test._run_backup())
         self.assertEqual(self.output.getvalue(), "\n-----------[Backup  Creation]-----------\n\nNo backup option"
                                                  " selected. Please consider backing up your volumes or instance\n")
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @responses.activate
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @moto.mock_ec2
-    def test_main__run_backup_allvolumes(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main__run_backup_allvolumes(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that _run_backup() runs correctly when allvolumes are specified."""
         instanceid = self.setup_ec2()
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
@@ -1127,14 +1237,16 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @responses.activate
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @moto.mock_ec2
-    def test_main__run_backup_ami(self, main_log_handler_mock, debug_log_handler_mock, mkdir_mock):
+    def test_main__run_backup_ami(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that _run_backup() runs correctly when ami is specified."""
         instanceid = self.setup_ec2()
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
@@ -1148,16 +1260,20 @@ class TestMain(unittest.TestCase):
         self.assertTrue(re.match(r"^\n-----------\[Backup\s{2}Creation\]-----------\n\nCreating AMI "
                                  r"ami-[a-z0-9]{8} for i-[a-z0-9]{8}\n$",
                                  self.output.getvalue(), re.M))
+
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__run_backup_empty_backup_value(self,
                                                  main_log_handler_mock,
                                                  debug_log_handler_mock,
+                                                 chmod_mock,
                                                  mkdir_mock):
         """Test that an invalid backup value raise an MainInvalidVolumeSpecificationError exception."""
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
@@ -1171,16 +1287,19 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @responses.activate
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @moto.mock_ec2
     def test_main__run_backup_invalid_ebs_volumeid_value(self,
                                                          main_log_handler_mock,
                                                          debug_log_handler_mock,
+                                                         chmod_mock,
                                                          mkdir_mock):
         """Test that an invalid EBS volume name raise a ClientError exception."""
         instanceid = self.setup_ec2()
@@ -1197,11 +1316,13 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    def test_main_missing_subcommand(self, main_log_handler_mock, mkdir_mock):
+    def test_main_missing_subcommand(self, main_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that the short help message is printed when no subcommand is provided."""
         path_to_ec2rl = os.path.abspath("ec2rl")
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
@@ -1212,7 +1333,9 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("ion in a bug report\n\n\nec2rl: missing subcommand operand\n"))
         self.assertEqual(len(self.output.getvalue()), 1066)
+
         self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     def test_main_upload_missing_uploaddirectory(self):
@@ -1260,9 +1383,10 @@ class TestMain(unittest.TestCase):
         self.ec2rl.options.global_args["presignedurl"] = "abc"
         with self.assertRaises(ec2rlcore.main.MainUploadMissingSNISupport):
             self.ec2rl.upload()
-        self.assertTrue(mock_import.called)
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["presignedurl"]
+
+        self.assertTrue(mock_import.called)
 
     @mock.patch("ec2rlcore.s3upload.make_tarfile", side_effect=simple_return)
     @mock.patch("ec2rlcore.s3upload.s3upload", side_effect=simple_return)
@@ -1272,10 +1396,11 @@ class TestMain(unittest.TestCase):
         self.ec2rl.options.global_args["presignedurl"] = "abc"
         with self.assertRaises(ec2rlcore.main.MainFileRemovalError):
             self.ec2rl.upload()
-        self.assertTrue(mock_s3upload.called)
-        self.assertTrue(mock_make_tarfile.called)
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["presignedurl"]
+
+        self.assertTrue(mock_s3upload.called)
+        self.assertTrue(mock_make_tarfile.called)
 
     @mock.patch("ec2rlcore.s3upload.os.remove", side_effect=simple_return)
     @mock.patch("ec2rlcore.s3upload.s3upload", side_effect=simple_return)
@@ -1285,11 +1410,12 @@ class TestMain(unittest.TestCase):
         self.ec2rl.options.global_args["uploaddirectory"] = "."
         self.ec2rl.options.global_args["presignedurl"] = "abc"
         self.assertTrue(self.ec2rl.upload())
+        del self.ec2rl.options.global_args["uploaddirectory"]
+        del self.ec2rl.options.global_args["presignedurl"]
+
         self.assertTrue(mock_make_tarfile.called)
         self.assertTrue(mock_s3upload.called)
         self.assertTrue(mock_os_remove.called)
-        del self.ec2rl.options.global_args["uploaddirectory"]
-        del self.ec2rl.options.global_args["presignedurl"]
 
     @mock.patch("os.remove", side_effect=simple_return)
     @mock.patch("{}.open".format(builtins_name), new_callable=mock.mock_open())
@@ -1304,19 +1430,22 @@ class TestMain(unittest.TestCase):
             with contextlib.redirect_stdout(self.output):
                 self.ec2rl.upload()
         self.assertEqual(self.output.getvalue(), "ERROR: Upload failed.  Received response 403\n")
-        self.assertTrue(make_tarfile_mock.called)
-        self.assertTrue(open_mock.called)
-        self.assertTrue(remove_mock.called)
         del self.ec2rl.options.global_args["uploaddirectory"]
         del self.ec2rl.options.global_args["presignedurl"]
 
+        self.assertTrue(make_tarfile_mock.called)
+        self.assertTrue(open_mock.called)
+        self.assertTrue(remove_mock.called)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_diagnose_unknown(self,
                                                    main_log_handler_mock,
                                                    debug_log_handler_mock,
+                                                   chmod_mock,
                                                    mkdir_mock):
         """Test that _summary() returns True and test its output when the run_status is UNKNOWN."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
@@ -1339,15 +1468,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_diagnose_success(self,
                                                    main_log_handler_mock,
                                                    debug_log_handler_mock,
+                                                   chmod_mock,
                                                    mkdir_mock):
         """Test that _summary() returns True and test its output when the run_status is SUCCESS."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
@@ -1370,15 +1502,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_diagnose_failure(self,
                                                    main_log_handler_mock,
                                                    debug_log_handler_mock,
+                                                   chmod_mock,
                                                    mkdir_mock):
         """Test that _summary() returns True and test its output when the run_status is FAILURE."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
@@ -1401,15 +1536,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_diagnose_warn(self,
                                                 main_log_handler_mock,
                                                 debug_log_handler_mock,
+                                                chmod_mock,
                                                 mkdir_mock):
         """Test that _summary() returns True and test its output when the run_status is WARN."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
@@ -1432,15 +1570,56 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
+    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
+    @responses.activate
+    def test_main__summary_single_collect_warn(self,
+                                               main_log_handler_mock,
+                                               debug_log_handler_mock,
+                                               chmod_mock,
+                                               mkdir_mock):
+        """
+        Test that _summary() returns True for a single collect module when there are no diagnose modules run
+        and test its output when the run_status is WARN.
+        """
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
+                      status=200)
+        path_to_ec2rl = os.path.abspath("ec2rl")
+        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
+        sys.argv = [test_path, "run"]
+        ec2rl_summary_test = ec2rlcore.main.Main(debug=True, full_init=True)
+        module_path = os.path.join(self.callpath, "test/modules/single_collect/")
+        ec2rl_summary_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
+        # Removing the "diagnose" key will test the path that skips the diagnose-related messages
+        del ec2rl_summary_test.modules.class_map["diagnose"]
+
+        ec2rl_summary_test._modules[0].run_status = "WARN"
+        with contextlib.redirect_stdout(self.output):
+            self.assertTrue(ec2rl_summary_test._summary())
+        self.assertTrue(self.output.getvalue().startswith("\n--------------[Run  Stats]--------------\n\nTotal module"))
+        self.assertTrue(self.output.getvalue().endswith(
+            "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
+        self.assertTrue("collect\' modules run:           1" in self.output.getvalue())
+
+        self.assertTrue(main_log_handler_mock.called)
+        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
+        self.assertTrue(mkdir_mock.called)
+
+    @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_diagnose_empty_run_status_details(self,
                                                                     main_log_handler_mock,
                                                                     debug_log_handler_mock,
+                                                                    chmod_mock,
                                                                     mkdir_mock):
         """Test that _summary() returns True and prints the expected amount of characters."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
@@ -1466,15 +1645,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_collect_unknown(self,
                                                   main_log_handler_mock,
                                                   debug_log_handler_mock,
+                                                  chmod_mock,
                                                   mkdir_mock):
         """
         Test that _summary() returns True for a single collect module when there are no diagnose modules run
@@ -1501,15 +1683,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_collect_success(self,
                                                   main_log_handler_mock,
                                                   debug_log_handler_mock,
+                                                  chmod_mock,
                                                   mkdir_mock):
         """
         Test that _summary() returns True for a single collect module when there are no diagnose modules run
@@ -1536,15 +1721,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @responses.activate
     def test_main__summary_single_collect_failure(self,
                                                   main_log_handler_mock,
                                                   debug_log_handler_mock,
+                                                  chmod_mock,
                                                   mkdir_mock):
         """
         Test that _summary() returns True for a single collect module when there are no diagnose modules run
@@ -1571,41 +1759,7 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
-        self.assertTrue(mkdir_mock.called)
-
-    @mock.patch("os.mkdir", side_effect=simple_return)
-    @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
-    @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    @responses.activate
-    def test_main__summary_single_diagnose_warn(self,
-                                                main_log_handler_mock,
-                                                debug_log_handler_mock,
-                                                mkdir_mock):
-        """
-        Test that _summary() returns True for a single collect module when there are no diagnose modules run
-        and test its output when the run_status is WARN.
-        """
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
-                      status=200)
-        path_to_ec2rl = os.path.abspath("ec2rl")
-        test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
-        sys.argv = [test_path, "run"]
-        ec2rl_summary_test = ec2rlcore.main.Main(debug=True, full_init=True)
-        module_path = os.path.join(self.callpath, "test/modules/single_collect/")
-        ec2rl_summary_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        # Removing the "diagnose" key will test the path that skips the diagnose-related messages
-        del ec2rl_summary_test.modules.class_map["diagnose"]
-
-        ec2rl_summary_test._modules[0].run_status = "WARN"
-        with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
-        self.assertTrue(self.output.getvalue().startswith("\n--------------[Run  Stats]--------------\n\nTotal module"))
-        self.assertTrue(self.output.getvalue().endswith(
-            "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
-        self.assertTrue("collect\' modules run:           1" in self.output.getvalue())
-
-        self.assertTrue(main_log_handler_mock.called)
-        self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("logging.FileHandler")
@@ -1619,6 +1773,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.ec2rl._run_postdiagnostics())
         # Set the applicable boolean value back how it was originally
         self.ec2rl._postdiags[0].applicable = not self.ec2rl._postdiags[0].applicable
+
         self.assertTrue(makedirs_mock.called)
         self.assertTrue(logging_fh_mock.called)
 
@@ -1648,6 +1803,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1655,6 +1811,7 @@ class TestMain(unittest.TestCase):
                       prediag_mock,
                       main_log_handler_mock,
                       debug_log_handler_mock,
+                      chmod_mock,
                       mkdir_mock,
                       copyfile_mock,
                       chdir_mock,
@@ -1687,6 +1844,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1699,6 +1857,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1706,6 +1865,7 @@ class TestMain(unittest.TestCase):
                                     prediag_mock,
                                     main_log_handler_mock,
                                     debug_log_handler_mock,
+                                    chmod_mock,
                                     mkdir_mock,
                                     copyfile_mock,
                                     chdir_mock,
@@ -1739,6 +1899,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1752,6 +1913,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1759,6 +1921,7 @@ class TestMain(unittest.TestCase):
                                     prediag_mock,
                                     main_log_handler_mock,
                                     debug_log_handler_mock,
+                                    chmod_mock,
                                     mkdir_mock,
                                     copyfile_mock,
                                     chdir_mock,
@@ -1793,6 +1956,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1805,6 +1969,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1812,6 +1977,7 @@ class TestMain(unittest.TestCase):
                                    prediag_mock,
                                    main_log_handler_mock,
                                    debug_log_handler_mock,
+                                   chmod_mock,
                                    mkdir_mock,
                                    copyfile_mock,
                                    chdir_mock,
@@ -1845,6 +2011,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1854,6 +2021,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("logging.FileHandler")
     @mock.patch("ec2rlcore.options.Options.write_config", side_effect=simple_return)
     @mock.patch("os.chdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
@@ -1863,6 +2031,7 @@ class TestMain(unittest.TestCase):
                                              prediag_mock,
                                              main_log_handler_mock,
                                              debug_log_handler_mock,
+                                             chmod_mock,
                                              mkdir_mock,
                                              copyfile_mock,
                                              chdir_mock,
@@ -1895,6 +2064,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1907,6 +2077,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1914,6 +2085,7 @@ class TestMain(unittest.TestCase):
                                       prediag_mock,
                                       main_log_handler_mock,
                                       debug_log_handler_mock,
+                                      chmod_mock,
                                       mkdir_mock,
                                       copyfile_mock,
                                       chdir_mock,
@@ -1946,6 +2118,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -1957,6 +2130,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chdir", side_effect=simple_return)
     @mock.patch("shutil.copyfile", side_effect=simple_return)
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
@@ -1964,6 +2138,7 @@ class TestMain(unittest.TestCase):
                                       prediag_mock,
                                       main_log_handler_mock,
                                       debug_log_handler_mock,
+                                      chmod_mock,
                                       mkdir_mock,
                                       copyfile_mock,
                                       chdir_mock,
@@ -1996,6 +2171,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(prediag_mock.called)
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(copyfile_mock.called)
         self.assertTrue(chdir_mock.called)
@@ -2006,6 +2182,7 @@ class TestMain(unittest.TestCase):
         """Test running the instance of Main when os.shutil fails to copy functions.bash."""
         with self.assertRaises(ec2rlcore.main.MainFileCopyError):
             self.ec2rl()
+
         self.assertTrue(mock_side_effect_function.called)
 
     @responses.activate
@@ -2035,14 +2212,17 @@ class TestMain(unittest.TestCase):
         """Test that version_check raises an exception when the connection to the endpoint times out."""
         with self.assertRaises(ec2rlcore.main.MainVersionCheckTimeout):
             self.ec2rl.version_check()
+
             self.assertTrue(requests_get_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main_software_check_missing_software(self,
                                                   main_log_handler_mock,
                                                   debug_log_handler_mock,
+                                                  chmod_mock,
                                                   mkdir_mock):
         """Test that software_check returns the expected list of software."""
         path_to_ec2rl = os.path.abspath("ec2rl")
@@ -2065,14 +2245,17 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main_software_check_missing_software_parse_failure(self,
                                                                 main_log_handler_mock,
                                                                 debug_log_handler_mock,
+                                                                chmod_mock,
                                                                 mkdir_mock):
         """Test that software_check handles a failure to parse the package value into the name and URL."""
         path_to_ec2rl = os.path.abspath("ec2rl")
@@ -2097,15 +2280,18 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("ec2rlcore.prediag.which", side_effect=[True])
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main_main_software_check_no_missing_software(self,
                                                           main_log_handler_mock,
                                                           debug_log_handler_mock,
+                                                          chmod_mock,
                                                           mkdir_mock,
                                                           which_mock):
         """Test that software_check returns the expected list of software."""
@@ -2124,6 +2310,7 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
         self.assertTrue(which_mock.called)
 
@@ -2159,11 +2346,13 @@ class TestMain(unittest.TestCase):
         self.assertFalse(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__summary_noinstance_unknown(self,
                                               main_log_handler_mock,
                                               debug_log_handler_mock,
+                                              chmod_mock,
                                               mkdir_mock):
         """
         Test that _summary() returns True and test its output when the run_status is UNKNOWN 
@@ -2187,14 +2376,17 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__summary_noinstance_success(self,
                                               main_log_handler_mock,
                                               debug_log_handler_mock,
+                                              chmod_mock,
                                               mkdir_mock):
         """
         Test that _summary() returns True and test its output when the run_status is SUCCESS
@@ -2218,14 +2410,17 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__summary_noinstance_failure(self,
                                               main_log_handler_mock,
                                               debug_log_handler_mock,
+                                              chmod_mock,
                                               mkdir_mock):
         """
         Test that _summary() returns True and test its output when the run_status is FAILURE
@@ -2249,14 +2444,17 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=simple_return)
+    @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
     def test_main__summary_noinstance_warn(self,
                                            main_log_handler_mock,
                                            debug_log_handler_mock,
+                                           chmod_mock,
                                            mkdir_mock):
         """
         Test that _summary() returns True and test its output when the run_status is WARN
@@ -2280,4 +2478,5 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(main_log_handler_mock.called)
         self.assertTrue(debug_log_handler_mock.called)
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
