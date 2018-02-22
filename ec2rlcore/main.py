@@ -108,7 +108,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.0")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.1")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
