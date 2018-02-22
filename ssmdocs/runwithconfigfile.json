@@ -39,8 +39,9 @@
     "inputs": {
       "runCommand": [
         "#!/bin/bash",
-        "curl https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz | tar xz",
-        "cd ec2rl",
+        "curl https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz -o ec2rl.tgz",
+        "tar -xvf ec2rl.tgz",
+        "cd \"$(tar -tf ec2rl.tgz --exclude=\"*/*\")\" || echo \"Failed to enter ec2rl directory\"; exit 1",
         "sudo ./ec2rl run --config_file=exampleconfigs/{{ defaultConfig }}"
       ],
       "workingDirectory": "{{ workingDirectory }}"

@@ -13,7 +13,7 @@
 # language governing permissions and limitations under the License.
 PYTHON:=python3
 SHELL:=/bin/bash
-VERSION:=1.1.0
+VERSION:=1.1.1
 BASENAME=ec2rl-$(VERSION)
 
 python: prep
