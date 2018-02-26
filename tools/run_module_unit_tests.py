@@ -40,6 +40,7 @@ def main():
                                                                              file_name))
             sys.exit(1)
     call_paths.append(os.path.join(*split_call_path_list))
+    call_paths.append(os.path.join(call_paths[-1], "lib"))
     for call_path in call_paths:
         sys.path.insert(0, call_path)
 
@@ -53,7 +54,7 @@ def main():
             sys.exit(1)
         code_coverage.stop()
         code_coverage.save()
-        code_coverage.report()
+        code_coverage.report(show_missing=True)
     except Exception:
         print("Caught unhandled exception!")
         raise
