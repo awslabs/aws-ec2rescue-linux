@@ -22,25 +22,35 @@ The "openssh" module for EC2 Rescue for Linux is a diagnostic module that checks
 8.  File mode and owner of any host keys defined in the server configuration that have not been previously checked during the prior steps.
 9.  If remediation is enabled, remediation of problems discovered during these checks.
 
+This module can also be used to inject new OpenSSH public keys into users' authorized keys files. This action can be performed standalone or as a precursor to the standard checks that are performed. This module supports using the key from the Instance Metadata Service, a user-specified key, and generating a new RSA key pair. See the parameters for additional details.
+
 ### Parameters
 
 The OpenSSH module can utilize several parameters from EC2 Rescue For Linux.
 
 1. --remediate
 
-Enable remediation of detected problems.
+Enable remediation of detected problems. Also required for key injection functionality.
 
-2. --inject_key
+2. --inject-key
 
-Inject a new public key into the authorized_keys file for each user whose home directory is in /home. The new key is obtained from the metadata of the running instance. Alternatively, the key can be specified via the new_ssh_key parameter. This action is performed prior to any problem checking and remediation steps. The inject_key parameter is dependent upon the remediation parameter.
+Inject a new public key into the authorized_keys file for each user whose home directory is in /home. The default behavior is to obtain the key from the metadata of the running instance. Alternatively, the key can be specified via the new-ssh-key parameter or a new key pair can be generated with --create-new-keys. This action is performed prior to any problem checking and before any other remediation steps. The inject-key parameter is dependent upon the --remediate parameter.
 
-3. --new_ssh_key="new key value"
+3. --inject-key-only
 
-Specify the value of the new public key for use with the inject_key parameter. This is useful when using the module in a system that is not an instance or when a particular public key is required, but is not available from the instance metadata.
+As with --inject-key, but when this parameter is given, the remainder of the module functionality is skipped. Use this parameter to perform key injection as a standalone action.
+
+4. --new-ssh-key="new key value"
+
+Specify the value of the new public key for use with the inject-key parameter. This is useful when using the module in a system that is not an instance or when a particular public key is required, but is not available from the instance metadata. This parameter always takes precendence over --create-new-keys.
+
+5. --create-new-keys
+
+Generate a new 4096-bit RSA key pair using ssh-keygen. The public key will be injected as previously described and the private key will be securely stored using AWS Systems Manager Parameter Store for later retrieval. This parameter only functions within an AWS EC2 instance and requires that the AWS credentials have sufficient permissions to use the SSM put_parameter API call.
 
 ### Example
 ```
-[ec2-user@localhost ~]$ sudo ./ec2rl run --only-modules=openssh --remediate --inject_key --new_key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQwbc5itEVp5PqNyp/xkhdyYpXbzUEo0m2w1n49rkymJ7aSLUiaGIvvOqxRYkplfvGesxS90V5lo47O2bEw6y/iEvzy2wUHWCywlGw6klPwbdzfNrV8kk0uOI/rY6e+rJoOQBO2Asut3vDz3bj6hdJ/4NLsQYyFKv+vnEDzWzRAhO3KLa7JhlEvCg4O1WBgC4ko4b8OswI3cjrpRt3NgxC9W81qdSxE44YCUVb2JGm14VJvyiWDDMz4u7RRCvsefCAZxRt7W3UADVm9PiUJA80vrIXirx1ShQYGIu61hz0nLtR/NGPWdweJOKt4PERJ1Ht7b99BL8NsXyO3wS6lr7j documentation-example-key"
+[ec2-user@localhost ~]$ sudo ./ec2rl run --only-modules=openssh --remediate --inject-key --new-key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQwbc5itEVp5PqNyp/xkhdyYpXbzUEo0m2w1n49rkymJ7aSLUiaGIvvOqxRYkplfvGesxS90V5lo47O2bEw6y/iEvzy2wUHWCywlGw6klPwbdzfNrV8kk0uOI/rY6e+rJoOQBO2Asut3vDz3bj6hdJ/4NLsQYyFKv+vnEDzWzRAhO3KLa7JhlEvCg4O1WBgC4ko4b8OswI3cjrpRt3NgxC9W81qdSxE44YCUVb2JGm14VJvyiWDDMz4u7RRCvsefCAZxRt7W3UADVm9PiUJA80vrIXirx1ShQYGIu61hz0nLtR/NGPWdweJOKt4PERJ1Ht7b99BL8NsXyO3wS6lr7j documentation-example-key"
 ```
 
 Passing output

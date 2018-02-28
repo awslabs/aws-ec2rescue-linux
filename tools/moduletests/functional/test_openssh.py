@@ -14,14 +14,19 @@
 
 """Functional tests for "openssh" module."""
 
+import glob
 import os
 import pwd
+import re
 import shlex
 import shutil
 import stat
 import subprocess
 import sys
 import unittest
+
+import boto3
+import requests
 
 import ec2rlcore.prediag
 import moduletests.src.openssh
@@ -75,7 +80,9 @@ class TestSSH(unittest.TestCase):
         self.verified_fixed = False
         self.env_dict["remediate"] = "False"
         self.env_dict["notaninstance"] = "True"
-        self.env_dict["inject_key"] = "False"
+        self.env_dict["injectkey"] = "False"
+        self.env_dict["injectkeyonly"] = "False"
+        self.env_dict["createnewkeys"] = "False"
         self.env_dict["EC2RL_GATHEREDDIR"] = self.backup_dir_path
         os.makedirs(self.backup_dir_path, 0o700)
 
@@ -83,7 +90,10 @@ class TestSSH(unittest.TestCase):
         self.backed_files = None
         del self.env_dict["remediate"]
         del self.env_dict["notaninstance"]
-        del self.env_dict["inject_key"]
+        del self.env_dict["injectkey"]
+        del self.env_dict["injectkeyonly"]
+        del self.env_dict["createnewkeys"]
+        # Remove files created by running ec2rl
         shutil.rmtree(self.backup_dir_path)
 
     def test_ssh_missing_sshd(self):
@@ -132,7 +142,9 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of /etc/ssh to 777 (world writable), verify the issue is detected and remediated, and
         undo the permission mode change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = "/etc/ssh"
         output_messages = list()
         output_messages.append("-- FIXED       Permission mode includes write for groups and/or other users: /etc/ssh")
@@ -179,7 +191,9 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of sshd_config to 777 (world writable), verify the issue is detected and remediated, and
         undo the permission mode change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = self.config_file_path
         output_messages = list()
         output_messages.append("-- FIXED       Permission mode includes write for groups and/or other users: {}".format(
@@ -228,8 +242,10 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of sshd_config to 777 (world writable), verify the issue is detected and remediated, and
         undo the permission mode change, if needed.
         """
-        test_path = "/home"
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
+        test_path = "/home"
         output_messages = list()
         output_messages.append(
             "-- FIXED       Permission mode includes write for groups and/or other users: /home")
@@ -271,7 +287,9 @@ class TestSSH(unittest.TestCase):
         """
         Set the uid of /home to 1337, verify the issue is detected and remediated, and undo the uid change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = "/home"
         output_messages = list()
         output_messages.append("-- FIXED       Not owned by user root: /home")
@@ -318,7 +336,9 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of user's home directory (ec2-user or ubuntu) to 777 (world writable),
         verify the issue is detected and remediated, and undo the permission mode change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = "/home/{}".format(self.username)
         output_messages = list()
         output_messages.append("-- FIXED       Permission mode includes write for groups and/or other users: {}".format(
@@ -363,7 +383,9 @@ class TestSSH(unittest.TestCase):
         Set the uid of user's home directory (ec2-user or ubuntu) to 0, verify the issue is detected and remediated,
         and undo the uid change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = "/home/{}".format(self.username)
         output_messages = list()
         output_messages.append("-- FIXED       Not owned by user {}: {}".format(self.username, test_path))
@@ -417,8 +439,10 @@ class TestSSH(unittest.TestCase):
         the instance metadata. Without one of these, there is no way to know what key to add to the new authorized keys
         file. This test uses a key from the instance metadata and is, thus, only suitable to be run on an instance.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
         self.env_dict["notaninstance"] = "False"
+
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
@@ -471,7 +495,9 @@ class TestSSH(unittest.TestCase):
         Set the uid of user's (ec2-user or ubuntu) authorized keys file to 0, verify the issue is detected and
         remediated, and undo the uid change, if necesary.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
@@ -524,7 +550,9 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of a user's (ec2-user or ubuntu) authorized keys file to 777 (world writable),
         verify the issue is detected and remediated, and undo the permission mode change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = os.sep.join(["/home",
                                  self.username,
@@ -579,7 +607,9 @@ class TestSSH(unittest.TestCase):
         invalid option, test that the problem is detected and remediated, and restore the backup configuration file
         copy.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = self.config_file_path
         output_messages = list()
         output_messages.append("-- FIXED       Bad lines in configuration file: {}".format(test_path))
@@ -637,7 +667,9 @@ class TestSSH(unittest.TestCase):
         Backup the sshd configuration file, write a new configuration file with multiple AuthorizedKeysFile lines,
         test that the problem is detected and remediated, and restore the backup configuration file copy.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = self.config_file_path
         output_messages = list()
         output_messages.append(
@@ -701,7 +733,9 @@ class TestSSH(unittest.TestCase):
         Backup the user privilege separation directory, remove the user privilege separation directory, test that
         the problem is detected and remediated, and restore the backup user privilege separation directory copy.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = moduletests.src.openssh.get_privilege_separation_dir()
         output_messages = list()
         output_messages.append("-- FIXED       Missing privilege separation directory: {}".format(test_path))
@@ -750,7 +784,9 @@ class TestSSH(unittest.TestCase):
         Set the uid of the user privilege separation directory to 1337, verify the issue is detected and remediated, and
         undo the uid change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = moduletests.src.openssh.get_privilege_separation_dir()
         output_messages = list()
         output_messages.append("-- FIXED       Not owned by user root: {}".format(test_path))
@@ -797,7 +833,9 @@ class TestSSH(unittest.TestCase):
         Set the permission mode of the user privilege separation user directory to 777 (world writable),
         verify the issue is detected and remediated, and undo the permission mode change, if needed.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         test_path = moduletests.src.openssh.get_privilege_separation_dir()
         output_messages = list()
         output_messages.append("-- FIXED       Permission mode includes write for groups and/or other users: {}".format(
@@ -855,7 +893,9 @@ class TestSSH(unittest.TestCase):
         set the permission mode on key file to 777 (world writable), verify the issue is detected and remediated, and
         undo the sshd configuration change and remove the new host key file.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         moduletests.src.openssh.Problem.setup_config_vars()
         test_path = "/root/test_key.dsa"
         output_messages = list()
@@ -919,7 +959,9 @@ class TestSSH(unittest.TestCase):
         privilege separation user, if needed. There is no programatic way to obtain this user so the test will
          assume it is "sshd".
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         # There is no programatic way to obtain this user so the test will assume it is "sshd".
         test_user = "sshd"
         test_path = moduletests.src.openssh.get_privilege_separation_dir()
@@ -993,7 +1035,9 @@ class TestSSH(unittest.TestCase):
         Backup the hostkeys, remove the host keys, test that the problem has been detected and remediated, and
         restore the backup host key copies.
         """
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         output_messages = list()
         output_messages.append("-- FIXED       Missing hostkey files")
         for key_file in ["/etc/ssh/ssh_host_dsa_key",
@@ -1019,11 +1063,15 @@ class TestSSH(unittest.TestCase):
             self.assertTrue(message in process_output)
 
     def test_ssh_chained_problems(self):
-        """Create a set of problems on the system including problems dependent upon eachother, test that they are all
+        """
+        Create a set of problems on the system including problems dependent upon eachother, test that they are all
         detected and remediate, and restore all the backed up files.
         """
         moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
         self.env_dict["remediate"] = "True"
+
         sshd_config_path = self.config_file_path
         auth_keys_path = os.sep.join(["/home",
                                       self.username,
@@ -1076,3 +1124,270 @@ class TestSSH(unittest.TestCase):
         for message in output_messages:
             self.assertTrue(message in process_output)
         self.assertEqual(self.verified_fixed, [True] * 3)
+
+    def test_ssh_key_injection_only_arg_success(self):
+        """Test standalone key injection using a new key value from the user args."""
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["remediate"] = "True"
+        self.env_dict["injectkeyonly"] = "True"
+        self.env_dict["newsshkey"] = "newkeyvalue"
+
+        # Create test user, its .ssh directory, and its authorized_keys file
+        test_user_name = "ec2rltestuser"
+        subprocess.check_call(shlex.split("useradd --create-home {}".format(test_user_name)))
+        test_user_home_ssh_dir = os.path.join(pwd.getpwnam("{}".format(test_user_name)).pw_dir, ".ssh")
+        test_user_auth_keys = os.path.join(test_user_home_ssh_dir, "authorized_keys")
+        os.makedirs(test_user_home_ssh_dir)
+        os.chmod(test_user_home_ssh_dir, 0o0600)
+        os.mknod(test_user_auth_keys)
+        os.chmod(test_user_auth_keys, 0o0600)
+
+        output_messages = list()
+        output_messages.append("Key injection enabled. Will skip other functionality.")
+        output_messages.append("Obtained new key from --new-ssh-key arg.")
+        output_messages.append("[SUCCESS] OpenSSH public key injection operation completed successfully.")
+        try:
+            # Backup original authorized_keys files
+            for file in glob.glob("/home/*"):
+                for key_path in moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"]:
+                    file = os.path.realpath(file)
+                    full_path_auth_keys = os.path.join(file, key_path)
+                    # Verify this file is a directory
+                    if not os.path.isdir(file):
+                        continue
+                    # Verify the /home directory belongs to a user account
+                    try:
+                        pwd.getpwnam(os.path.basename(file)).pw_uid
+                    except KeyError:
+                        # pwd.getpwnam raises KeyError when the arg does not match a user in the password database
+                        continue
+                    # Verify the entire key path is valid and the keys file is actually a file
+                    if not os.path.isfile(full_path_auth_keys):
+                        continue
+
+                    ec2rlcore.prediag.backup(full_path_auth_keys, self.backed_files, self.backup_dir_path)
+
+            process_output = subprocess.check_output(TestSSH.command,
+                                                     stderr=subprocess.STDOUT,
+                                                     env=self.env_dict,
+                                                     universal_newlines=True)
+
+            for message in output_messages:
+                self.assertTrue(message in process_output)
+            with open(test_user_auth_keys, "r") as fp:
+                auth_keys_content = fp.read()
+            self.assertEqual(auth_keys_content.strip(), self.env_dict["newsshkey"])
+        finally:
+            del self.env_dict["newsshkey"]
+            for key_file in self.backed_files:
+                ec2rlcore.prediag.restore(key_file, self.backed_files)
+            subprocess.check_output(shlex.split("userdel --force --remove {}".format(test_user_name)),
+                                    stderr=subprocess.STDOUT)
+
+    @unittest.skipIf(not ec2rlcore.prediag.is_an_instance(), "Test must be run from an AWS EC2 instance.")
+    def test_ssh_key_injection_only_metadata_success(self):
+        """Test standalone key injection using a new key value from the user args."""
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["remediate"] = "True"
+        self.env_dict["injectkeyonly"] = "True"
+        self.env_dict["notaninstance"] = "False"
+
+        # Get the expected key value from the IMDS
+        expected_key_value = requests.get(moduletests.src.openssh.METADATA_KEY_URL).text.strip()
+
+        # Create test user, its .ssh directory, and its authorized_keys file
+        test_user_name = "ec2rltestuser"
+        subprocess.check_call(shlex.split("useradd --create-home {}".format(test_user_name)))
+        test_user_home_ssh_dir = os.path.join(pwd.getpwnam("{}".format(test_user_name)).pw_dir, ".ssh")
+        test_user_auth_keys = os.path.join(test_user_home_ssh_dir, "authorized_keys")
+        os.makedirs(test_user_home_ssh_dir)
+        os.chmod(test_user_home_ssh_dir, 0o0600)
+        os.mknod(test_user_auth_keys)
+        os.chmod(test_user_auth_keys, 0o0600)
+
+        output_messages = list()
+        output_messages.append("Key injection enabled. Will skip other functionality.")
+        output_messages.append("Obtained new key from instance metadata.")
+        output_messages.append("[SUCCESS] OpenSSH public key injection operation completed successfully.")
+        try:
+            # Backup original authorized_keys files
+            for file in glob.glob("/home/*"):
+                for key_path in moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"]:
+                    file = os.path.realpath(file)
+                    full_path_auth_keys = os.path.join(file, key_path)
+                    # Verify this file is a directory
+                    if not os.path.isdir(file):
+                        continue
+                    # Verify the /home directory belongs to a user account
+                    try:
+                        pwd.getpwnam(os.path.basename(file)).pw_uid
+                    except KeyError:
+                        # pwd.getpwnam raises KeyError when the arg does not match a user in the password database
+                        continue
+                    # Verify the entire key path is valid and the keys file is actually a file
+                    if not os.path.isfile(full_path_auth_keys):
+                        continue
+
+                    ec2rlcore.prediag.backup(full_path_auth_keys, self.backed_files, self.backup_dir_path)
+
+            process_output = subprocess.check_output(TestSSH.command,
+                                                     stderr=subprocess.STDOUT,
+                                                     env=self.env_dict,
+                                                     universal_newlines=True)
+
+            for message in output_messages:
+                self.assertTrue(message in process_output)
+            with open(test_user_auth_keys, "r") as fp:
+                auth_keys_content = fp.read()
+            self.assertEqual(auth_keys_content.strip(), expected_key_value)
+        finally:
+            for key_file in self.backed_files:
+                ec2rlcore.prediag.restore(key_file, self.backed_files)
+            subprocess.check_output(shlex.split("userdel --force --remove {}".format(test_user_name)),
+                                    stderr=subprocess.STDOUT)
+
+    @unittest.skipIf(not ec2rlcore.prediag.is_an_instance(), "Test must be run from an AWS EC2 instance.")
+    def test_ssh_key_injection_only_generate_new_success(self):
+        """
+        Test standalone key injection when creating a new key pair. This test also requires the EC2 instance
+        have sufficient permissions since the newly generated private key is stored as a SecureString Parameter
+        and the test must retrieve the parameter for verification. Both put_parameter and get_parameter SSM
+        permissions as well as access to the KMS key used to encrypt the SecureString value are required.
+        """
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["remediate"] = "True"
+        self.env_dict["injectkeyonly"] = "True"
+        self.env_dict["createnewkeys"] = "True"
+        self.env_dict["notaninstance"] = "False"
+
+        # Expected SSM parameter name for verification purposes
+        ssm_parameter_name = "/ec2rl/openssh/{}/key".format(ec2rlcore.awshelpers.get_instance_id())
+
+        # Create test user, its .ssh directory, and its authorized_keys file
+        test_user_name = "ec2rltestuser"
+        subprocess.check_call(shlex.split("useradd --create-home {}".format(test_user_name)))
+        test_user_home_ssh_dir = os.path.join(pwd.getpwnam("{}".format(test_user_name)).pw_dir, ".ssh")
+        test_user_auth_keys = os.path.join(test_user_home_ssh_dir, "authorized_keys")
+        os.makedirs(test_user_home_ssh_dir)
+        os.chmod(test_user_home_ssh_dir, 0o0600)
+        os.mknod(test_user_auth_keys)
+        os.chmod(test_user_auth_keys, 0o0600)
+
+        output_messages = list()
+        output_messages.append("Key injection enabled. Will skip other functionality.")
+        output_messages.append("New key pair generated.")
+        output_messages.append("[SUCCESS] OpenSSH public key injection operation completed successfully.")
+        try:
+            # Backup original authorized_keys files
+            for file in glob.glob("/home/*"):
+                for key_path in moduletests.src.openssh.Problem.CONFIG_DICT["AUTH_KEYS"]["relative"]:
+                    file = os.path.realpath(file)
+                    full_path_auth_keys = os.path.join(file, key_path)
+                    # Verify this file is a directory
+                    if not os.path.isdir(file):
+                        continue
+                    # Verify the /home directory belongs to a user account
+                    try:
+                        pwd.getpwnam(os.path.basename(file)).pw_uid
+                    except KeyError:
+                        # pwd.getpwnam raises KeyError when the arg does not match a user in the password database
+                        continue
+                    # Verify the entire key path is valid and the keys file is actually a file
+                    if not os.path.isfile(full_path_auth_keys):
+                        continue
+
+                    ec2rlcore.prediag.backup(full_path_auth_keys, self.backed_files, self.backup_dir_path)
+
+            process_output = subprocess.check_output(TestSSH.command,
+                                                     stderr=subprocess.STDOUT,
+                                                     env=self.env_dict,
+                                                     universal_newlines=True)
+
+            for message in output_messages:
+                self.assertTrue(message in process_output)
+            with open(test_user_auth_keys, "r") as fp:
+                auth_keys_content = fp.read()
+            self.assertTrue(re.match(r"^ssh-rsa .+ Added by EC2 Rescue for Linux$", auth_keys_content.strip()))
+            try:
+                client = boto3.client("ssm", ec2rlcore.awshelpers.get_instance_region())
+                private_key = client.get_parameter(Name=ssm_parameter_name, WithDecryption=True)["Parameter"]["Value"]
+                self.assertTrue(re.match(r"^-----BEGIN RSA PRIVATE KEY-----.+-----END RSA PRIVATE KEY-----\n$",
+                                         private_key,
+                                         re.DOTALL))
+            except Exception:
+                self.fail("Failed to verify SSM SecureString Parameter value.")
+        finally:
+            for key_file in self.backed_files:
+                ec2rlcore.prediag.restore(key_file, self.backed_files)
+            subprocess.check_output(shlex.split("userdel --force --remove {}".format(test_user_name)),
+                                    stderr=subprocess.STDOUT)
+
+    def test_ssh_key_injection_only_no_key_available_notaninstance(self):
+        """
+        Test that key injection fails when no key is provided, the create keys arg is not passed,
+        and the environment is not an instance.
+        """
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["remediate"] = "True"
+        self.env_dict["injectkeyonly"] = "True"
+        self.env_dict["notaninstance"] = "True"
+
+        output_messages = list()
+        output_messages.append("Key injection enabled. Will skip other functionality.")
+        output_messages.append("Aborting because no new key available.")
+        output_messages.append("[FAILURE] Failed to obtain and inject new OpenSSH public key.")
+        process_output = subprocess.check_output(TestSSH.command,
+                                                 stderr=subprocess.STDOUT,
+                                                 env=self.env_dict,
+                                                 universal_newlines=True)
+
+        for message in output_messages:
+            self.assertTrue(message in process_output)
+
+    def test_ssh_key_injection_only_missing_remediate(self):
+        """Test that key injection fails when remediation is not enabled via user arg."""
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["injectkeyonly"] = "True"
+
+        output_messages = list()
+        output_messages.append("Key injection not enabled.")
+        output_messages.append("[FAILURE] --inject-key-only requires --remediate which was not provided.")
+        process_output = subprocess.check_output(TestSSH.command,
+                                                 stderr=subprocess.STDOUT,
+                                                 env=self.env_dict,
+                                                 universal_newlines=True)
+
+        for message in output_messages:
+            self.assertTrue(message in process_output)
+
+    def test_ssh_key_injection_missing_remediate(self):
+        """
+        Test that key injection does not execute when remediation is not enabled via user args, but
+        the rest of the module does execute.
+        """
+        moduletests.src.openssh.Problem.setup_config_vars()
+
+        # Translated user args
+        self.env_dict["injectkey"] = "True"
+
+        output_messages = list()
+        output_messages.append("Key injection not enabled.")
+        output_messages.append("  --inject-key requires --remediate which was not provided.")
+        output_messages.append("[SUCCESS] All configuration checks passed or all detected problems fixed.")
+        process_output = subprocess.check_output(TestSSH.command,
+                                                 stderr=subprocess.STDOUT,
+                                                 env=self.env_dict,
+                                                 universal_newlines=True)
+
+        for message in output_messages:
+            self.assertTrue(message in process_output)

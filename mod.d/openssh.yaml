@@ -20,6 +20,13 @@ version: !!str 2.0
 title: !!str Verify OpenSSH configuration for faults that could prevent remote access
 helptext: !!str |
   Runs a series of checks to verify the OpenSSH configuration is in a usable state.
+  Remediate discovered issues if the --remediate arg was provided. Can also inject new
+  keys through the use of optional args.
+  Optional --inject-key inject a new OpenSSH key prior to running the standard checks
+  Optional --inject-key-only inject a new OpenSSH key then exit
+  Optional --new-ssh-key="new key goes here" specify the value of the new key to inject
+  Optional --create-new-keys generate a new key pair with ssh-keygen during key injection
+                             and store the private key as a SSM SecureString Parameter
 placement: !!str run
 package:
   - !!str
@@ -75,11 +82,17 @@ content: !!str |
   # when this module is directly invoked with the interpreter.
   if __name__ == "__main__":  # pragma: no coverage
       sys.path.insert(0, os.environ["EC2RL_CALLPATH"])
+      sys.path.insert(0, os.path.join(os.environ["EC2RL_CALLPATH"], "lib"))
 
+  from ec2rlcore.awshelpers import get_instance_id
+  from ec2rlcore.awshelpers import get_instance_region
   from ec2rlcore.prediag import backup
   from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import print_indent
   from ec2rlcore.prediag import restore
+
+  import boto3
+  import botocore
 
 
   class DirectedAcyclicGraph(object):
@@ -360,6 +373,8 @@ content: !!str |
                       "CONFIG_PATH": "/etc/ssh/sshd_config",
                       "CONFIG_DICT": dict(),
                       "INJECT_KEY": False,
+                      "INJECT_KEY_ONLY": False,
+                      "CREATE_NEW_KEYS": False,
                       "NEW_KEY": None,
                       "PRIV_SEP_DIR": "/var/empty/sshd",
                       # Define bitmasks for verifying permission modes
@@ -396,20 +411,36 @@ content: !!str |
           cls.CONFIG_DICT.update(get_config_dict("openssh"))
 
           try:
-              if os.environ["inject_key"] == "True":
-                  cls.CONFIG_DICT["INJECT_KEY"] = True
-                  print("Key injection enabled.")
-              else:
-                  print("Key injection not enabled. To enable, rerun with the --inject_key argument.")
+              cls.CONFIG_DICT["INJECT_KEY"] = os.environ["injectkey"] == "True"
           except KeyError:
-              print("Key injection not enabled. To enable, rerun with the --inject_key argument.")
+              pass
+
+          try:
+              cls.CONFIG_DICT["INJECT_KEY_ONLY"] = os.environ["injectkeyonly"] == "True"
+          except KeyError:
+              pass
+
+          if cls.CONFIG_DICT["INJECT_KEY"] and cls.CONFIG_DICT["REMEDIATE"]:
+              print("Key injection enabled.")
+          elif cls.CONFIG_DICT["INJECT_KEY_ONLY"] and cls.CONFIG_DICT["REMEDIATE"]:
+              print("Key injection enabled. Will skip other functionality.")
+          else:
+              print("Key injection not enabled.")
+              print("To enable, rerun with --remediate and either the --inject-key or the --inject-key-only argument.")
+
+          try:
+              cls.CONFIG_DICT["CREATE_NEW_KEYS"] = os.environ["createnewkeys"] == "True"
+          except KeyError:
+              pass
 
           try:
               # Prefer an explicitly given key over the key from the metadata service
-              cls.CONFIG_DICT["NEW_KEY"] = os.environ["new_ssh_key"]
-              print("Found new key from user args.")
+              cls.CONFIG_DICT["NEW_KEY"] = os.environ["newsshkey"]
+              print("Obtained new key from --new-ssh-key arg.")
           except KeyError:
-              if not cls.CONFIG_DICT["NOT_AN_INSTANCE"]:
+              if cls.CONFIG_DICT["CREATE_NEW_KEYS"] and not cls.CONFIG_DICT["NOT_AN_INSTANCE"]:
+                  print("Will create new public key using ssh-keygen.")
+              elif not cls.CONFIG_DICT["NOT_AN_INSTANCE"]:
                   cls.CONFIG_DICT["NEW_KEY"] = requests.get(metadata_key_url).text.strip()
                   print("Obtained new key from instance metadata.")
 
@@ -1122,6 +1153,91 @@ content: !!str |
   ###
   # Utility functions
   ###
+  def generate_rsa_key_pair(key_path):
+      """
+      Call ssh-keygen to create a new 4096-bit RSA key pair as return them in a dict.
+
+      Parameters:
+          key_path (str): the path to output the generated key pair
+
+      Returns:
+          keys_dict (dict): key types and the paths to each key
+      """
+      try:
+          key_path = os.path.join(key_path, "ec2rl_opensshresetaccess")
+          keys_dict = {"private": None, "public": None}
+          subprocess.check_call(
+              shlex.split("ssh-keygen -q -t rsa -b 4096 -f {} -N \"\" -C \"Added by EC2 Rescue for Linux\"".format(
+                  key_path)),
+              stderr=subprocess.STDOUT)
+
+          with open("{}.pub".format(key_path), "r") as pub_fp:
+              keys_dict["public"] = pub_fp.read()
+          with open(key_path, "r") as priv_fp:
+              keys_dict["private"] = priv_fp.read()
+          return keys_dict
+      finally:
+          # Always remove the key files even in the event of an exception being raised
+          # It is possible that an exception is raised before the key files are created so catch those exceptions
+          # IOError/Python 2, OSError/Python 3 (FileNotFoundError, etc)
+          try:
+              os.remove(key_path)
+          except (OSError, IOError):
+              pass
+          try:
+              os.remove("{}.pub".format(key_path))
+          except (OSError, IOError):
+              pass
+
+
+  def key_injection_driver(sys_config_dict):
+      """
+      Determine where to obtain the key and inject it into the authorized_keys file(s).
+
+      Parameters:
+          sys_config_dict (dict):
+
+      Returns:
+          (bool): True if a key was obtained and injected else False
+      """
+      try:
+          if sys_config_dict["NEW_KEY"]:
+              print("Key present, proceeding.")
+          elif sys_config_dict["CREATE_NEW_KEYS"]:
+              if not os.path.exists(Problem.CONFIG_DICT["BACKUP_DIR"]):
+                  os.makedirs(Problem.CONFIG_DICT["BACKUP_DIR"])
+              keys = generate_rsa_key_pair(Problem.CONFIG_DICT["BACKUP_DIR"])
+              sys_config_dict["NEW_KEY"] = keys["public"]
+              instance_id = get_instance_id()
+
+              try:
+                  client = boto3.client("ssm", region_name=get_instance_region())
+                  parameter_dict = {
+                      "Name": "/ec2rl/openssh/{}/key".format(instance_id),
+                      "Description": "Private key added to instance {} by EC2 Rescue for Linux.".format(instance_id),
+                      "Value": keys["private"],
+                      "Type": "SecureString",
+                      "Overwrite": True
+                  }
+                  client.put_parameter(**parameter_dict)
+                  print("New key pair generated.")
+              except botocore.exceptions.NoCredentialsError as nce:
+                  print("No AWS Credentials configured. Please configure them and try again.")
+                  raise nce
+          else:
+              print("Aborting because no new key available.")
+              return False
+
+          inject_key_all(sys_config_dict["NEW_KEY"],
+                         sys_config_dict["AUTH_KEYS"],
+                         sys_config_dict["BACKED_FILES"],
+                         sys_config_dict["BACKUP_DIR"])
+      except Exception as ex:
+          print(ex)
+          return False
+      return True
+
+
   def inject_key_all(new_key, auth_keys, backed_files, backup_dir):
       """
       Given a new key, new_key, add it to each user's authorized key file.
@@ -1633,9 +1749,14 @@ content: !!str |
       raise Exception("Failed to obtain privilege separation directory path!")
 
 
-  METADATA_KEY_URL = "http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key"
+  def run():
+      """
+      Run the key injection routine if the required args were provided. If this wasn not the only requested function
+      then continue on and perform all the normal checks.
 
-  if __name__ == "__main__":  # pragma: no coverage
+      Returns:
+          (bool): True if execution was successful. False if an operation failed or an unhandled exception was raised.
+      """
       print("Verify OpenSSH components such as file permissions/ownership and the daemon configuration.")
       print("Improper configuration may result in system inaccessiblity and/or compromised security.")
       print("See https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/openssh.md for "
@@ -1649,31 +1770,52 @@ content: !!str |
               pass
 
           Problem.setup_run_vars(metadata_key_url=METADATA_KEY_URL)
+          ret = True
 
-          if (Problem.CONFIG_DICT["INJECT_KEY"]
-              and not Problem.CONFIG_DICT["REMEDIATE"]) \
-                  or (Problem.CONFIG_DICT["REMEDIATE"]
-                      and Problem.CONFIG_DICT["INJECT_KEY"]
-                      and not Problem.CONFIG_DICT["NEW_KEY"]):
-              print("Skipping key injection because no new key available.")
-          elif Problem.CONFIG_DICT["REMEDIATE"] \
-                  and Problem.CONFIG_DICT["INJECT_KEY"] \
-                  and Problem.CONFIG_DICT["NEW_KEY"]:
-              inject_key_all(Problem.CONFIG_DICT["NEW_KEY"],
-                             Problem.CONFIG_DICT["AUTH_KEYS"],
-                             Problem.CONFIG_DICT["BACKED_FILES"],
-                             Problem.CONFIG_DICT["BACKUP_DIR"])
-
-          PROBLEMS_DAG = get_dag(Problem.CONFIG_DICT)
-          print("")
-          PROBLEMS_DAG.topological_solve(Problem.CONFIG_DICT["REMEDIATE"])
-          print("")
-          print(get_output_status(Problem.CONFIG_DICT["LOG_DIR"], PROBLEMS_DAG))
+          if Problem.CONFIG_DICT["REMEDIATE"] and Problem.CONFIG_DICT["INJECT_KEY_ONLY"]:
+              if key_injection_driver(Problem.CONFIG_DICT):
+                  print("[SUCCESS] OpenSSH public key injection operation completed successfully.")
+              else:
+                  print("[FAILURE] Failed to obtain and inject new OpenSSH public key.")
+                  ret = False
+          elif Problem.CONFIG_DICT["REMEDIATE"] and Problem.CONFIG_DICT["INJECT_KEY"]:
+              if not key_injection_driver(Problem.CONFIG_DICT):
+                  print("[FAILURE] Failed to obtain and inject new OpenSSH public key.")
+                  ret = False
+              else:
+                  problems_dag = get_dag(Problem.CONFIG_DICT)
+                  print("")
+                  problems_dag.topological_solve(Problem.CONFIG_DICT["REMEDIATE"])
+                  print("")
+                  print(get_output_status(Problem.CONFIG_DICT["LOG_DIR"], problems_dag))
+          elif not Problem.CONFIG_DICT["REMEDIATE"] and Problem.CONFIG_DICT["INJECT_KEY_ONLY"]:
+              print("[FAILURE] --inject-key-only requires --remediate which was not provided.")
+              ret = False
+          elif not Problem.CONFIG_DICT["REMEDIATE"] and Problem.CONFIG_DICT["INJECT_KEY"]:
+              print_indent("--inject-key requires --remediate which was not provided.", level=1)
+              problems_dag = get_dag(Problem.CONFIG_DICT)
+              print("")
+              problems_dag.topological_solve(Problem.CONFIG_DICT["REMEDIATE"])
+              print("")
+              print(get_output_status(Problem.CONFIG_DICT["LOG_DIR"], problems_dag))
+          else:
+              problems_dag = get_dag(Problem.CONFIG_DICT)
+              print("")
+              problems_dag.topological_solve(Problem.CONFIG_DICT["REMEDIATE"])
+              print("")
+              print(get_output_status(Problem.CONFIG_DICT["LOG_DIR"], problems_dag))
+          return ret
       except Exception as ex:
           print(ex)
           print("[WARN] module generated an exception and exited abnormally.")
           print("-- Review the logs to determine the cause of the issue.")
-          sys.exit(0)
+          return False
+
+
+  METADATA_KEY_URL = "http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key"
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
 
 constraint:
   requires_ec2: !!str False
