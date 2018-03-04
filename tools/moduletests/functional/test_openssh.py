@@ -1253,10 +1253,11 @@ class TestSSH(unittest.TestCase):
     @unittest.skipIf(not ec2rlcore.prediag.is_an_instance(), "Test must be run from an AWS EC2 instance.")
     def test_ssh_key_injection_only_generate_new_success(self):
         """
-        Test standalone key injection when creating a new key pair. This test also requires the EC2 instance
-        have sufficient permissions since the newly generated private key is stored as a SecureString Parameter
-        and the test must retrieve the parameter for verification. Both put_parameter and get_parameter SSM
-        permissions as well as access to the KMS key used to encrypt the SecureString value are required.
+        Test standalone key injection when creating a new key pair. This test also requires there be configured
+        AWS credentials and that the EC2 instance have sufficient permissions since the newly generated private
+        key is stored as a SecureString Parameter and the test must retrieve the parameter for verification.
+        Both put_parameter and get_parameter SSM permissions as well as access to the KMS key used to encrypt
+        the SecureString value are required.
         """
         moduletests.src.openssh.Problem.setup_config_vars()
 
@@ -1308,7 +1309,6 @@ class TestSSH(unittest.TestCase):
                                                      stderr=subprocess.STDOUT,
                                                      env=self.env_dict,
                                                      universal_newlines=True)
-
             for message in output_messages:
                 self.assertTrue(message in process_output)
             with open(test_user_auth_keys, "r") as fp:
