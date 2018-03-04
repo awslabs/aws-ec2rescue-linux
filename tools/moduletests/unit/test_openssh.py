@@ -1385,7 +1385,7 @@ class TestSSH(unittest.TestCase):
         self.assertTrue(subprocess_mock.called)
 
     @mock.patch("moduletests.src.openssh.subprocess.check_call", side_effect=subprocess.CalledProcessError(2, "cmd"))
-    @mock.patch("moduletests.src.openssh.os.remove", side_effect=[FileNotFoundError, FileNotFoundError])
+    @mock.patch("moduletests.src.openssh.os.remove", side_effect=[IOError, IOError])
     def test_ssh_generate_rsa_key_pair_remove_error(self, os_remove_mock, subprocess_mock):
         key_path = "test_path"
 
