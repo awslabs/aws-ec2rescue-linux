@@ -69,6 +69,7 @@ content: !!str |
   import glob
   import os
   import pwd
+  import re
   import shlex
   import shutil
   import stat
@@ -1725,14 +1726,19 @@ content: !!str |
       # See CPPFLAGS in Makefile.in
       # It is also set in the man page using sed with the variable PRIVSEP_PATH
       # See PATHSUBS in Makefile.in
+
+      # This man page line is the same as far back as OpenSSH version 3.5 (see sshd.8)
+      # RHEL6 is a known exeception as it includes escaped hex characters:
+      # "chroot(2) directory used by s\x08ss\x08sh\x08hd\x08d during privilege separation in"
+      # To accommodate, only inspect the string around where we think a form of the "sshd" substring is located
+      regex = re.compile(r"directory used by .* during privilege separation")
       try:
           man_output = subprocess.check_output(shlex.split("man sshd"),
                                                universal_newlines=True,
                                                stderr=subprocess.STDOUT).splitlines()
           for line_no, line in enumerate(man_output):
               man_output[line_no] = man_output[line_no].strip()
-              # This man page line is the same as far back as OpenSSH version 3.5 (see sshd.8)
-              if "directory used by sshd during privilege separation" in line:
+              if regex.search(line):
                   return man_output[line_no - 1]
       # non-standard exit, "man" not found
       except (subprocess.CalledProcessError, OSError):

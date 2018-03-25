@@ -2039,7 +2039,16 @@ class TestSSH(unittest.TestCase):
                                                         "             chroot(2) directory used by sshd during "
                                                         "privilege separation in the pre-authentication phase.  The "
                                                         "directory should not contain any files and"])
-    def test_ssh_get_privilege_separation_dir_subprocess_found(self, subprocess_mock):
+    def test_ssh_get_privilege_separation_dir_subprocess_found_plaintext(self, subprocess_mock):
+        self.assertEqual(moduletests.src.openssh.get_privilege_separation_dir(), "/var/run/sshd")
+        self.assertTrue(subprocess_mock.called)
+
+    @mock.patch("subprocess.check_output", side_effect=["     /var/run/sshd\n"
+                                                        "             chroot(2) directory used by "
+                                                        "s\x08ss\x08sh\x08hd\x08d during "
+                                                        "privilege separation in the pre-authentication phase.  The "
+                                                        "directory should not contain any files and"])
+    def test_ssh_get_privilege_separation_dir_subprocess_found_escaped_chars(self, subprocess_mock):
         self.assertEqual(moduletests.src.openssh.get_privilege_separation_dir(), "/var/run/sshd")
         self.assertTrue(subprocess_mock.called)
 
