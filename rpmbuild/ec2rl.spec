@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           ec2rl
-Version:	    1.1.1
+Version:	    1.1.2
 Release:        1
 Summary:        Automatic diagnostic tool for Linux
 
@@ -44,6 +44,8 @@ rm -rf /usr/bin/ec2rl
 %dir
 
 %changelog
+* Thur April 05 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.2
+ - Update EC2 Rescue for Linux to version 1.1.2
 * Thur Feb 22 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.1
  - Update EC2 Rescue for Linux to version 1.1.1
 * Mon Jan 29 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.0
