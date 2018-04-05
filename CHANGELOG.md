@@ -5,15 +5,15 @@
 * [Enhancement] Updated vendored version of botocore to 1.9.1
 
 #### Framework
-* [Enhancement] Added lib directory to PATH for modules that require access to libraried modules
+* [Enhancement] Added lib directory to PATH for Python-based EC2RL modules that require access to vendored modules
 
 #### Modules
-* [New Feature] Added support for generation of a new RSA keypair in the openssh module. The new private key is stored as an SSM SecureString Parameter
-* [Enhancement] Refactored key injection in the openssh module to support key injection as a standalone action
-* [Enhancement] Modified method by which the privilege separation directory is obtained to support older distributions
+* [New Feature] OpenSSH module: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
+* [Enhancement] OpenSSH module: Refactored key injection to support key injection as a standalone action
+* [Enhancement] OpenSSH module: Modified method by which the privilege separation directory is obtained to support older distributions
 
 #### Testing
-* [Enhancement] Updated test runner script to show missing coverage in test report
+* [Enhancement] Updated test runner script, run_module_unit_tests.py, to show missing coverage in test report
 * [Enhancement] Updated Makefile to support Python 2 in the "binary" and "test" targets
 * [Bugfix] Changed a side_effect exception from FileNotFoundError to IOError because FileNotFoundError does not exist in Python 2
 
