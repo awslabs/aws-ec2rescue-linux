@@ -118,21 +118,21 @@ content: !!str |
 
           if distro == "alami":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn1\.x86_64", initrd_file_name).group(0)
-              subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
+              subprocess_command = "dracut -f /boot/initramfs-{0}.img {0}".format(regex_match)
           elif distro == "alami2":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.amzn2\.x86_64", initrd_file_name).group(0)
-              subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
+              subprocess_command = "dracut -f /boot/initramfs-{0}.img {0}".format(regex_match)
           elif distro == "rhel":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+(.*).el7\.x86_64", initrd_file_name).group(0)
-              subprocess_command = "dracut -f /boot/initramfs-{}.img".format(regex_match)
+              subprocess_command = "dracut -f /boot/initramfs-{0}.img {0}".format(regex_match)
           elif distro == "ubuntu":
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+(.*)+-(aws|generic)", initrd_file_name).group(0)
-              subprocess_command = "update-initramfs -c -k{}".format(regex_match)
+              subprocess_command = "update-initramfs -c -k {}".format(regex_match)
           # Equivalent of elif distro == "suse":
           # The early guard check on the distro parameter makes this safe
           else:
               regex_match = re.search(r"[0-9]\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+-default", initrd_file_name).group(0)
-              subprocess_command = "dracut -f /boot/initrd-{}".format(regex_match)
+              subprocess_command = "dracut -f /boot/initrd-{0} {0}".format(regex_match)
 
           try:
               print("Creating new initial ramdisk for {}".format(regex_match))
