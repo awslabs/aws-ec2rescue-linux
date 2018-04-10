@@ -11,6 +11,7 @@
 * [New Feature] OpenSSH module: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
 * [Enhancement] OpenSSH module: Refactored key injection to support key injection as a standalone action
 * [Enhancement] OpenSSH module: Modified method by which the privilege separation directory is obtained to support older distributions
+* [Bugfix] rebuildinitrd module: Added missing dracut kernel version argument
 
 #### Testing
 * [Enhancement] Updated test runner script, run_module_unit_tests.py, to show missing coverage in test report
