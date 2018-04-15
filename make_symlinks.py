@@ -22,10 +22,10 @@ if not os.path.isabs(_callp):
 CALLPATH = os.path.split(_callp)[0]
 
 # Find the duplicated files and replace the copies in the bin directory with symlinks to the copies two directories up
-for module_dir_prefix in os.listdir(os.sep.join((CALLPATH, "dist", "ec2rl", "bin"))):
-    os.chdir(os.sep.join((CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix)))
-    for same_file in filecmp.dircmp(os.sep.join((CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix)),
-                                    os.sep.join((CALLPATH, "dist", "ec2rl"))).same_files:
+for module_dir_prefix in os.listdir(os.path.join(CALLPATH, "dist", "ec2rl", "bin")):
+    os.chdir(os.path.join(CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix))
+    for same_file in filecmp.dircmp(os.path.join(CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix),
+                                    os.path.join(CALLPATH, "dist", "ec2rl")).same_files:
             print("Replacing '{}/{}' with a symlink".format(module_dir_prefix, same_file))
-            os.remove(os.sep.join((CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix, same_file)))
+            os.remove(os.path.join(CALLPATH, "dist", "ec2rl", "bin", module_dir_prefix, same_file))
             os.symlink("../../{}".format(same_file), same_file)

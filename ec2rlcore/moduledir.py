@@ -88,7 +88,7 @@ class ModuleDir(list):
                                                                     len(filename) - len(".yaml"),
                                                                     len(filename)):
                 try:
-                    filename_with_path = os.sep.join([directory, filename])
+                    filename_with_path = os.path.join(directory, filename)
                     self.logger.debug("Adding file: {}".format(filename_with_path))
                     this_module = ec2rlcore.module.get_module(filename_with_path)
                     self.append(this_module)

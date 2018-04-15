@@ -261,10 +261,10 @@ class Module(object):
                     envlist[option] = optionvalue
 
         if self.language == "binary":
-            command = [os.sep.join((envlist["EC2RL_CALLPATH"],
+            command = [os.path.join(envlist["EC2RL_CALLPATH"],
                                     "bin",
                                     self.placement_dir_mapping[self.placement],
-                                    self.name))]
+                                    self.name)]
         else:
             # Create a temporary file, write the value of the content attribute, and call the interpreter that matches
             # the language attribute.

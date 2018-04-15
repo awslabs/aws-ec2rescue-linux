@@ -145,7 +145,7 @@ class Main(object):
             self.debug = True
             self.logger.setLevel(logging.DEBUG)
             self._setup_write_paths()
-            ec2rlcore.logutil.LogUtil.set_debug_log_handler(os.sep.join((self.directories["RUNDIR"], "Debug.log")))
+            ec2rlcore.logutil.LogUtil.set_debug_log_handler(os.path.join(self.directories["RUNDIR"], "Debug.log"))
             self.logger.debug("ec2rlcore.Main.__init__()")
         else:
             self.debug = False
@@ -174,8 +174,8 @@ class Main(object):
         self._setup_write_paths()
 
         # Configure the main log file
-        ec2rlcore.logutil.LogUtil.set_main_log_handler(os.sep.join((self.directories["RUNDIR"], "Main.log")))
-        self.logger.debug("Added main log handler at {}".format(os.sep.join((self.directories["RUNDIR"], "Main.log"))))
+        ec2rlcore.logutil.LogUtil.set_main_log_handler(os.path.join(self.directories["RUNDIR"], "Main.log"))
+        self.logger.debug("Added main log handler at {}".format(os.path.join(self.directories["RUNDIR"], "Main.log")))
 
         ec2rlcore.logutil.LogUtil.set_console_log_handler(logging.WARNING)
         self.logger.debug("Console logging for warning+ enabled")
@@ -208,13 +208,13 @@ class Main(object):
 
         # Each Run gets its own directory to hold output files
         datetime_str = re.sub(":", "_", datetime.datetime.utcnow().isoformat())
-        self.directories["RUNDIR"] = os.sep.join([self.directories["WORKDIR"], datetime_str])
+        self.directories["RUNDIR"] = os.path.join(self.directories["WORKDIR"], datetime_str)
 
         # Store log files in the mod_out directory under RUNDIR
-        self.directories["LOGDIR"] = os.sep.join([self.directories["RUNDIR"], "mod_out"])
+        self.directories["LOGDIR"] = os.path.join(self.directories["RUNDIR"], "mod_out")
 
         # Store gathered output log files in gathered_out directory under RUNDIR
-        self.directories["GATHEREDDIR"] = os.sep.join([self.directories["RUNDIR"], "gathered_out"])
+        self.directories["GATHEREDDIR"] = os.path.join(self.directories["RUNDIR"], "gathered_out")
 
         # Getting the datetime_str for compression purposes
         self.directories["SPECDIR"] = datetime_str
@@ -503,7 +503,7 @@ class Main(object):
         self.full_init()
         self.logger.debug("ec2rlcore.Main.save_config()")
 
-        config_file = os.sep.join((self.directories["RUNDIR"], "configuration.cfg"))
+        config_file = os.path.join(self.directories["RUNDIR"], "configuration.cfg")
         self.options.write_config(config_file, self.modules)
         ec2rlcore.dual_log("\n----------[Configuration File]----------\n")
         ec2rlcore.dual_log("Configuration file saved:")
@@ -753,8 +753,8 @@ class Main(object):
         self.full_init()
 
         # Move functions.bash to WORKDIR
-        _source = os.sep.join([self.directories["CALLPATH"], "functions.bash"])
-        _dest = os.sep.join([self.directories["RUNDIR"], "functions.bash"])
+        _source = os.path.join(self.directories["CALLPATH"], "functions.bash")
+        _dest = os.path.join(self.directories["RUNDIR"], "functions.bash")
         try:
             shutil.copyfile(_source, _dest)
         # This is typically OSError, but can also be IOError or SameFileError depending upon the version of Python
