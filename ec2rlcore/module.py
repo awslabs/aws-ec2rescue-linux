@@ -219,10 +219,6 @@ class Module(object):
             (str): output from module run subprocess.check_output
         """
         self.logger.debug("module.Module.run()")
-        # Due to the use of temporary files for module execution, it is necessary to provide a way for a module
-        # to know the originating file.
-        # TODO this would get clobbered with parallel execution
-        os.environ["EC2RL_MODULE_PATH"] = self.path
 
         # limit the environment-variables inherited by the module execution
         envlist = {}
