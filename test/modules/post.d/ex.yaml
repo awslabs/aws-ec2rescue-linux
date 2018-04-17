@@ -35,7 +35,7 @@ content: !!str |
   }
   trap error_trap ERR
 
-    echo "module 'ex' can write a message to the main output"
+  echo "[SUCCESS] module 'ex' can write a message to the main output"
 constraint:
   requires_ec2: !!str False
   domain: !!str os

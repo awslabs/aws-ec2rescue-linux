@@ -91,8 +91,9 @@ def main():
     Create the ec2rl instance and run it. Provide the user with messages relevant to their subcommand, if applicable.
 
     Returns:
-        (int): 0 if no errors detected,
-        201 if Python < 2.7,
+        (int): 0 if subcommand ran successfully
+               1 if subcommand did not successfully run
+               201 if Python < 2.7,
     """
 
     if sys.hexversion < 0x2070000:
@@ -102,9 +103,7 @@ def main():
 
     import ec2rlcore.main
     ec2rl = ec2rlcore.main.Main()
-    ec2rl()
-
-    return 0
+    return ec2rl()
 
 
 def pdb_signal_handler(signal_num, stack_frame):
@@ -114,6 +113,7 @@ def pdb_signal_handler(signal_num, stack_frame):
     print("Received signal: {}".format(signal_num))
     pdb.Pdb().set_trace(stack_frame)
 
+
 if __name__ == "__main__":
     if "--pdb" in sys.argv:
         sys.argv.remove("--pdb")
@@ -121,4 +121,7 @@ if __name__ == "__main__":
     else:
         # SIGUSR1 is POSIX signal 10
         signal.signal(signal.SIGUSR1, pdb_signal_handler)
-        sys.exit(main())
+        if main():
+            sys.exit(0)
+        else:
+            sys.exit(1)

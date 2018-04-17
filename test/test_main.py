@@ -1460,7 +1460,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "UNKNOWN"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
@@ -1528,7 +1528,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "FAILURE"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
@@ -1562,7 +1562,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "WARN"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
@@ -1635,7 +1635,7 @@ class TestMain(unittest.TestCase):
         ec2rl_summary_test._modules[0].run_status = "UNKNOWN"
         output = StringIO()
         with contextlib.redirect_stdout(output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertEqual(len(output.getvalue()), 1154)
         self.assertTrue(output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule "
                                                      "prediagnostic/xennetroc"))
@@ -2107,6 +2107,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._prediags.clear()
         ec2rl_run_test._postdiags.clear()
 
+        ec2rl_run_test._modules[0].run_status = "SUCCESS"
+
         # Minimum concurrency = 1
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -2133,7 +2135,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_main_log_handler", side_effect=simple_return)
-    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=[simple_return])
+    @mock.patch("ec2rlcore.main.Main._run_prediagnostics", side_effect=simple_return)
     def test_main_run_concurrency_max(self,
                                       prediag_mock,
                                       main_log_handler_mock,
@@ -2159,6 +2161,8 @@ class TestMain(unittest.TestCase):
         # We don't need to run pre/post modules for this test
         ec2rl_run_test._prediags.clear()
         ec2rl_run_test._postdiags.clear()
+
+        ec2rl_run_test._modules[0].run_status = "SUCCESS"
 
         # Maximum concurrency = 100
         with contextlib.redirect_stdout(self.output):
@@ -2202,7 +2206,7 @@ class TestMain(unittest.TestCase):
         responses.add(responses.GET, self.ec2rl.VERSION_ENDPOINT,
                       body="1.0.0b6", status=200)
         with contextlib.redirect_stdout(self.output):
-            self.assertFalse(self.ec2rl.version_check())
+            self.assertTrue(self.ec2rl.version_check())
         self.assertEqual(self.output.getvalue(),
                          "Running version:  {}\nUpstream version: 1.0.0b6\nNo update available.\n".format(
                              ec2rlcore.main.Main.PROGRAM_VERSION))
@@ -2367,7 +2371,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "UNKNOWN"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "KrcrMZ2quIDzjn?InstanceID=not_an_instance&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
@@ -2435,7 +2439,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "FAILURE"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "KrcrMZ2quIDzjn?InstanceID=not_an_instance&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
@@ -2469,7 +2473,7 @@ class TestMain(unittest.TestCase):
 
         ec2rl_summary_test._modules[0].run_status = "WARN"
         with contextlib.redirect_stdout(self.output):
-            self.assertTrue(ec2rl_summary_test._summary())
+            self.assertFalse(ec2rl_summary_test._summary())
         self.assertTrue(self.output.getvalue().startswith("\n----------[Diagnostic Results]----------\n\nmodule predi"))
         self.assertTrue(self.output.getvalue().endswith(
             "KrcrMZ2quIDzjn?InstanceID=not_an_instance&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))

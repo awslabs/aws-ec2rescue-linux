@@ -20,20 +20,20 @@ declare -a python_executables=(python2.7 python3)
 if which python &> /dev/null; then
     if [ "$(readlink "$(which python 2>/dev/null)")" != "$(readlink "$(which python2.7 2>/dev/null)")" ] \
     && [ "$(readlink "$(which python 2>/dev/null)")" != "$(readlink "$(which python3 2>/dev/null)")" ]; then
-        python_executables[2]="$(readlink $(which python))"
+        python_executables[2]="$(readlink "$(which python)")"
     fi
 fi
 
-for py_executable in ${python_executables[@]}; do
+for py_executable in "${python_executables[@]}"; do
     if which "$py_executable" &>/dev/null; then
         /usr/bin/env "$py_executable" "$BASEDIR/ec2rl.py" "$@"
         declare -i ret=$?
-        if [ "$ret" -eq 0 ]; then
-            exit $?
-        elif [ "$ret" -ne 201 ]; then
-            exit $?
+        echo "ret = $ret"
+        if [ "$ret" -ne 201 ]; then
+            exit "${ret}"
         fi
         # If exit code is 201 then continue on to try other versions of Python
     fi
 done
 echo -e "Error:\tFailed to find compatible Python environment to run ec2rl!"
+exit 201

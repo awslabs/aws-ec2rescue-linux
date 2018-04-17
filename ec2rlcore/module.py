@@ -210,7 +210,7 @@ class Module(object):
 
     def run(self, options=None):
         """
-        Run the BASH module using the subprocess module and check that it successfully ran.
+        Run the module using the subprocess module and check that it successfully ran.
 
         Parameters:
              options: parsed command line argument:value pairs
@@ -221,6 +221,7 @@ class Module(object):
         self.logger.debug("module.Module.run()")
         # Due to the use of temporary files for module execution, it is necessary to provide a way for a module
         # to know the originating file.
+        # TODO this would get clobbered with parallel execution
         os.environ["EC2RL_MODULE_PATH"] = self.path
 
         # limit the environment-variables inherited by the module execution
@@ -301,7 +302,8 @@ class Module(object):
             return self.processoutput
         except subprocess.CalledProcessError as cpe:
             self.processoutput = cpe.output
-            error_message = "Module execution failed: {}:{}, returned {}".format(self.placement, self.name,
+            error_message = "Module execution failed: {}:{}, returned {}".format(self.placement,
+                                                                                 self.name,
                                                                                  cpe.returncode)
             self.logger.debug(error_message)
             self.logger.debug(cpe.cmd)
