@@ -146,6 +146,10 @@ class ModuleDir(list):
         except KeyError:
             raise ModuleDirModuleNotPresent(item.name)
 
+    def clear(self):
+        for item in self:
+            self.remove(item)
+
     def pop(self, *args, **kwargs):
         raise NotImplementedError()
 
@@ -191,7 +195,7 @@ class ModuleDir(list):
         self.name_map[module_obj.name] = module_obj
 
     def _unmap_module(self, module_obj):
-        """Remove references to this module from the class, domain, language, and name mappings."""
+        """Remove references to this module from the class, domain, language, software, package, and name mappings."""
         for class_name in module_obj.constraint["class"]:
             self.class_map[class_name].remove(module_obj)
             if not self.class_map[class_name]:
@@ -201,6 +205,16 @@ class ModuleDir(list):
             self.domain_map[domain_name].remove(module_obj)
             if not self.domain_map[domain_name]:
                 del self.domain_map[domain_name]
+
+        for software_program in module_obj.constraint["software"]:
+            self.software_map[software_program].remove(module_obj)
+            if not self.software_map[software_program]:
+                del self.software_map[software_program]
+
+        for package in module_obj.package:
+            self.package_map[package].remove(module_obj)
+            if not self.package_map[package]:
+                del self.package_map[package]
 
         self.language_map[module_obj.language].remove(module_obj)
         if not self.language_map[module_obj.language]:

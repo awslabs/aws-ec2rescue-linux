@@ -721,8 +721,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         # Setup the input buffer for curses to grab from
         curses.initscr()
@@ -1830,8 +1830,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -1884,8 +1884,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -1941,8 +1941,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -1995,9 +1995,9 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't want any modules for this test
-        del ec2rl_run_test._prediags[:]
-        del ec2rl_run_test._modules[:]
-        del ec2rl_run_test._postdiags[:]
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._modules.clear()
+        ec2rl_run_test._postdiags.clear()
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -2005,7 +2005,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(self.output.getvalue().endswith(
             "/SV_3KrcrMZ2quIDzjn?InstanceID=i-deadbeef&Version={}\n\n".format(ec2rlcore.main.Main.PROGRAM_VERSION)))
         self.assertTrue("-\n\nTotal modules run:               0\n\n-" in self.output.getvalue())
-        self.assertEqual(len(self.output.getvalue()), 1321)
+        self.assertEqual(len(self.output.getvalue()), 1243)
         self.assertTrue(re.search(r"\d{4}-\d{2}-\d{2}T\d{2}_\d{2}_\d{2}.\d{6}$", self.output.getvalue(), re.M))
 
         self.assertTrue(prediag_mock.called)
@@ -2050,8 +2050,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_run_test())
@@ -2104,8 +2104,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         # Minimum concurrency = 1
         with contextlib.redirect_stdout(self.output):
@@ -2157,8 +2157,8 @@ class TestMain(unittest.TestCase):
         ec2rl_run_test._postdiags = ec2rlcore.moduledir.ModuleDir(module_path)
 
         # We don't need to run pre/post modules for this test
-        ec2rl_run_test._prediags = []
-        ec2rl_run_test._postdiags = []
+        ec2rl_run_test._prediags.clear()
+        ec2rl_run_test._postdiags.clear()
 
         # Maximum concurrency = 100
         with contextlib.redirect_stdout(self.output):
