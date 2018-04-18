@@ -28,7 +28,6 @@ for py_executable in "${python_executables[@]}"; do
     if which "$py_executable" &>/dev/null; then
         /usr/bin/env "$py_executable" "$BASEDIR/ec2rl.py" "$@"
         declare -i ret=$?
-        echo "ret = $ret"
         if [ "$ret" -ne 201 ]; then
             exit "${ret}"
         fi
