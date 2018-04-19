@@ -6,6 +6,10 @@
 
 #### Framework
 * [Enhancement] Added lib directory to PATH for Python-based EC2RL modules that require access to vendored modules
+* [Enhancement] Framework now returns a non-zero status code when the subcommand fails
+* [Enhancement] ModuleDir class: Added clear method
+* [Bugfix] ModuleDir class: Updated _unmap_module method because some mappings were not being updated
+* [Bugfix] Module class: Removed unsuable environment variable, EC2RL_MODULE_PATH, which was exported by the run method
 
 #### Modules
 * [New Feature] OpenSSH module: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
