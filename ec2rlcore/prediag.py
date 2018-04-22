@@ -75,7 +75,7 @@ def get_distro():
             elif re.match(alami2_regex, distro_str):
                 distro = "alami2"
             elif re.match(rhel_regex, distro_str) or \
-                    re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
+                    re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
                 distro = "rhel"
             else:
                 distro = "unknown for /etc/system-release"

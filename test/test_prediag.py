@@ -163,7 +163,13 @@ class TestPrediag(unittest.TestCase):
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="CentOS Linux release 7.1.1503"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
-    def test_prediag_os_cent(self, mock_isfile):
+    def test_prediag_os_cent7(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="CentOS release 6.9 (Final)\n"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
+    def test_prediag_os_cent6(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
         self.assertTrue(mock_isfile.called)
 

@@ -7,6 +7,7 @@
 #### Framework
 * [Enhancement] Added lib directory to PATH for Python-based EC2RL modules that require access to vendored modules
 * [Enhancement] Framework now returns a non-zero status code when the subcommand fails
+* [Enhancement] Updated get_distro to accommodate CentOS 6 system-release version strings.
 * [Enhancement] ModuleDir class: Added clear method
 * [Bugfix] ModuleDir class: Updated _unmap_module method because some mappings were not being updated
 * [Bugfix] Module class: Removed unsuable environment variable, EC2RL_MODULE_PATH, which was exported by the run method
