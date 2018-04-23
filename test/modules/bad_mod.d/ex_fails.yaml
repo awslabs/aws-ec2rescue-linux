@@ -14,7 +14,7 @@
 
 --- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
-name: !!str ex
+name: !!str ex_bad
 path: !!str
 version: !!str 1.0
 title: !!str sanity-check of basic module functions
@@ -35,7 +35,7 @@ content: !!str |
   }
   trap error_trap ERR
 
-  echo "module 'ex' can write a message to the main output"
+  echo "module 'ex_bad' can write a message to the main output"
   exit 1
 constraint:
   requires_ec2: !!str False

@@ -199,8 +199,8 @@ class TestParallelDiagnostics(unittest.TestCase):
         self.work_queue.put(None)
         with contextlib.redirect_stdout(self.output):
             ec2rlcore.paralleldiagnostics._worker(self.options, self.work_queue, self.logdir)
-        self.assertEqual(self.output.getvalue(), "Running Modules:\nex")
-        self.assertEqual("module 'ex' can write a message to the main output\n", module_obj.processoutput)
+        self.assertEqual(self.output.getvalue(), "Running Modules:\nex_bad")
+        self.assertEqual("module 'ex_bad' can write a message to the main output\n", module_obj.processoutput)
         self.assertTrue(logging_fh_mock.called)
         self.assertTrue(os_makedirs_mock.called)
 

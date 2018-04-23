@@ -214,14 +214,14 @@ class LogUtil(object):
             module_logger (Logger): The created logging.Logger for the module.
         """
 
-        module_log_dir = os.sep.join((logdir, mod.placement))
+        module_log_dir = os.path.join(logdir, mod.placement)
 
         # Create the directory, if needed.
         try:
             os.makedirs(module_log_dir)
         except FileExistsError:
             pass
-        file_name_with_path = os.sep.join((module_log_dir, mod.name + ".log"))
+        file_name_with_path = os.path.join(module_log_dir, mod.name + ".log")
         module_fh = logging.FileHandler(file_name_with_path)
         module_fh.setFormatter("")
         module_logger = logging.getLogger("ec2rl").getChild("module").getChild(mod.placement).getChild(mod.name)

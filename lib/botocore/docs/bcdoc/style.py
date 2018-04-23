@@ -88,8 +88,16 @@ class ReSTStyle(BaseStyle):
         # problems in the ReST inline markup so we remove it here
         # by popping the last item written off the stack, striping
         # the whitespace and then pushing it back on the stack.
-        last_write = self.doc.pop_write()
-        self.doc.push_write(last_write.rstrip(' '))
+        last_write = self.doc.pop_write().rstrip(' ')
+
+        # Sometimes, for whatever reason, a tag like <b/> is present. This
+        # is problematic because if we simply translate that directly then
+        # we end up with something like ****, which rst will assume is a
+        # heading instead of an empty bold.
+        if last_write == markup:
+            return
+
+        self.doc.push_write(last_write)
         self.doc.write(markup + ' ')
 
     def start_bold(self, attrs=None):
@@ -186,6 +194,16 @@ class ReSTStyle(BaseStyle):
         self.dedent()
         self.new_paragraph()
 
+    def start_danger(self, attrs=None):
+        self.new_paragraph()
+        self.doc.write('.. danger::')
+        self.indent()
+        self.new_paragraph()
+
+    def end_danger(self):
+        self.dedent()
+        self.new_paragraph()
+
     def start_a(self, attrs=None):
         if attrs:
             for attr_key, attr_value in attrs:
@@ -220,19 +238,18 @@ class ReSTStyle(BaseStyle):
                 if ':' in last_write:
                     last_write = last_write.replace(':', r'\:')
                 self.doc.push_write(last_write)
-                self.doc.hrefs[last_write] = self.a_href
-                self.doc.write('`_')
+                self.doc.push_write(' <%s>`__' % self.a_href)
             elif last_write == '`':
                 # Look at start_a().  It will do a self.doc.write('`')
                 # which is the start of the link title.  If that is the
                 # case then there was no link text.  We should just
                 # use an inline link.  The syntax of this is
                 # `<http://url>`_
-                self.doc.push_write('`<%s>`_' % self.a_href)
+                self.doc.push_write('`<%s>`__' % self.a_href)
             else:
                 self.doc.push_write(self.a_href)
                 self.doc.hrefs[self.a_href] = self.a_href
-                self.doc.write('`_')
+                self.doc.write('`__')
             self.a_href = None
         self.doc.write(' ')
 
@@ -391,5 +408,11 @@ class ReSTStyle(BaseStyle):
     def external_link(self, title, link):
         if self.doc.target == 'html':
             self.doc.write('`%s <%s>`_' % (title, link))
+        else:
+            self.doc.write(title)
+
+    def internal_link(self, title, page):
+        if self.doc.target == 'html':
+            self.doc.write(':doc:`%s <%s>`' % (title, page))
         else:
             self.doc.write(title)

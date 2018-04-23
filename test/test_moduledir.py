@@ -162,6 +162,25 @@ class TestModuleDir(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             module_list.pop()
 
+    def test_moduledir_remove(self):
+        """Check a module is fully unmapped when removed from an instance of ModuleDir."""
+        good_module_path = os.path.join(self.callpath, "test/modules/mod.d/")
+        module_list = ec2rlcore.moduledir.ModuleDir(good_module_path)
+        test_module = module_list.name_map["atop"]
+        self.assertTrue(test_module in module_list.class_map["collect"])
+        self.assertTrue(test_module in module_list.domain_map["performance"])
+        self.assertTrue(test_module in module_list.language_map["bash"])
+        self.assertTrue(test_module in module_list.software_map["atop"])
+        self.assertTrue(test_module in module_list.package_map["atop https://www.atoptool.nl/"])
+        self.assertTrue(test_module in module_list.package_map["asdf https://www.asdf.com/"])
+        module_list.remove(test_module)
+        self.assertFalse(test_module in module_list.class_map["collect"])
+        self.assertFalse(test_module in module_list.domain_map["performance"])
+        self.assertFalse(test_module in module_list.language_map["bash"])
+        self.assertFalse(test_module in module_list.software_map["atop"])
+        self.assertFalse("atop https://www.atoptool.nl/" in module_list.package_map.keys())
+        self.assertFalse("asdf https://www.asdf.com/" in module_list.package_map.keys())
+
     def test_moduledir_remove_moduledirtypeerror(self):
         """
         Check that ModuleDir raises a ModuleDirTypeError when trying to remove an item that isn't of 

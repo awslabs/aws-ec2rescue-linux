@@ -90,7 +90,7 @@ class RequestSigner(object):
         return self.sign(operation_name, request)
 
     def sign(self, operation_name, request, region_name=None,
-             signing_type='standard', expires_in=None):
+             signing_type='standard', expires_in=None, signing_name=None):
         """Sign a request before it goes out over the wire.
 
         :type operation_name: string
@@ -113,22 +113,31 @@ class RequestSigner(object):
         :type expires_in: int
         :param expires_in: The number of seconds the presigned url is valid
             for. This parameter is only valid for signing type 'presign-url'.
+
+        :type signing_name: str
+        :param signing_name: The name to use for the service when signing.
         """
         if region_name is None:
             region_name = self._region_name
 
-        signature_version = self._choose_signer(operation_name, signing_type)
+        if signing_name is None:
+            signing_name = self._signing_name
+
+        signature_version = self._choose_signer(
+            operation_name, signing_type, request.context)
 
         # Allow mutating request before signing
         self._event_emitter.emit(
             'before-sign.{0}.{1}'.format(self._service_name, operation_name),
-            request=request, signing_name=self._signing_name,
+            request=request, signing_name=signing_name,
             region_name=self._region_name,
-            signature_version=signature_version, request_signer=self)
+            signature_version=signature_version, request_signer=self,
+            operation_name=operation_name
+        )
 
         if signature_version != botocore.UNSIGNED:
             kwargs = {
-                'signing_name': self._signing_name,
+                'signing_name': signing_name,
                 'region_name': region_name,
                 'signature_version': signature_version
             }
@@ -146,7 +155,7 @@ class RequestSigner(object):
 
             auth.add_auth(request)
 
-    def _choose_signer(self, operation_name, signing_type):
+    def _choose_signer(self, operation_name, signing_type, context):
         """
         Allow setting the signature version via the choose-signer event.
         A value of `botocore.UNSIGNED` means no signing will be performed.
@@ -170,7 +179,7 @@ class RequestSigner(object):
         handler, response = self._event_emitter.emit_until_response(
             'choose-signer.{0}.{1}'.format(self._service_name, operation_name),
             signing_name=self._signing_name, region_name=self._region_name,
-            signature_version=signature_version)
+            signature_version=signature_version, context=context)
 
         if response is not None:
             signature_version = response
@@ -229,7 +238,8 @@ class RequestSigner(object):
     get_auth = get_auth_instance
 
     def generate_presigned_url(self, request_dict, operation_name,
-                               expires_in=3600, region_name=None):
+                               expires_in=3600, region_name=None,
+                               signing_name=None):
         """Generates a presigned url
 
         :type request_dict: dict
@@ -246,11 +256,14 @@ class RequestSigner(object):
         :type region_name: string
         :param region_name: The region name to sign the presigned url.
 
+        :type signing_name: str
+        :param signing_name: The name to use for the service when signing.
+
         :returns: The presigned url
         """
         request = create_request_object(request_dict)
         self.sign(operation_name, request, region_name,
-                  'presign-url', expires_in)
+                  'presign-url', expires_in, signing_name)
 
         request.prepare()
         return request.url
@@ -382,6 +395,61 @@ class CloudFrontSigner(object):
             data).replace(b'+', b'-').replace(b'=', b'_').replace(b'/', b'~')
 
 
+def add_generate_db_auth_token(class_attributes, **kwargs):
+    class_attributes['generate_db_auth_token'] = generate_db_auth_token
+
+
+def generate_db_auth_token(self, DBHostname, Port, DBUsername, Region=None):
+    """Generates an auth token used to connect to a db with IAM credentials.
+
+    :type DBHostname: str
+    :param DBHostname: The hostname of the database to connect to.
+
+    :type Port: int
+    :param Port: The port number the database is listening on.
+
+    :type DBUsername: str
+    :param DBUsername: The username to log in as.
+
+    :type Region: str
+    :param Region: The region the database is in. If None, the client
+        region will be used.
+
+    :return: A presigned url which can be used as an auth token.
+    """
+    region = Region
+    if region is None:
+        region = self.meta.region_name
+
+    params = {
+        'Action': 'connect',
+        'DBUser': DBUsername,
+    }
+
+    request_dict = {
+        'url_path': '/',
+        'query_string': '',
+        'headers': {},
+        'body': params,
+        'method': 'GET'
+    }
+
+    # RDS requires that the scheme not be set when sent over. This can cause
+    # issues when signing because the Python url parsing libraries follow
+    # RFC 1808 closely, which states that a netloc must be introduced by `//`.
+    # Otherwise the url is presumed to be relative, and thus the whole
+    # netloc would be treated as a path component. To work around this we
+    # introduce https here and remove it once we're done processing it.
+    scheme = 'https://'
+    endpoint_url = '%s%s:%s' % (scheme, DBHostname, Port)
+    prepare_request_dict(request_dict, endpoint_url)
+    presigned_url = self._request_signer.generate_presigned_url(
+        operation_name='connect', request_dict=request_dict,
+        region_name=region, expires_in=900, signing_name='rds-db'
+    )
+    return presigned_url[len(scheme):]
+
+
 class S3PostPresigner(object):
     def __init__(self, request_signer):
         self._request_signer = request_signer
@@ -485,8 +553,14 @@ def generate_presigned_url(self, ClientMethod, Params=None, ExpiresIn=3600,
     """
     client_method = ClientMethod
     params = Params
+    if params is None:
+        params = {}
     expires_in = ExpiresIn
     http_method = HttpMethod
+    context = {
+        'is_presign_request': True,
+        'use_global_endpoint': _should_use_global_endpoint(self),
+    }
 
     request_signer = self._request_signer
     serializer = self._serializer
@@ -499,6 +573,8 @@ def generate_presigned_url(self, ClientMethod, Params=None, ExpiresIn=3600,
     operation_model = self.meta.service_model.operation_model(
         operation_name)
 
+    params = self._emit_api_params(params, operation_model, context)
+
     # Create a request dict based on the params to serialize.
     request_dict = serializer.serialize_to_request(
         params, operation_model)
@@ -509,7 +585,7 @@ def generate_presigned_url(self, ClientMethod, Params=None, ExpiresIn=3600,
 
     # Prepare the request dict by including the client's endpoint url.
     prepare_request_dict(
-        request_dict, endpoint_url=self.meta.endpoint_url)
+        request_dict, endpoint_url=self.meta.endpoint_url, context=context)
 
     # Generate the presigned url.
     return request_signer.generate_presigned_url(
@@ -611,7 +687,12 @@ def generate_presigned_post(self, Bucket, Key, Fields=None, Conditions=None,
 
     # Prepare the request dict by including the client's endpoint url.
     prepare_request_dict(
-        request_dict, endpoint_url=self.meta.endpoint_url)
+        request_dict, endpoint_url=self.meta.endpoint_url,
+        context={
+            'is_presign_request': True,
+            'use_global_endpoint': _should_use_global_endpoint(self),
+        },
+    )
 
     # Append that the bucket name to the list of conditions.
     conditions.append({'bucket': bucket})
@@ -629,3 +710,12 @@ def generate_presigned_post(self, Bucket, Key, Fields=None, Conditions=None,
     return post_presigner.generate_presigned_post(
         request_dict=request_dict, fields=fields, conditions=conditions,
         expires_in=expires_in)
+
+
+def _should_use_global_endpoint(client):
+    use_dualstack_endpoint = False
+    if client.meta.config.s3 is not None:
+        use_dualstack_endpoint = client.meta.config.s3.get(
+            'use_dualstack_endpoint', False)
+    return (client.meta.partition == 'aws' and
+            not use_dualstack_endpoint)

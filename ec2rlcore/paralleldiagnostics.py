@@ -95,8 +95,7 @@ def parallel_run(modules, logdir, options=None, concurrency=10):
     for worker in workers:
         worker.join()
 
-    logger.info("All workers completed.  Active threads: {}".
-                format(threading.active_count()))
+    logger.info("All workers completed.  Active threads: {}".format(threading.active_count()))
     return modules_scheduled
 
 

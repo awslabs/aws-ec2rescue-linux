@@ -1,5 +1,11 @@
 {
   "pagination": {
+    "DescribeIamInstanceProfileAssociations": {
+      "input_token": "NextToken",
+      "output_token": "NextToken",
+      "limit_key": "MaxResults",
+      "result_key": "IamInstanceProfileAssociations"
+    },
     "DescribeInstanceStatus": {
       "input_token": "NextToken",
       "output_token": "NextToken",
@@ -23,11 +29,23 @@
       "output_token": "NextToken",
       "result_key": "ReservedInstancesModifications"
     },
+    "DescribeSecurityGroups": {
+      "input_token": "NextToken",
+      "output_token": "NextToken",
+      "limit_key": "MaxResults",
+      "result_key": "SecurityGroups"
+    },
     "DescribeSnapshots": {
       "input_token": "NextToken",
       "output_token": "NextToken",
       "limit_key": "MaxResults",
       "result_key": "Snapshots"
+    },
+    "DescribeSpotFleetInstances": {
+      "input_token": "NextToken",
+      "output_token": "NextToken",
+      "limit_key": "MaxResults",
+      "result_key": "ActiveInstances"
     },
     "DescribeSpotFleetRequests": {
       "input_token": "NextToken",
@@ -58,6 +76,12 @@
       "output_token": "NextToken",
       "limit_key": "MaxResults",
       "result_key": "Volumes"
+    },
+    "DescribeNatGateways": {
+      "input_token": "NextToken",
+      "limit_key": "MaxResults",
+      "output_token": "NextToken",
+      "result_key": "NatGateways"
     }
   }
 }

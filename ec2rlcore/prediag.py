@@ -62,7 +62,7 @@ def get_distro():
 
     distro = "unknown"
     alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
-    alami2_regex = re.compile(r"^Amazon Linux release \d\.\d")
+    alami2_regex = re.compile(r"^Amazon Linux release \d.* \(\d{4}\.\d{2}\) ")
     rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release \d\.\d")
 
     # Amazon Linux & RHEL
@@ -75,7 +75,7 @@ def get_distro():
             elif re.match(alami2_regex, distro_str):
                 distro = "alami2"
             elif re.match(rhel_regex, distro_str) or \
-                    re.match(r"^CentOS Linux release (\d)\.(\d)\.(\d{4})", distro_str):
+                    re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
                 distro = "rhel"
             else:
                 distro = "unknown for /etc/system-release"

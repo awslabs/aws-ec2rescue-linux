@@ -38,6 +38,7 @@ def main():
                                                                              file_name))
             sys.exit(1)
     call_paths.append(os.path.join(*split_call_path_list))
+    call_paths.append(os.path.join(call_paths[-1], "lib"))
     for call_path in call_paths:
         sys.path.insert(0, call_path)
     # Setup EC2RL_CALLPATH environment variable for modules to use

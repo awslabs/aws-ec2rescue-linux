@@ -108,7 +108,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.1")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.2")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
@@ -145,7 +145,7 @@ class Main(object):
             self.debug = True
             self.logger.setLevel(logging.DEBUG)
             self._setup_write_paths()
-            ec2rlcore.logutil.LogUtil.set_debug_log_handler(os.sep.join((self.directories["RUNDIR"], "Debug.log")))
+            ec2rlcore.logutil.LogUtil.set_debug_log_handler(os.path.join(self.directories["RUNDIR"], "Debug.log"))
             self.logger.debug("ec2rlcore.Main.__init__()")
         else:
             self.debug = False
@@ -174,8 +174,8 @@ class Main(object):
         self._setup_write_paths()
 
         # Configure the main log file
-        ec2rlcore.logutil.LogUtil.set_main_log_handler(os.sep.join((self.directories["RUNDIR"], "Main.log")))
-        self.logger.debug("Added main log handler at {}".format(os.sep.join((self.directories["RUNDIR"], "Main.log"))))
+        ec2rlcore.logutil.LogUtil.set_main_log_handler(os.path.join(self.directories["RUNDIR"], "Main.log"))
+        self.logger.debug("Added main log handler at {}".format(os.path.join(self.directories["RUNDIR"], "Main.log")))
 
         ec2rlcore.logutil.LogUtil.set_console_log_handler(logging.WARNING)
         self.logger.debug("Console logging for warning+ enabled")
@@ -208,13 +208,13 @@ class Main(object):
 
         # Each Run gets its own directory to hold output files
         datetime_str = re.sub(":", "_", datetime.datetime.utcnow().isoformat())
-        self.directories["RUNDIR"] = os.sep.join([self.directories["WORKDIR"], datetime_str])
+        self.directories["RUNDIR"] = os.path.join(self.directories["WORKDIR"], datetime_str)
 
         # Store log files in the mod_out directory under RUNDIR
-        self.directories["LOGDIR"] = os.sep.join([self.directories["RUNDIR"], "mod_out"])
+        self.directories["LOGDIR"] = os.path.join(self.directories["RUNDIR"], "mod_out")
 
         # Store gathered output log files in gathered_out directory under RUNDIR
-        self.directories["GATHEREDDIR"] = os.sep.join([self.directories["RUNDIR"], "gathered_out"])
+        self.directories["GATHEREDDIR"] = os.path.join(self.directories["RUNDIR"], "gathered_out")
 
         # Getting the datetime_str for compression purposes
         self.directories["SPECDIR"] = datetime_str
@@ -498,23 +498,25 @@ class Main(object):
         file from this object.
 
         Returns:
-            True (bool):
+            True (bool)
         """
         self.full_init()
         self.logger.debug("ec2rlcore.Main.save_config()")
 
-        config_file = os.sep.join((self.directories["RUNDIR"], "configuration.cfg"))
+        config_file = os.path.join(self.directories["RUNDIR"], "configuration.cfg")
         self.options.write_config(config_file, self.modules)
         ec2rlcore.dual_log("\n----------[Configuration File]----------\n")
         ec2rlcore.dual_log("Configuration file saved:")
         ec2rlcore.dual_log(config_file)
-
         return True
 
     def menu_config(self):
         """
-        Present the user with a curses-driven menu system for setting individual module options then create
-        a configuration file using this data and save_config().
+        Present the user with a curses-driven menu system for setting individual module options. Afterwards, either run
+        or save the configuration. The return is the either return value of run or save_config.
+
+        Returns:
+            (bool): whether the resulting subcommand was successful
         """
         try:
             import curses
@@ -598,7 +600,7 @@ class Main(object):
         # If the user selected "Run" from the menu then run the current configuration
         if the_menu["Run this configuration"].get_value():
             self.subcommand = "run"
-            self()
+            return self()
         # If the user did not select "Run" from the menu then just save the configuration
         else:
             # Create the actual configuration file
@@ -622,6 +624,7 @@ class Main(object):
             subcommand = self.subcommand
         # Replace the hyphens so the subcommand matches its method name
         subcommand = subcommand.replace("-", "_")
+        # Subcommand return values represent function success/failure
         return getattr(self, subcommand)()
 
     def version(self):
@@ -636,8 +639,10 @@ class Main(object):
 
     def version_check(self):
         """
-        Get the current upstream version, compare against this version, inform the user whether an update is available,
-        and return True.
+        Get the current upstream version, compare against this version, inform the user whether an update is available.
+
+        Returns:
+            True (bool)
         """
         try:
             upstream_version = ec2rlcore.programversion.ProgramVersion(requests.get(self.VERSION_ENDPOINT).text.strip())
@@ -648,15 +653,17 @@ class Main(object):
         print("Upstream version: {}".format(upstream_version))
         if upstream_version > self.PROGRAM_VERSION:
             print("An update is available.")
-            return True
         else:
             print("No update available.")
-            return False
+        return True
 
     def software_check(self):
         """
         Check for software that is not installed but is required for a module, and inform the user on details about how
         to obtain it if needed and return True.
+
+        Returns:
+            True (bool)
         """
         packages_needed = set()
         for mod in self.modules:
@@ -695,7 +702,7 @@ class Main(object):
         the resulting tarball to S3 using the provided url.
 
         Returns:
-            True (bool): returns True if the function completes.
+            True (bool)
         """
         if "uploaddirectory" not in self.options.global_args.keys():
             raise MainMissingRequiredArgument("The upload subcommand requires --upload-directory")
@@ -747,14 +754,14 @@ class Main(object):
         8. Run all specified modules that are still applicable after constraint and prediagnostic checking
 
         Returns:
-            True (bool)
+            mod_run_success (bool): True if all modules ran successfully else False
         """
         self.logger.debug("ec2rlcore.Main.run()")
         self.full_init()
 
         # Move functions.bash to WORKDIR
-        _source = os.sep.join([self.directories["CALLPATH"], "functions.bash"])
-        _dest = os.sep.join([self.directories["RUNDIR"], "functions.bash"])
+        _source = os.path.join(self.directories["CALLPATH"], "functions.bash")
+        _dest = os.path.join(self.directories["RUNDIR"], "functions.bash")
         try:
             shutil.copyfile(_source, _dest)
         # This is typically OSError, but can also be IOError or SameFileError depending upon the version of Python
@@ -788,10 +795,10 @@ class Main(object):
 
         # Parallel is now the default and only diagnostic module execution path.
         # Setting concurrency=1 will simulate the serial execution mode by only running with one worker
-        self._run_diagmodules_parallel()
+        mod_run_success = self._run_diagmodules_parallel()
 
         self._run_postdiagnostics()
-        return True
+        return mod_run_success
 
     def _run_prunemodules(self):
         """
@@ -892,7 +899,7 @@ class Main(object):
         Runs the backup based on flags used
 
         Returns:
-            None
+            True (bool)
         """
         import ec2rlcore.awshelpers
         import ec2rlcore.backup
@@ -918,6 +925,13 @@ class Main(object):
         return True
 
     def _run_prediagnostics(self):
+        """
+        Run the selected diagnostic modules in the instance of Main.prediags.
+
+        Returns:
+            (bool): True if all prediagnostics modules ran successfully or there were none to run else False
+                    Raises MainPrediagnosticFailure if any prediagnostic module fails
+        """
         # Start prediagnostics
         self.logger.info("----------------------------------------")
         self.logger.info("BEGIN PREDIAGNOSTICS")
@@ -950,7 +964,6 @@ class Main(object):
                 module_logger.info(mod.run(options=self.options))
                 if mod.run_status == "FAILURE":
                     raise MainPrediagnosticFailure(mod.run_summary)
-
             else:
                 self.logger.info("module {}/{}: Skipping. Reason: {}".format(mod.placement, mod.name, mod.whyskipping))
                 self.logger.debug("module '{}': skipping: {}".format(mod.name, mod.whyskipping))
@@ -961,7 +974,7 @@ class Main(object):
         Run the selected diagnostic modules in parallel.
 
         Returns:
-            (int): Count of modules run
+            (bool): True if all diagnostic modules ran successfully or none were run else False
         """
         # If concurrency arg is set and is a number
         if "concurrency" in self.options.global_args and self.options.global_args["concurrency"].isdigit():
@@ -976,40 +989,47 @@ class Main(object):
         # Sorting modules by class to attempt a consistent run order of classes
         self.modules.sort(key=lambda mod: mod.constraint["class"][0])
 
-        modules_executed = ec2rlcore.paralleldiagnostics.parallel_run(self.modules,
-                                                                      self.directories["LOGDIR"],
-                                                                      concurrency=concurrency,
-                                                                      options=self.options)
+        ec2rlcore.paralleldiagnostics.parallel_run(self.modules,
+                                                   self.directories["LOGDIR"],
+                                                   concurrency=concurrency,
+                                                   options=self.options)
 
         ec2rlcore.dual_log("")
-        self._summary()
-        return modules_executed
+        return self._summary()
 
     def _run_postdiagnostics(self):
         """
-        Run the selected diagnostic modules in self.modules.
+        Run the selected diagnostic modules in self.postdiags.
 
         Returns:
-            (bool): True if there were any applicable modules to run
+            (bool): True if all postdiagnostics modules ran successfully or there were none to run else False
         """
+        postdiag_success = True
         # Start postdiagnostics
         self.logger.info("----------------------------------------")
         self.logger.info("BEGIN POSTDIAGNOSTICS")
         self.logger.info("----------------------------------------")
-        # Run each prediagnostic module
+        # Run each postdiagnostic module
         for mod in self.postdiags:
             if mod.applicable:
                 self.logger.info("module {}/{}: Running".format(mod.placement, mod.name))
                 self.logger.debug("module {}/{}: applicable = True".format(mod.placement, mod.name))
                 module_logger = ec2rlcore.logutil.LogUtil.create_module_logger(mod, self.directories["LOGDIR"])
                 module_logger.info(mod.run(options=self.options))
+                if mod.run_status != "SUCCESS":
+                    postdiag_success = False
             else:
                 self.logger.info("module {}/{}: Skipping. Reason: {}".format(mod.placement, mod.name, mod.whyskipping))
                 self.logger.debug("module '{}': skipping: {}".format(mod.name, mod.whyskipping))
-        return True
+        return postdiag_success
 
     def _summary(self):
-        """Print the summary of diagnostic execution."""
+        """
+        Print the summary of diagnostic execution.
+
+        Returns:
+            (bool): True if all modules in the diagnose class ran successfully or none were run else False
+        """
         # Determine the execution results for the "diagnose" class of modules
         diagnose_successes = 0
         diagnose_failures = 0
@@ -1030,8 +1050,8 @@ class Main(object):
             # Sort the list by the run_status string so that warnings, successes, etc are grouped.
             for module_obj in sorted([module_obj for module_obj in self.modules.class_map["diagnose"]],
                                      key=lambda mod: mod.run_status):
-                ec2rlcore.dual_log("{:32} {}".format(
-                    "module " + module_obj.placement + "/" + module_obj.name, module_obj.run_summary))
+                ec2rlcore.dual_log("{:32} {}".format("module " + module_obj.placement + "/" + module_obj.name,
+                                                     module_obj.run_summary))
                 for detail in module_obj.run_status_details:
                     ec2rlcore.dual_log("{:32} {}".format(" ", detail))
 
@@ -1058,18 +1078,14 @@ class Main(object):
                                        self.prune_stats.get(ec2rlcore.module.SkipReason.MISSING_ARGUMENT, 0),
                                        self.prune_stats.get(ec2rlcore.module.SkipReason.PERFORMANCE_IMPACT, 0)))
 
-        ec2rlcore. dual_log("\n----------------[NOTICE]----------------\n")
+        ec2rlcore.dual_log("\n----------------[NOTICE]----------------\n")
         ec2rlcore.dual_log("Please note, this directory could contain sensitive data depending on modules run! Please"
                            " review its contents!")
         ec2rlcore.dual_log("\n----------------[Upload]----------------\n")
         ec2rlcore.dual_log("You can upload results to AWS Support with the following, or run 'help upload' for details"
                            " on using an S3 presigned URL:\n")
-        if os.environ["EC2RL_SUDO"] == "False":
-            ec2rlcore.dual_log("./ec2rl upload --upload-directory={} --support-url=\"URLProvidedByAWSSupport\" \n".
-                               format(self.directories["RUNDIR"]))
-        elif os.environ["EC2RL_SUDO"] == "True":
-            ec2rlcore.dual_log("sudo ./ec2rl upload --upload-directory={} --support-url=\"URLProvidedByAWSSupport\" \n".
-                               format(self.directories["RUNDIR"]))
+        ec2rlcore.dual_log("{}./ec2rl upload --upload-directory={} --support-url=\"URLProvidedByAWSSupport\" \n".
+                           format("sudo " if os.environ["EC2RL_SUDO"] == "True" else "", self.directories["RUNDIR"]))
         ec2rlcore.dual_log("The quotation marks are required, and if you ran the tool with sudo, you will also need to"
                            " upload with sudo.")
         ec2rlcore.dual_log("\n---------------[Feedback]---------------\n")
@@ -1080,7 +1096,10 @@ class Main(object):
         else:
             ec2rlcore.dual_log("https://aws.au1.qualtrics.com/jfe1/form/SV_3KrcrMZ2quIDzjn?InstanceID={}&Version={}\n".
                                format(ec2rlcore.awshelpers.get_instance_id(), self.PROGRAM_VERSION))
-        return True
+        if "diagnose" in self.modules.class_map.keys():
+            return len(self.modules.class_map["diagnose"]) == diagnose_successes
+        else:
+            return True
 
 
 class MainError(Exception):

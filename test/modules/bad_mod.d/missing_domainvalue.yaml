@@ -34,7 +34,7 @@ content: !!str |
   }
   trap error_trap ERR
 
-    echo "module '${EC2RL_MODULE_PATH}' can write a message to the main output"
+    echo "module 'ex_bad' can write a message to the main output"
 constraint:
   requires_ec2: !!str False
   domain: !!str

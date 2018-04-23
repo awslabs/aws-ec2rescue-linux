@@ -184,18 +184,18 @@ class TestModule(unittest.TestCase):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
         my_opts.global_args["perfimpact"] = True
-        my_opts.per_module_args["ex"] = {"hello": True}
+        my_opts.per_module_args["ex_bad"] = {"hello": True}
         my_opts.per_module_args["helloworld"] = {"hello": True}
         module_path = os.path.join(self.callpath, "test/modules/bad_mod.d/ex_prints_failure.yaml")
         module_obj = ec2rlcore.module.get_module(module_path)
         module_obj.run(options=my_opts)
-        self.assertEqual("[FAILURE] module 'ex' can write a message to the main output",
+        self.assertEqual("[FAILURE] module 'ex_bad' can write a message to the main output",
                          module_obj.run_summary)
         self.assertEqual("FAILURE", module_obj.run_status)
         # Test path where this module doesn't have any per_module_args
-        del my_opts.per_module_args["ex"]
+        del my_opts.per_module_args["ex_bad"]
         module_obj.run(options=my_opts)
-        self.assertEqual("[FAILURE] module 'ex' can write a message to the main output",
+        self.assertEqual("[FAILURE] module 'ex_bad' can write a message to the main output",
                          module_obj.run_summary)
         self.assertEqual("FAILURE", module_obj.run_status)
 
@@ -213,18 +213,18 @@ class TestModule(unittest.TestCase):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
         my_opts.global_args["perfimpact"] = True
-        my_opts.per_module_args["ex"] = {"hello": True}
+        my_opts.per_module_args["ex_bad"] = {"hello": True}
         my_opts.per_module_args["helloworld"] = {"hello": True}
         module_path = os.path.join(self.callpath, "test/modules/bad_mod.d/ex_prints_warn.yaml")
         module_obj = ec2rlcore.module.get_module(module_path)
         module_obj.run(options=my_opts)
-        self.assertEqual("[WARN] module 'ex' can write a message to the main output",
+        self.assertEqual("[WARN] module 'ex_bad' can write a message to the main output",
                          module_obj.run_summary)
         self.assertEqual("WARN", module_obj.run_status)
         # Test path where this module doesn't have any per_module_args
-        del my_opts.per_module_args["ex"]
+        del my_opts.per_module_args["ex_bad"]
         module_obj.run(options=my_opts)
-        self.assertEqual("[WARN] module 'ex' can write a message to the main output",
+        self.assertEqual("[WARN] module 'ex_bad' can write a message to the main output",
                          module_obj.run_summary)
         self.assertEqual("WARN", module_obj.run_status)
 

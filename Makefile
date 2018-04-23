@@ -11,10 +11,23 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-PYTHON:=python3
+
+PYTHON2:=$(shell command -v python2 --version 2> /dev/null)
+PYTHON3:=$(shell command -v python3 --version 2> /dev/null)
 SHELL:=/bin/bash
-VERSION:=1.1.1
+VERSION:=1.1.2
 BASENAME=ec2rl-$(VERSION)
+
+ifdef PYTHON3
+	PYTHON:=python3
+	COVERAGE:=coverage3
+else ifdef PYTHON2
+	PYTHON:=python2
+	COVERAGE:=coverage2
+else:
+	$(error "Did not find required python3 or python2 executable!")
+	exit 1
+endif
 
 python: prep
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -45,7 +58,7 @@ python: prep
 binary: prep
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	rm -f ec2rl-binary.tgz
-	@$(PYTHON) make_bin_modules.py
+	$(PYTHON) make_bin_modules.py
 	@pyinstaller -y \
 	-p lib \
 	--add-data "functions.bash:." \
@@ -64,7 +77,7 @@ binary: prep
 	--hidden-import botocore \
 	ec2rl.py
 
-	@$(PYTHON) make_symlinks.py
+	$(PYTHON) make_symlinks.py
 
 	@# Build the one-directory binary tarball
 	mv dist/ec2rl dist/$(BASENAME)
@@ -111,15 +124,13 @@ rpm: prep python
 
 .PHONY: test
 test:
-	@coverage3  run --source=ec2rlcore --branch -m unittest discover
-	@coverage3 report -m
+	$(COVERAGE) run --source=ec2rlcore --branch -m unittest discover
+	$(COVERAGE) report -m
 
 test_modules_unit:
 	@cd tools; \
 	$(PYTHON) run_module_unit_tests.py; \
-	coverage3 report -m
 
 test_modules_functional:
 	@cd tools; \
 	$(PYTHON) run_module_functional_tests.py; \
-	coverage3 report -m
