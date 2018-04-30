@@ -84,12 +84,27 @@ class TestOptions(unittest.TestCase):
         self.assertTrue("list" in self.options.global_args.keys())
         self.assertFalse(self.options.global_args["list"])
 
-    def test_options_argument_nokey_value(self):
+    def test_options_argument_nokey_single_value(self):
         """Test parsing of argument with "no" key."""
         sys.argv = ["ec2rl", "run", "--no=xyz"]
         self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
-        value = self.options.global_args["xyz"]
-        self.assertEqual(value, "False")
+        self.assertEqual(self.options.global_args["xyz"], "False")
+
+    def test_options_argument_nokey_multi_value(self):
+        """Test parsing of argument with "no" key."""
+        sys.argv = ["ec2rl", "run", "--no=abc,xyz"]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        self.assertEqual(self.options.global_args["abc"], "False")
+        self.assertEqual(self.options.global_args["xyz"], "False")
+
+    def test_options_argument_nokey_key_novalue(self):
+        """
+        Test parsing of argument set with a "no" key and a conflicting dynamic arg.
+        The "no" key logic should take precedence.
+        """
+        sys.argv = ["ec2rl", "run", "--no=xyz", "--xyz"]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        self.assertEqual(self.options.global_args["xyz"], "False")
 
     def test_options_argument_key_value(self):
         """Test parsing of argument with a value."""
