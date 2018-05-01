@@ -1,3 +1,16 @@
+# EC2 Rescue for Linux v1.1.3
+
+#### General
+
+#### Framework
+* [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
+
+#### Modules
+* [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
+
+#### Testing
+* None
+
 # EC2 Rescue for Linux v1.1.2
 
 #### General
@@ -13,10 +26,10 @@
 * [Bugfix] Module class: Removed unsuable environment variable, EC2RL_MODULE_PATH, which was exported by the run method
 
 #### Modules
-* [New Feature] OpenSSH module: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
-* [Enhancement] OpenSSH module: Refactored key injection to support key injection as a standalone action
-* [Enhancement] OpenSSH module: Modified method by which the privilege separation directory is obtained to support older distributions
-* [Bugfix] rebuildinitrd module: Added missing dracut kernel version argument
+* [New Feature] openssh: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
+* [Enhancement] openssh: Refactored key injection to support key injection as a standalone action
+* [Enhancement] openssh: Modified method by which the privilege separation directory is obtained to support older distributions
+* [Bugfix] rebuildinitrd: Added missing dracut kernel version argument
 
 #### Testing
 * [Enhancement] Updated test runner script, run_module_unit_tests.py, to show missing coverage in test report
