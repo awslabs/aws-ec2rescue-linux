@@ -56,10 +56,14 @@ content: !!str |
   def detect():
       """
       Detect if aggressive TCP recycling is enabled.
+      Since this is a kernel setting that may change in the future, first check that this module is applicable.
 
       Returns:
           (bool): True if aggressive TCP recycling is enabled.
       """
+      net_ipv4_out = subprocess.check_output(["sysctl", "net.ipv4"], universal_newlines=True)
+      if not re.match(r"net.ipv4.tcp_tw_recycle", net_ipv4_out):
+          return False
       tcp_recycle = subprocess.check_output(["sysctl", "net.ipv4.tcp_tw_recycle"], universal_newlines=True)
       return not bool(re.match(r"net.ipv4.tcp_tw_recycle = 0", tcp_recycle))
 
