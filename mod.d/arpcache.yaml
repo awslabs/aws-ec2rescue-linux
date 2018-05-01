@@ -16,7 +16,7 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str arpcache
 path: !!str
-version: !!str 3.0
+version: !!str 3.1
 title: !!str Determines if aggressive arp caching is enabled
 helptext: !!str |
   Determines if aggressive arp caching is enabled.
@@ -53,6 +53,8 @@ content: !!str |
   from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import restore
 
+  SEARCH_STRING = r"net.ipv4.neigh.default.gc_thresh1 = 1"
+
 
   def detect():
       """
@@ -61,8 +63,11 @@ content: !!str |
       Returns:
           (bool): True if aggressive arp caching is enabled.
       """
-      arpstatus = subprocess.check_output(["sysctl", "net.ipv4.neigh.default.gc_thresh1"], universal_newlines=True)
-      return bool(re.match(r"net.ipv4.neigh.default.gc_thresh1 = 1", arpstatus))
+      sysctl_all_out = subprocess.check_output(["sysctl", "-a"], universal_newlines=True, stderr=subprocess.STDOUT)
+      for line in sysctl_all_out.splitlines():
+          if re.match(SEARCH_STRING, line):
+              return True
+      return False
 
 
   def fix(config_file_path):

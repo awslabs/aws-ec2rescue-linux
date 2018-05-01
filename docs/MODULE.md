@@ -147,6 +147,7 @@ arg3 = Grep arguments (optional)
 4. Use four space indention unless otherwise required by the implementation language.
 5. Modules must complete without any user intervention such as waiting for user input.
 5. Modules must be tested for compatibility on the latest Amazon Machine Images (AMIs) of Amazon Linux, RHEL, SLES, and Ubuntu or as many as possible depending upon the intended operations performed.
+6. Modules dealing with kernel parameters must not assume the parameter exists since these can and do change over time.
 ### Diagnostic Module Requirements
 1. A diagnostic module must print a status message.
    * A successful diagnostic should print a message prefixed with "[SUCCESS]".
