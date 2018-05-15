@@ -777,16 +777,7 @@ class Main(object):
             self._run_backup()
 
         self._run_prediagnostics()
-
-        # Comparison of constraints to determine run/diag modules that can run
-        self.modules.validate_constraints_have_args(
-            options=self.options, constraint=self.constraint, without_keys=["software",
-                                                                            "distro",
-                                                                            "sudo",
-                                                                            "requires_ec2"])
-
         self._run_prunemodules()
-        # write-out the Configuration for this run to a file
         self.save_config()
 
         ec2rlcore.dual_log("\n-------------[Output  Logs]-------------\n")
@@ -799,6 +790,161 @@ class Main(object):
 
         self._run_postdiagnostics()
         return mod_run_success
+
+    # Formerly flubber()
+    def _validate_constraints_have_args(self, mod, options, constraint, with_keys=None, without_keys=None):
+        """
+        Validate whether a given module should be run given the constraints.
+
+        First, check to see if it is still applicable. Modules that have already been marked as not
+        applicable are skipped.
+
+        Second, the module is checked to see if it was excluded via the command line args.
+
+        Third, the constraint keys are filtered if with_keys or without_keys are provided. with_keys takes precedence
+        over without_keys if both are specified (without_keys is not evaluated).
+
+        Fourth, we attempt to match each constraint and constraint value to a corresponding constraint:value pair in
+        the options. The module-specific options are checked then the global options are checked.
+
+        constraint_retval is True when the constraint:value pair is found and False when it is not.
+        module_retval is initialized to True and ANDed with the resulting constraint_retval after each constraint is
+        checked. This keeps track of the overall success of the constraint checking.
+
+        Parameters:
+            mod (Module): the module being validated
+            options (Options): the Options instance containing the parsed constraints
+            constraint (Constraint): the Constraints instance containing
+            the combined constraint:value pairs of all modules
+            with_keys (list): key list to be used for filtering (filter to only these keys)
+            without_keys (list): key list to be used for filtering (filter to exclude these keys)
+
+        Returns:
+            module_retval (bool): whether the module can run
+        """
+        self.logger.debug("moduledir.ModuleDir.validate_constraints_have_args()")
+        self.logger.debug("Validating module: {}".format(mod.name))
+        # module_retval (boolean), represents whether a module's constraints have values
+        module_retval = True
+
+        # Keep earlier decisions about module acceptance (and their message)
+        if not mod.applicable:
+            return False
+
+        # Check to see if module was excluded by name (--no=<module_name>)
+        if mod.name in options.global_args and options.global_args[mod.name] == "False":
+            self.logger.debug("module '{}' explicitly excluded with '--no={}'; skipping module".format(
+                mod.name, mod.name))
+            mod.applicable = False
+            mod.whyskipping = "explicitly excluded with '--no={}'.".format(mod.name)
+            return False
+
+        # Filter the constraints compared to include only the keys specified
+        if with_keys:
+            constraint_filtered_using = mod.constraint.with_keys
+            key_list = with_keys
+        # Filter the constraints compared to exclude the keys specified
+        elif without_keys:
+            constraint_filtered_using = mod.constraint.without_keys
+            key_list = without_keys
+        # All constraints will be compared
+        else:
+            constraint_filtered_using = mod.constraint.without_keys
+            key_list = []
+        self.logger.debug("key_list = {}".format(key_list))
+
+        # Check current module's constraints against options
+        for constraint_name in constraint_filtered_using(key_list).keys():
+            self.logger.debug("'{}' constraint:values = '{}:{}'".format(
+                mod.name, constraint_name, mod.constraint[constraint_name]))
+
+            # Skip optional constraints
+            if constraint_name == "optional":
+                continue
+
+            if constraint_name == "parallelexclusive":
+                continue
+
+            def check_per_module_args(this_constraint_value):
+                """Check if this module has per-module args
+
+                Parameters:
+                    this_constraint_value (str): the constraint whose value we ware looking for
+
+                Returns:
+                    (bool): indicates whether a constraint value was found
+                """
+                if mod.name in options.per_module_args:
+                    self.logger.debug("....Checking per_module_args")
+                    # Check if this module's per-module args contains this constraint name as well as a value
+                    if this_constraint_value in options.per_module_args[mod.name] and \
+                            options.per_module_args[mod.name][this_constraint_value]:
+                        self.logger.debug("........FOUND Constraint value is present")
+                        return True
+                    else:
+                        self.logger.debug("......UNFOUND Constraint value is False (bool) or absent from "
+                                          "options.per_module_args")
+                        return False
+                return False
+
+            def check_global_constraints(this_constraint_value):
+                """Check the global constraint:value pairs (options.global_args) for constraint:value pair
+
+                Parameters:
+                    this_constraint_value (str): the constraint whose value we ware looking for
+
+                Returns:
+                    (bool): indicates whether a constraint value was found
+                """
+                if this_constraint_value in options.global_args:
+                    self.logger.debug("....Checking global_args")
+                    self.logger.debug("......FOUND constraint name present in global_args")
+                    # Check if this key has a value
+                    if options.global_args[this_constraint_value]:
+                        self.logger.debug("........FOUND Constraint value is present")
+                        return True
+                    else:
+                        self.logger.debug("......UNFOUND Constraint value is False (bool) or absent from "
+                                          "options.global_args")
+                        return False
+                return False
+
+            # Check each value of the named-set against the run-constraints and run-options
+            for constraint_value in mod.constraint[constraint_name]:
+                self.logger.debug("Checking: {}:{}".format(constraint_name, constraint_value))
+                # constraint_retval (boolean) represents whether constraint has a value
+                if {constraint_name: constraint_value} in constraint:
+                    self.logger.debug("..FOUND constraint:value pair present in the summation of constraints")
+                    constraint_retval = True
+                    module_retval = module_retval and constraint_retval
+                    self.logger.debug("module_retval={}".format(module_retval))
+                    # Found so go to the next constraint
+                    continue
+
+                self.logger.debug("..UNFOUND constraint:value pair absent from summation of constraints")
+
+                # Run the additional checks
+                # Python short-circuits "and" and "or" operators so this is as efficient as a if/elif block while
+                # keeping the checks self-contained in their own functions
+                constraint_retval = check_per_module_args(constraint_value) or \
+                    check_global_constraints(constraint_value)
+                # Add any new checks here, chaining off the constraint_retval assignment's "or" chain
+
+                # Handle cases where the constraint was found in neither options" global_args
+                # nor per_module_args
+                if not constraint_retval:
+                    self.logger.debug("..UNFOUND {} absent from options".format(constraint_value))
+                    mod.whyskipping = "Missing required argument '{}'.".format(constraint_value)
+
+                self.logger.debug("..constraint_retval={}".format(constraint_retval))
+                # AND the module and constraint return values
+                # (any constraint failure causes the module to fail where fail = False)
+                module_retval = module_retval and constraint_retval
+                self.logger.debug("module_retval={}".format(module_retval))
+
+            if not module_retval:
+                mod.applicable = False
+        return module_retval
 
     def _run_prunemodules(self):
         """
@@ -820,12 +966,9 @@ class Main(object):
             if (mods_to_run == "all" or mod.name in mods_to_run) \
                     and set(mod.constraint["domain"]).intersection(self.options.domains_to_run) \
                     and set(mod.constraint["class"]).intersection(self.options.classes_to_run):
-                # Flag the module for removal if validate_constraints_have_args found missing args (constraints)
-                if not mod.applicable:
-                    prune = True
                 # Flag the module for removal if the module requires the system be an EC2 instance and
                 # it is not an instance
-                elif next(iter(mod.constraint["requires_ec2"])) == "True" \
+                if next(iter(mod.constraint["requires_ec2"])) == "True" \
                         and self.options.global_args["notaninstance"] == "True":
                     mod.whyskipping = "Module requires system be an EC2 instance."
                     prune = True
@@ -840,6 +983,16 @@ class Main(object):
                 # Flag the module for removal if it requires root/sudo but this is not executing as such
                 elif next(iter(mod.constraint["sudo"])) == "True" and os.environ["EC2RL_SUDO"] == "False":
                     mod.whyskipping = "Requires sudo access, but not executing as root."
+                    prune = True
+                # Flag the module for removal if validate_constraints_have_args found missing args (constraints)
+                elif not self._validate_constraints_have_args(mod=mod,
+                                                              options=self.options,
+                                                              constraint=self.constraint,
+                                                              without_keys=["software",
+                                                                            "distro",
+                                                                            "sudo",
+                                                                            "requires_ec2"]):
+                    # mod.whyskipping is set by _validate_constraints_have_args()
                     prune = True
             # If the module isn't supposed to run, determine how it was excluded by the user's args
             else:
@@ -875,24 +1028,23 @@ class Main(object):
             self._prune_module(mod)
 
     def _prune_module(self, mod):
-        # Only collecting stats on the skip reasons we want to actually display
+        def add_to_prune_stats(reason):
+            if reason not in self.prune_stats:
+                self.prune_stats[reason] = 0
+            self.prune_stats[reason] += 1
 
+        # Only collect stats on the skip reasons we want to actually display
         if mod.whyskipping.startswith("Requires performance impact okay, but not given."):
-            self._add_to_prune_stats(ec2rlcore.module.SkipReason.PERFORMANCE_IMPACT)
+            add_to_prune_stats(ec2rlcore.module.SkipReason.PERFORMANCE_IMPACT)
         elif mod.whyskipping.startswith("Requires sudo access, but not executing as root."):
-            self._add_to_prune_stats(ec2rlcore.module.SkipReason.REQUIRES_SUDO)
+            add_to_prune_stats(ec2rlcore.module.SkipReason.REQUIRES_SUDO)
         elif mod.whyskipping.startswith("Requires missing/non-executable software"):
-            self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_SOFTWARE)
+            add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_SOFTWARE)
         elif mod.whyskipping.startswith("Missing required argument"):
-            self._add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_ARGUMENT)
+            add_to_prune_stats(ec2rlcore.module.SkipReason.MISSING_ARGUMENT)
 
         self.pruned_modules.append(mod)
         self.modules.remove(mod)
-
-    def _add_to_prune_stats(self, reason, count=1):
-        if reason not in self.prune_stats:
-            self.prune_stats[reason] = 0
-        self.prune_stats[reason] += count
 
     def _run_backup(self):
         """
@@ -1078,24 +1230,33 @@ class Main(object):
                                        self.prune_stats.get(ec2rlcore.module.SkipReason.MISSING_ARGUMENT, 0),
                                        self.prune_stats.get(ec2rlcore.module.SkipReason.PERFORMANCE_IMPACT, 0)))
 
-        ec2rlcore.dual_log("\n----------------[NOTICE]----------------\n")
-        ec2rlcore.dual_log("Please note, this directory could contain sensitive data depending on modules run! Please"
-                           " review its contents!")
-        ec2rlcore.dual_log("\n----------------[Upload]----------------\n")
-        ec2rlcore.dual_log("You can upload results to AWS Support with the following, or run 'help upload' for details"
-                           " on using an S3 presigned URL:\n")
-        ec2rlcore.dual_log("{}./ec2rl upload --upload-directory={} --support-url=\"URLProvidedByAWSSupport\" \n".
-                           format("sudo " if os.environ["EC2RL_SUDO"] == "True" else "", self.directories["RUNDIR"]))
-        ec2rlcore.dual_log("The quotation marks are required, and if you ran the tool with sudo, you will also need to"
-                           " upload with sudo.")
-        ec2rlcore.dual_log("\n---------------[Feedback]---------------\n")
-        ec2rlcore.dual_log("We appreciate your feedback. If you have any to give, please visit:")
         if self.options.global_args["notaninstance"] == "True":
-            ec2rlcore.dual_log("https://aws.au1.qualtrics.com/jfe1/form/SV_3KrcrMZ2quIDzjn?InstanceID={}&Version={}\n".
-                               format("not_an_instance", self.PROGRAM_VERSION))
+            feedback_url = \
+                "https://aws.au1.qualtrics.com/jfe1/form/SV_3KrcrMZ2quIDzjn?InstanceID={}&Version={}\n".format(
+                    "not_an_instance",
+                    self.PROGRAM_VERSION)
         else:
-            ec2rlcore.dual_log("https://aws.au1.qualtrics.com/jfe1/form/SV_3KrcrMZ2quIDzjn?InstanceID={}&Version={}\n".
-                               format(ec2rlcore.awshelpers.get_instance_id(), self.PROGRAM_VERSION))
+            feedback_url = \
+                "https://aws.au1.qualtrics.com/jfe1/form/SV_3KrcrMZ2quIDzjn?InstanceID={}&Version={}\n".format(
+                    ec2rlcore.awshelpers.get_instance_id(),
+                    self.PROGRAM_VERSION)
+
+        ec2rlcore.dual_log(
+            "\n----------------[NOTICE]----------------\n"
+            "\nPlease note, this directory could contain sensitive data depending on modules run! "
+            "Please review its contents!\n"
+            "\n----------------[Upload]----------------\n"
+            "\nYou can upload results to AWS Support with the following, "
+            "or run 'help upload' for details on using an S3 presigned URL:\n"
+            "\n{}./ec2rl upload --upload-directory={} --support-url=\"URLProvidedByAWSSupport\" \n"
+            "\nThe quotation marks are required, and if you ran the tool with sudo, "
+            "you will also need to upload with sudo.\n"
+            "\n---------------[Feedback]---------------\n"
+            "\nWe appreciate your feedback. If you have any to give, please visit:\n{}".format(
+                "sudo " if os.environ["EC2RL_SUDO"] == "True" else "",
+                self.directories["RUNDIR"],
+                feedback_url))
+
         if "diagnose" in self.modules.class_map.keys():
             return len(self.modules.class_map["diagnose"]) == diagnose_successes
         else:
