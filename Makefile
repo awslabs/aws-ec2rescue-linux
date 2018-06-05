@@ -74,6 +74,7 @@ binary: prep
 	--add-data "pre.d:pre.d" \
 	--add-data "mod.d:mod.d" \
 	--add-data "post.d:post.d" \
+	--add-data "lib/requests/cacert.pem:requests" \
 	--hidden-import botocore \
 	ec2rl.py
 
