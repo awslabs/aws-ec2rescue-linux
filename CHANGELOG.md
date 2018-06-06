@@ -1,6 +1,7 @@
 # EC2 Rescue for Linux v1.1.3
 
 #### General
+* [Enhancement] Added pull request template with license wording.
 
 #### Framework
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
