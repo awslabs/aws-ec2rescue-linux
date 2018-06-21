@@ -115,6 +115,18 @@ clean: prep
 
 all: python binary
 
+nightly: python
+	mv -v ec2rl.tgz ec2rl-nightly.tgz
+	mv -v ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
+	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
+
+nightlybinary: binary
+	mv -v ec2rl-binary.tgz ec2rl-nightly-binary.tgz
+	mv -v ec2rl-binary.tgz.sha256 ec2rl-nightly-binary.tgz.sha256
+	sed -i 's/ec2rl-binary.tgz/ec2rl-nightly-binary.tgz/' ec2rl-nightly-binary.tgz.sha256
+
+nightlyall: nightly nightlybinary
+
 rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."

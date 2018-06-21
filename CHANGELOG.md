@@ -7,6 +7,7 @@
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
 * [Enhancement] Main, ModuleDir classes: Merged all module validation tasks into one location.
 * [Enhancement] Binary build: include the requests certificate bundle to ensure SSL works.
+* [Enhancement] Added nightly, nightlybinary, and nightyall Makefile targets to simplify the CodeBuild buildspec.
 
 #### Modules
 * [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
