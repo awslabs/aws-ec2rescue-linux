@@ -60,6 +60,6 @@ constraint:
   required: !!str
   optional: !!str
   software: !!str
-  sudo: !!str True
+  sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str
