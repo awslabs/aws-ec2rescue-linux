@@ -99,6 +99,7 @@ menuconfig:
 	./ec2rl menu-config --debug
 
 prep:
+	rm -rf bin
 	rm -rf dist
 	rm -rf build
 	rm -rf rpmbuild/noarch
