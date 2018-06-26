@@ -13,6 +13,8 @@
 
 #### Modules
 * [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
+* [New Module] Added dhclientleases module with remediation support.
+
 
 #### Testing
 * None
