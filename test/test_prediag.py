@@ -148,10 +148,16 @@ class TestPrediag(unittest.TestCase):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "alami")
         self.assertTrue(mock_isfile.called)
 
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux 2"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
+    def test_prediag_os_alami2_lts_release(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami2")
+        self.assertTrue(mock_isfile.called)
+
     @mock.patch("ec2rlcore.prediag.open",
                 mock.mock_open(read_data="Amazon Linux release 2.0 (2017.12) LTS Release Candidate"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
-    def test_prediag_os_alami2(self, mock_isfile):
+    def test_prediag_os_alami2_release_candidate(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "alami2")
         self.assertTrue(mock_isfile.called)
 
