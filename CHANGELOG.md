@@ -17,7 +17,7 @@
 * [New Module] Added dhclientleases module with remediation support.
 * [New Module] Added dpkgpackages module.
 * [New Module] Added rpmpackages module.
-* [New Module] Added workspaceslogs module.
+* [New Module] Added workspacelogs module.
 
 #### Testing
 * None
