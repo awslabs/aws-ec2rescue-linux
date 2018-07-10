@@ -141,6 +141,8 @@ class Main(object):
         # (but the CWD/PWD will change, so we need a fully-specified path)
         self.directories["CALLPATH"] = os.path.split(_callp)[0]
 
+        self.directories["LIBDIR"] = os.path.join(self.directories["CALLPATH"], "lib")
+
         if "--debug" in sys.argv or debug:
             self.debug = True
             self.logger.setLevel(logging.DEBUG)
@@ -282,11 +284,13 @@ class Main(object):
         """
         self.logger.debug("ec2rlcore.Main._setup_environ()")
 
+        # LIBDIR: path to the vendored Python modules
         # WORKDIR: path to the root directory used for data capture from all executions
         # RUNDIR: path to the root directory for a particular execution
         # LOGDIR: directory inside RUNDIR that contains module logs
         # GATHEREDDIR: directory inside RUNDIR that contains files captured by the modules
         # SPECDIR: root directory name for a particular execution (date + time)
+        os.environ["EC2RL_LIBDIR"] = self.directories["LIBDIR"]
         os.environ["EC2RL_WORKDIR"] = self.directories["WORKDIR"]
         os.environ["EC2RL_RUNDIR"] = self.directories["RUNDIR"]
         os.environ["EC2RL_LOGDIR"] = self.directories["LOGDIR"]

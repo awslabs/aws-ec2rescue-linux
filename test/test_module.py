@@ -151,7 +151,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_run_bash_unknown(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -179,7 +180,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_run_bash_failure(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -208,7 +210,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_run_bash_warn(self):
         """Check that run returns process output when running a BASH module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -368,7 +371,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_run_python_global_args(self):
         """Check that run returns process output when running a Python module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -387,7 +391,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_run_python_per_module_args(self):
         """Check that run returns process output when running a Python module."""
         my_opts = ec2rlcore.options.Options(subcommands=["run"])
@@ -564,7 +569,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_unsupported_language_run(self):
         """
         Check that a UnsupportedLanguageError exception is raised when a module defines an unknown language during
@@ -586,7 +592,8 @@ class TestModule(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     def test_module_execution_failure(self):
         """Check that ModuleRunFailureError is raised when a module returns non-zero."""
         module_path = os.path.join(self.callpath, "test/modules/bad_mod.d/exits_nonzero.yaml")

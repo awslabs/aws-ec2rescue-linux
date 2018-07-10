@@ -162,7 +162,8 @@ class TestParallelDiagnostics(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("logging.FileHandler")
     def test_paralleldiagnostics_worker_runs_module(self, logging_fh_mock, os_makedirs_mock):
@@ -188,7 +189,8 @@ class TestParallelDiagnostics(unittest.TestCase):
                                   "EC2RL_VIRT_TYPE": "test",
                                   "EC2RL_SUDO": "test",
                                   "EC2RL_PERFIMPACT": "test",
-                                  "EC2RL_CALLPATH": "test"})
+                                  "EC2RL_CALLPATH": "test",
+                                  "EC2RL_LIBDIR": "test"})
     @mock.patch("os.makedirs", side_effect=simple_return)
     @mock.patch("logging.FileHandler")
     def test_paralleldiagnostics_worker_runs_module_with_failure(self, logging_fh_mock, os_makedirs_mock):

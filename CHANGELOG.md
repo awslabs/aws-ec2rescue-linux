@@ -11,6 +11,7 @@
 * [Enhancement] Binary build: include the requests certificate bundle to ensure SSL works.
 * [Enhancement] The prep Makefile target now removes the bin directory.
 * [Enhancement] Updated distribution detection for the Amazon Linux 2 LTS release.
+* [Enhancement] Make the vendored Python modules available to EC2RL modules via PYTHONPATH.
 
 #### Modules
 * [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
