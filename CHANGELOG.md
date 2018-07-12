@@ -4,6 +4,7 @@
 * [Enhancement] Added pull request template with license wording.
 * [Enhancement] Added nightly, nightlybinary, and nightyall Makefile targets to simplify the CodeBuild buildspec.
 * [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
+* [Enhancement] Added GPG signature verification details to README.
 
 #### Framework
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.

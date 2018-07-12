@@ -6,16 +6,27 @@ Amazon Elastic Compute Cloud (EC2) Rescue for Linux (ec2rl) is a framework for e
 troubleshooting modules to analyze and remediate issues on Linux instances on AWS.
 
 ## The Latest Version
-The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz  
-File integrity can be verified using the sha256 hash which can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
-
-Example:
+The latest stable version can be downloaded [here](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz ). Example:
 ```commandline
 [ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz
-[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
-[ec2-user@localhost ~]$ sha256sum -c ec2rl.tgz.sha256
-ec2rl.tgz: OK
 ```
+File integrity can be verified in two ways:
+1. [sha256 hash](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256). Example:
+
+    ```commandline
+    [ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
+    [ec2-user@localhost ~]$ sha256sum -c ec2rl.tgz.sha256
+    ec2rl.tgz: OK
+    ```
+
+2. [Detached GPG signature](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sig) and [GPG public key](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.key). Example:
+
+    ```commandline
+    [ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sig
+    [ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.key
+    [ec2-user@localhost ~]$ gpg2 --import ec2rl.key
+    [ec2-user@localhost ~]$ gpg2 --verify ec2rl.tgz.sig
+    ```
 
 ## Documentation
 Available in docs/ subdirectory
