@@ -6,6 +6,7 @@
 * [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
 * [Enhancement] Added GPG signature verification details to README.
 * [Enhancement] Updated example configs to include run subcommand.
+* [Enhancement] Added new example configs for remediation oriented tasks.
 
 #### Framework
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
