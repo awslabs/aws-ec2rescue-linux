@@ -5,6 +5,7 @@
 * [Enhancement] Added nightly, nightlybinary, and nightyall Makefile targets to simplify the CodeBuild buildspec.
 * [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
 * [Enhancement] Added GPG signature verification details to README.
+* [Enhancement] Updated example configs to include run subcommand.
 
 #### Framework
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
