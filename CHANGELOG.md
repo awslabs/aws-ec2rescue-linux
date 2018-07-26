@@ -22,6 +22,7 @@
 * [New Module] Added dpkgpackages module.
 * [New Module] Added rpmpackages module.
 * [New Module] Added workspacelogs module.
+* [New Module] Added localtime module.
 
 #### Testing
 * None
