@@ -24,6 +24,7 @@
 * [New Module] Added workspacelogs module.
 * [New Module] Added localtime module.
 * [New Module] Added kerberosconfig module.
+* [New Module] Added libtirpcnetconfig module.
 
 #### Testing
 * None
