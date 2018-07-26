@@ -18,6 +18,7 @@
 
 #### Modules
 * [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
+* [Enhancement] Rewrote kernelconfig to gather the three most recently modified kernel configuration files from /boot plus the running kernel configuration if it is not amongst the initial three gathered configurations.
 * [New Module] Added dhclientleases module with remediation support.
 * [New Module] Added dpkgpackages module.
 * [New Module] Added rpmpackages module.
