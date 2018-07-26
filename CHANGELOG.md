@@ -23,6 +23,7 @@
 * [New Module] Added rpmpackages module.
 * [New Module] Added workspacelogs module.
 * [New Module] Added localtime module.
+* [New Module] Added kerberosconfig module.
 
 #### Testing
 * None
