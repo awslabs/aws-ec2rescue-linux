@@ -24,7 +24,7 @@ ifdef PYTHON3
 else ifdef PYTHON2
 	PYTHON:=python2
 	COVERAGE:=coverage2
-else:
+else
 	$(error "Did not find required python3 or python2 executable!")
 	exit 1
 endif
