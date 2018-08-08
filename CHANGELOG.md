@@ -2,7 +2,8 @@
 
 #### General
 * [Enhancement] Added pull request template with license wording.
-* [Enhancement] Added nightly, nightlybinary, and nightyall Makefile targets to simplify the CodeBuild buildspec.
+* [Enhancement] Added bundledpython Makefile target to create releases with a bundled copy of Python as an alternative to the binary build.
+* [Enhancement] Added several multi-action Makefile targets to simplify the CodeBuild buildspec.
 * [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
 * [Enhancement] Added GPG signature verification details to README.
 * [Enhancement] Updated example configs to include run subcommand.

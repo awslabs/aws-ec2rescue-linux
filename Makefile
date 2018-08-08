@@ -29,9 +29,24 @@ else:
 	exit 1
 endif
 
-python: prep
+python: prep pythonbase
+	@echo "Creating ec2rl.tgz..."
+	tar -czf ec2rl.tgz --exclude="python" -C /tmp $(BASENAME)
+	sha256sum ec2rl.tgz > ec2rl.tgz.sha256
+	@echo "Done!"
+
+bundledpython: prep pythonbase
+	@cp -ap python /tmp/$(BASENAME)
+	@echo "Creating ec2rl-bundled.tgz..."
+	tar -czf ec2rl-bundled.tgz -C /tmp $(BASENAME)
+	sha256sum ec2rl-bundled.tgz > ec2rl-bundled.tgz.sha256
+	@echo "Done!"
+
+pythonandbundled: python bundledpython
+pythonandbundlednightly: nightly nightlybundledpython
+
+pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
-	rm -f $(BASENAME).tgz
 	@mkdir /tmp/$(BASENAME)
 	@cp -ap ec2rl /tmp/$(BASENAME)
 	@cp -ap ec2rl.py /tmp/$(BASENAME)
@@ -49,15 +64,9 @@ python: prep
 	@cp -ap requirements.txt /tmp/$(BASENAME)
 	@cp -ap LICENSE /tmp/$(BASENAME)
 	@cp -ap NOTICE /tmp/$(BASENAME)
-	@echo "Creating ec2rl.tgz..."
-	@tar -czf ec2rl.tgz -C /tmp $(BASENAME)
-	@sha256sum ec2rl.tgz > ec2rl.tgz.sha256
-	@rm -rf /tmp/$(BASENAME)
-	@echo "Done!"
 
 binary: prep
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
-	rm -f ec2rl-binary.tgz
 	$(PYTHON) make_bin_modules.py
 	@pyinstaller -y \
 	-p lib \
@@ -83,10 +92,24 @@ binary: prep
 	@# Build the one-directory binary tarball
 	mv dist/ec2rl dist/$(BASENAME)
 	@echo "Creating ec2rl-binary.tgz ..."
-	@tar -czf ec2rl-binary.tgz -C dist $(BASENAME)
-	@sha256sum ec2rl-binary.tgz > ec2rl-binary.tgz.sha256
+	tar -czf ec2rl-binary.tgz -C dist $(BASENAME)
+	sha256sum ec2rl-binary.tgz > ec2rl-binary.tgz.sha256
 	@echo "Done!"
 
+nightly: python
+	mv ec2rl.tgz ec2rl-nightly.tgz
+	mv ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
+	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
+
+nightlybinary: binary
+	mv ec2rl-binary.tgz ec2rl-nightly-binary.tgz
+	mv ec2rl-binary.tgz.sha256 ec2rl-nightly-binary.tgz.sha256
+	sed -i 's/ec2rl-binary.tgz/ec2rl-nightly-binary.tgz/' ec2rl-nightly-binary.tgz.sha256
+
+nightlybundledpython: bundledpython
+	mv ec2rl-bundled.tgz ec2rl-bundled-nightly.tgz
+	mv ec2rl-bundled.tgz.sha256 ec2rl-bundled-nightly.tgz.sha256
+	sed -i 's/ec2rl-bundled.tgz/ec2rl-bundled-nightly.tgz/' ec2rl-bundled-nightly.tgz.sha256
 
 menuconfig:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -105,7 +128,6 @@ prep:
 	rm -rf rpmbuild/noarch
 	rm -f rpmbuild/*.rpm
 	rm -f ec2rl.spec
-	rm -rf /tmp/ec2rl
 	rm -rf /tmp/$(BASENAME)
 
 clean: prep
@@ -113,20 +135,14 @@ clean: prep
 	rm -f ec2rl.tgz.sha256
 	rm -f ec2rl-binary.tgz
 	rm -f ec2rl-binary.tgz.sha256
-
-all: python binary
-
-nightly: python
-	mv -v ec2rl.tgz ec2rl-nightly.tgz
-	mv -v ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
-	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
-
-nightlybinary: binary
-	mv -v ec2rl-binary.tgz ec2rl-nightly-binary.tgz
-	mv -v ec2rl-binary.tgz.sha256 ec2rl-nightly-binary.tgz.sha256
-	sed -i 's/ec2rl-binary.tgz/ec2rl-nightly-binary.tgz/' ec2rl-nightly-binary.tgz.sha256
-
-nightlyall: nightly nightlybinary
+	rm -f ec2rl-bundled.tgz
+	rm -f ec2rl-bundled.tgz.sha256
+	rm -f ec2rl-nightly.tgz
+	rm -f ec2rl-nightly.tgz.sha256
+	rm -f ec2rl-nightly-binary.tgz
+	rm -f ec2rl-nightly-binary.tgz.sha256
+	rm -f ec2rl-bundled-nightly.tgz
+	rm -f ec2rl-bundled-nightly.tgz.sha256
 
 rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
