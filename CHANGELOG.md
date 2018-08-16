@@ -6,6 +6,7 @@
 * [Enhancement] Added several multi-action Makefile targets to simplify the CodeBuild buildspec.
 * [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
 * [Enhancement] Added GPG signature verification details to README.
+* [Enhancement] Added bundled build details to README.
 * [Enhancement] Updated example configs to include run subcommand.
 * [Enhancement] Added new example configs for remediation oriented tasks.
 
