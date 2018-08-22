@@ -9,6 +9,7 @@
 * [Enhancement] Added bundled build details to README.
 * [Enhancement] Updated example configs to include run subcommand.
 * [Enhancement] Added new example configs for remediation oriented tasks.
+* [Bugfix] Added missing license files for vendored copies of pyyaml and requests.
 
 #### Framework
 * [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
@@ -17,6 +18,7 @@
 * [Enhancement] The prep Makefile target now removes the bin directory.
 * [Enhancement] Updated distribution detection for the Amazon Linux 2 LTS release.
 * [Enhancement] Make the vendored Python modules available to EC2RL modules via PYTHONPATH.
+* [Enhancement] Updated the ec2rl script to use a local copy of Python, if present. The local path for the local copy must be python/bin/python. This change is primarily intended to support the bundled build.
 
 #### Modules
 * [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
