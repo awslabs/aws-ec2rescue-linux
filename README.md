@@ -116,8 +116,9 @@ SSL SNI (Server Name Indication) is required for the ec2rl's upload functionalit
 
 ### What are the limitations of the bundled build?
 SSL and curses functionality may not work depending upon the versions of these libraries on the system. This impacts two subcommands:
-1. The "upload" subcommand may not function.
-2. The "menu-config" subcommand may not function.
+1. The "menu-config" subcommand may not function.
+2. The "upload" subcommand may not function.
+3. The "version-check" subcommand may not function.
 
 ### I'm trying to use the menu on a system running SUSE, but it does not work.
 Python's curses module is normally built into its standard library, however, it is sometimes separated and included as a separate package. You will need to install it with the operating system's package manager. The package name in SUSE Linux Enterprise Server 12 is "[python-curses](https://www.suse.com/LinuxPackages/packageRouter.jsp?product=server&version=12&service_pack=&architecture=x86_64&package_name=python-curses)".
