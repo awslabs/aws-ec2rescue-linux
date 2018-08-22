@@ -6,15 +6,39 @@ Amazon Elastic Compute Cloud (EC2) Rescue for Linux (ec2rl) is a framework for e
 troubleshooting modules to analyze and remediate issues on Linux instances on AWS.
 
 ## The Latest Version
-The latest stable version can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz  
-File integrity can be verified using the sha256 hash which can be downloaded from https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
+### Builds
+Two builds of the latest version are provided:
+1. The standard build only includes the EC2 Rescue for Linux code and requires the system meet the [Prerequisites](#prerequisites).
+2. The bundled build includes a minimal copy of Python. It is intended for use on systems that do not meet the Python version prerequisite. Please see the [FAQ](#what-are-the-limitations-of-the-bundled-build) for limitations associated with this build.
+### Downloads
+| Build | Download | sha256 hash | GPG signature |
+|:---:|:---:|:---:|:---:|
+| Standard | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sig) |
+| Bundled | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-standard.tgz) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz.sig) |
 
+Our GPG public key can be downloaded from [here](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.key).
+
+### Integrity Verification
+File integrity can be verified in two ways. The examples below demonstrate verifying the standard build.
+
+#### sha256 hash
 Example:
 ```commandline
-[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz
 [ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256
 [ec2-user@localhost ~]$ sha256sum -c ec2rl.tgz.sha256
 ec2rl.tgz: OK
+```
+
+#### Detached GPG signature with GPG public key
+Example:
+```commandline
+[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sig
+[ec2-user@localhost ~]$ wget -q https://s3.amazonaws.com/ec2rescuelinux/ec2rl.key
+[ec2-user@localhost ~]$ gpg2 --import ec2rl.key
+[ec2-user@localhost ~]$ gpg2 --verify ec2rl.tgz.sig
+...
+gpg: Good signature from "ec2autodiag@amazon.com <EC2 Rescue for Linux>"
+...
 ```
 
 ## Documentation
@@ -89,6 +113,11 @@ It is recommended the resulting data be reviewed prior to being uploaded in orde
 
 ### Why does EC2 Rescue For Linux require Python 2.7.9+? What about Python 2.7.x, x < 9?
 SSL SNI (Server Name Indication) is required for the ec2rl's upload functionality, however, this wasn't added to Python 2.7 until 2.7.9. See [PEP 466](https://www.python.org/dev/peps/pep-0466/) for more information regarding the SSL changes in Python 2.7.9.
+
+### What are the limitations of the bundled build?
+SSL and curses functionality may not work depending upon the versions of these libraries on the system. This impacts two subcommands:
+1. The "upload" subcommand may not function.
+2. The "menu-config" subcommand may not function.
 
 ### I'm trying to use the menu on a system running SUSE, but it does not work.
 Python's curses module is normally built into its standard library, however, it is sometimes separated and included as a separate package. You will need to install it with the operating system's package manager. The package name in SUSE Linux Enterprise Server 12 is "[python-curses](https://www.suse.com/LinuxPackages/packageRouter.jsp?product=server&version=12&service_pack=&architecture=x86_64&package_name=python-curses)".

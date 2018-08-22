@@ -47,6 +47,12 @@ class Testtcprecycle(unittest.TestCase):
         self.output.close()
 
     @mock.patch("subprocess.check_output")
+    def test_detect_notapplicable(self, check_output_mock):
+        check_output_mock.return_value = "net.ipv4.tcp_syncookies = 1"
+        self.assertFalse(moduletests.src.tcprecycle.detect())
+        self.assertTrue(check_output_mock.called)
+
+    @mock.patch("subprocess.check_output")
     def test_detect_noproblem(self, check_output_mock):
         check_output_mock.return_value = "net.ipv4.tcp_tw_recycle = 0"
         self.assertFalse(moduletests.src.tcprecycle.detect())

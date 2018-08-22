@@ -16,7 +16,7 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str arpignore
 path: !!str
-version: !!str 1.0
+version: !!str 3.1
 title: !!str Determines if any interfaces have been set to ignore arp requests
 helptext: !!str |
   Determines if any interfaces have been set to ignore arp requests
@@ -52,6 +52,8 @@ content: !!str |
   from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import restore
 
+  SEARCH_STRING = r"arp_ignore = [1-9]"
+
 
   def detect():
       """
@@ -60,8 +62,9 @@ content: !!str |
       Returns:
           (bool): True if arpignore is enabled on at least one interface.
       """
-      for line in subprocess.check_output(["sysctl", "net.ipv4.conf"], universal_newlines=True).splitlines():
-          if re.search(r"arp_ignore = [1-9]", line):
+      sysctl_all_out = subprocess.check_output(["sysctl", "-a"], universal_newlines=True, stderr=subprocess.STDOUT)
+      for line in sysctl_all_out.splitlines():
+          if re.search(SEARCH_STRING, line):
               return True
       return False
 

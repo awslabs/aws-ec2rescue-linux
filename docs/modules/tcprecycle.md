@@ -4,6 +4,8 @@
 
 TCP Connection recycling may cause networking issues when source TCP connections originate from a NAT device.
 
+Note: this kernel parameter was removed in the 4.12 kernel.
+
 ## Detecting with EC2 Rescue for Linux
 
 EC2 Rescue for Linux includes a diagnostic module which will check the status of TCP Connection Recycling. This is provided by the "tcprecycle" diagnostic module.  This module will run by default with sudo access, and can be run individually

@@ -10,8 +10,7 @@ phases:
   build:
     commands:
       - echo "Build started on $(date)"
-      - make all
-      - if [ "$NIGHTLY" == "TRUE" ]; then echo "Detected nightly build env var" && mv -v ec2rl.tgz ec2rl-nightly.tgz && mv -v ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256 && sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256 && mv -v ec2rl-binary.tgz ec2rl-nightly-binary.tgz && mv -v ec2rl-binary.tgz.sha256 ec2rl-nightly-binary.tgz.sha256 && sed -i 's/ec2rl-binary.tgz/ec2rl-nightly-binary.tgz/' ec2rl-nightly-binary.tgz.sha256; fi
+      - make ${MAKEARGS}
   post_build:
     commands:
       - echo "Build completed on $(date)"

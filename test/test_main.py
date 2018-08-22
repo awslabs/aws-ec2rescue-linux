@@ -266,6 +266,7 @@ class TestMain(unittest.TestCase):
         self.ec2rl._write_initialized = False  # Force re-initialization of writing for test
         self.assertTrue(self.ec2rl._setup_write_paths())
 
+        self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
@@ -385,7 +386,7 @@ class TestMain(unittest.TestCase):
         """Test that the help function returns a help string when no subcommand is given."""
         output = self.ec2rl.get_help()
         self.assertIsInstance(output, str)
-        self.assertEqual(len(output), 8437)
+        self.assertEqual(len(output), 8415)
         self.assertTrue(output.startswith("ec2rl:  A framework for executing diagnostic and troubleshooting\n"))
         self.assertTrue(output.endswith("bug                    - enables debug level logging\n"))
 
@@ -393,7 +394,7 @@ class TestMain(unittest.TestCase):
         """Test that the help function returns a help string for a valid subcommand (run)."""
         output = self.ec2rl.get_help("run")
         self.assertIsInstance(output, str)
-        self.assertEqual(len(output), 2540)
+        self.assertEqual(len(output), 2518)
         self.assertTrue(output.startswith("run:\n    SYNOPSIS:\n        ec2rl run [--only-"))
         self.assertTrue(output.endswith("to run in parallel. The default is 10.\n\n"))
 
@@ -431,7 +432,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8438)
+        self.assertEqual(len(self.output.getvalue()), 8416)
 
     def test_main_help_module(self):
         """Test output from a single module."""
@@ -549,7 +550,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
 
         # Check that the length of the help message matches the expected value
-        self.assertEqual(len(self.output.getvalue()), 2541)
+        self.assertEqual(len(self.output.getvalue()), 2519)
         self.assertTrue(self.output.getvalue().startswith("run:\n    SYNOPSIS:\n        ec2rl run [--only-modules=MOD"))
         self.assertTrue(self.output.getvalue().endswith("to run in parallel. The default is 10.\n\n\n"))
 
@@ -786,6 +787,112 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(write_config_mock.called)
 
+    def test_main_module_req_validation_all_keys(self):
+        """Test validate_constraints_have_args when with_keys is empty, meaning test all keys."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        sys.argv = ["ec2rl", "run"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        ret = self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                         options=options,
+                                                         constraint=constraint,
+                                                         without_keys=[])
+        # Failure is expected because no containt filter (without_keys) was provided
+        self.assertFalse(ret)
+        self.assertFalse(mod.applicable)
+
+    def test_main_module_req_validation_without_keys(self):
+        """Test validate_constraints_have_args when using without_keys to filter the key list."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        sys.argv = ["ec2rl", "run"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        ret = self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                         options=options,
+                                                         constraint=constraint,
+                                                         without_keys=["software", "distro", "sudo", "requires_ec2"])
+        self.assertTrue(ret)
+        self.assertTrue(mod.applicable)
+
+    def test_main_module_req_validation_with_keys(self):
+        """Test validate_constraints_have_args when using with_keys to filter the key list."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        sys.argv = ["ec2rl", "run"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        ret = self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                         options=options,
+                                                         constraint=constraint,
+                                                         with_keys=["required"])
+        self.assertTrue(ret)
+        self.assertTrue(mod.applicable)
+
+    def test_main_module_req_validation_with_global_args(self):
+        """Test validate_constraints_have_args when module constraints are in the global_args dict."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        mod.constraint["required"] = ["period", "times"]
+        sys.argv = ["ec2rl", "run", "--times=1", "--period=5"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        ret = self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                         options=options,
+                                                         constraint=constraint,
+                                                         with_keys=["required"])
+        self.assertTrue(ret)
+        self.assertTrue(mod.applicable)
+
+    def test_main_module_req_validation_with_module_exclusion(self):
+        """Test validate_constraints_have_args when a module is specifically excluded via --no=<module_name>."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        sys.argv = ["ec2rl", "run", "--no=xennetrocket"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        ret = self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                         options=options,
+                                                         constraint=constraint,
+                                                         with_keys=["required"])
+        self.assertFalse(ret)
+        self.assertFalse(mod.applicable)
+
+    def test_main_module_req_validation_with_per_module_args(self):
+        """Test validate_constraints_have_args when module constraints are in the per_module_args dict."""
+        mod = ec2rlcore.module.get_module(os.path.join(self.callpath, "test/modules/single_diagnose/xennetrocket.yaml"))
+        mod.constraint["required"] = ["period", "times"]
+        sys.argv = ["ec2rl", "run"]
+        options = ec2rlcore.options.Options(subcommands=ec2rlcore.main.Main.subcommands)
+        options.per_module_args["xennetrocket"] = {}
+        options.per_module_args["xennetrocket"]["times"] = 1
+        constraint = ec2rlcore.constraint.Constraint()
+        constraint.update(mod.constraint.with_keys(["domain", "class", "distro", "software", "perfimpact"]))
+
+        self.assertFalse(self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                                    options=options,
+                                                                    constraint=constraint,
+                                                                    with_keys=["required"]))
+        self.assertFalse(mod.applicable)
+        # times is satisfied but period is not
+        self.assertEqual(mod.whyskipping, "Missing required argument 'period'.")
+
+        # Re-test with the remaining constraint satisfied
+        options.per_module_args["xennetrocket"]["period"] = 5
+        mod.whyskipping = ""
+        mod.applicable = True
+        self.assertTrue(self.ec2rl._validate_constraints_have_args(mod=mod,
+                                                                   options=options,
+                                                                   constraint=constraint,
+                                                                   with_keys=["required"]))
+        self.assertTrue(mod.applicable)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
     @mock.patch("os.chmod", side_effect=simple_return)
     @mock.patch("ec2rlcore.logutil.LogUtil.set_debug_log_handler", side_effect=simple_return)
@@ -801,13 +908,6 @@ class TestMain(unittest.TestCase):
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
         sys.argv = [test_path, "run", "--only-modules=arpcache"]
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
-
         ec2rl_pruning_test._run_prunemodules()
 
         self.assertEqual(len(ec2rl_pruning_test._modules), 1)
@@ -837,12 +937,6 @@ class TestMain(unittest.TestCase):
         test_path = os.path.sep.join([os.path.split(path_to_ec2rl)[0], "test", "modules", "ec2rl"])
         sys.argv = [test_path, "run", "--only-domains=os"]
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 6)
 
@@ -871,12 +965,6 @@ class TestMain(unittest.TestCase):
         sys.argv = [test_path, "run", "--only-classes=diagnose"]
 
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 6)
 
@@ -902,13 +990,6 @@ class TestMain(unittest.TestCase):
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
         module_path = os.path.join(self.callpath, "test/modules/test_main_multi_run_prunemodules_fakeexecutable")
         ec2rl_pruning_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
-
         self.assertEqual(len(ec2rl_pruning_test._modules), 1)
         the_module = ec2rl_pruning_test._modules[0]
         ec2rl_pruning_test._run_prunemodules()
@@ -940,14 +1021,6 @@ class TestMain(unittest.TestCase):
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
         module_path = os.path.join(self.callpath, "test/modules/test_main__run_prunemodules_perfimpact_constraint")
         ec2rl_pruning_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
-
-        self.assertEqual(len(ec2rl_pruning_test._modules), 1)
         the_module = ec2rl_pruning_test._modules[0]
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 0)
@@ -978,14 +1051,6 @@ class TestMain(unittest.TestCase):
         ec2rl_pruning_test = ec2rlcore.main.Main(debug=True, full_init=True)
         module_path = os.path.join(self.callpath, "test/modules/test_main__run_prunemodules_requires_ec2_constraint/")
         ec2rl_pruning_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_pruning_test._modules.validate_constraints_have_args(options=ec2rl_pruning_test.options,
-                                                                   constraint=ec2rl_pruning_test.constraint,
-                                                                   without_keys=["software",
-                                                                                 "distro",
-                                                                                 "sudo",
-                                                                                 "requires_ec2"])
-
-        self.assertEqual(len(ec2rl_pruning_test._modules), 1)
         the_module = ec2rl_pruning_test._modules[0]
         ec2rl_pruning_test._run_prunemodules()
         self.assertEqual(len(ec2rl_pruning_test._modules), 0)
@@ -1785,7 +1850,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8438)
+        self.assertEqual(len(self.output.getvalue()), 8416)
         self.ec2rl.subcommand = original_subcommand
 
     def test_main___call__subcommand_arg(self):
@@ -1795,7 +1860,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl(subcommand="help"))
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8438)
+        self.assertEqual(len(self.output.getvalue()), 8416)
 
     @responses.activate
     @mock.patch("logging.FileHandler")
@@ -2235,9 +2300,10 @@ class TestMain(unittest.TestCase):
         ec2rl_softwarecheck_test = ec2rlcore.main.Main(debug=True, full_init=True)
         module_path = os.path.join(self.callpath, "test/modules/test_main_multi_run_prunemodules_fakeexecutable/")
         ec2rl_softwarecheck_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_softwarecheck_test._modules.validate_constraints_have_args(options=ec2rl_softwarecheck_test.options,
-                                                                         constraint=ec2rl_softwarecheck_test.constraint,
-                                                                         without_keys=["software", "distro", "sudo"])
+        ec2rl_softwarecheck_test._validate_constraints_have_args(mod=ec2rl_softwarecheck_test._modules[0],
+                                                                 options=ec2rl_softwarecheck_test.options,
+                                                                 constraint=ec2rl_softwarecheck_test.constraint,
+                                                                 without_keys=["software", "distro", "sudo"])
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_softwarecheck_test.software_check())
         self.assertEqual(self.output.getvalue(),
@@ -2269,9 +2335,10 @@ class TestMain(unittest.TestCase):
         module_path = os.path.join(self.callpath,
                                    "test/modules/test_main_software_check_missing_software_parse_failure/")
         ec2rl_softwarecheck_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_softwarecheck_test._modules.validate_constraints_have_args(options=ec2rl_softwarecheck_test.options,
-                                                                         constraint=ec2rl_softwarecheck_test.constraint,
-                                                                         without_keys=["software", "distro", "sudo"])
+        ec2rl_softwarecheck_test._validate_constraints_have_args(mod=ec2rl_softwarecheck_test._modules[0],
+                                                                 options=ec2rl_softwarecheck_test.options,
+                                                                 constraint=ec2rl_softwarecheck_test.constraint,
+                                                                 without_keys=["software", "distro", "sudo"])
         with contextlib.redirect_stdout(self.output):
             with self.assertRaises(ec2rlcore.main.MainSoftwareCheckPackageParsingFailure) as error:
                 ec2rl_softwarecheck_test.software_check()
@@ -2305,9 +2372,10 @@ class TestMain(unittest.TestCase):
         ec2rl_softwarecheck_test = ec2rlcore.main.Main(debug=True, full_init=True)
         module_path = os.path.join(self.callpath, "test/modules/test_main_multi_run_prunemodules_fakeexecutable/")
         ec2rl_softwarecheck_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_softwarecheck_test._modules.validate_constraints_have_args(options=ec2rl_softwarecheck_test.options,
-                                                                         constraint=ec2rl_softwarecheck_test.constraint,
-                                                                         without_keys=["software", "distro", "sudo"])
+        ec2rl_softwarecheck_test._validate_constraints_have_args(mod=ec2rl_softwarecheck_test._modules[0],
+                                                                 options=ec2rl_softwarecheck_test.options,
+                                                                 constraint=ec2rl_softwarecheck_test.constraint,
+                                                                 without_keys=["software", "distro", "sudo"])
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_softwarecheck_test.software_check())
         self.assertEqual("All test software requirements have been met.\n", self.output.getvalue())
@@ -2334,9 +2402,10 @@ class TestMain(unittest.TestCase):
         ec2rl_softwarecheck_test._modules_need_init = False
         module_path = os.path.join(self.callpath, "test/modules/test_main_multi_run_prunemodules_fakeexecutable/")
         ec2rl_softwarecheck_test._modules = ec2rlcore.moduledir.ModuleDir(module_path)
-        ec2rl_softwarecheck_test._modules.validate_constraints_have_args(options=ec2rl_softwarecheck_test.options,
-                                                                         constraint=ec2rl_softwarecheck_test.constraint,
-                                                                         without_keys=["software", "distro", "sudo"])
+        ec2rl_softwarecheck_test._validate_constraints_have_args(mod=ec2rl_softwarecheck_test._modules[0],
+                                                                 options=ec2rl_softwarecheck_test.options,
+                                                                 constraint=ec2rl_softwarecheck_test.constraint,
+                                                                 without_keys=["software", "distro", "sudo"])
         with contextlib.redirect_stdout(self.output):
             self.assertTrue(ec2rl_softwarecheck_test.software_check())
         self.assertEqual(self.output.getvalue(), "One or more software packages required to run all modules are "

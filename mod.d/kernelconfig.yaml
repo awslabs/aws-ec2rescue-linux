@@ -16,34 +16,75 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str kernelconfig
 path: !!str
-version: !!str 1.0
+version: !!str 2.0
 title: !!str Collect /boot/config details
 helptext: !!str |
-  Collect /boot/config details
+  Collect the three most recently modified kernel configuration files in /boot plus the configuration for the
+  running kernel if it is not amongst the initial three
 placement: !!str run
 package: 
   - !!str
-language: !!str bash
+language: !!str python
 content: !!str |
-  #!/bin/bash
-  error_trap()
-  {
-      printf "%0.s=" {1..80}
-      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
-      exit 0
-  }
-  trap error_trap ERR
+  import os
+  import platform
+  import shutil
 
-  # read-in shared function
-  source functions.bash
+  MODULE_NAME = "kernelconfig"
+  BOOT_DIR = "/boot"
+  NUM_CONFIGS = 3
 
-  echo "I will collect /boot/config details from this $EC2RL_DISTRO box."
 
-  cat /boot/config-`uname -r`
+  class ConfigFile:
+      def __init__(self, path):
+          self.file_path = path
+          self.file_name = os.path.split(path)[-1]
+          self.mtime = os.stat(path).st_mtime
+
+
+  if __name__ == "__main__":
+      try:
+          gather_path = os.path.join(os.environ["EC2RL_GATHEREDDIR"], MODULE_NAME)
+          running_kernel = platform.release()
+          running_kernel_config_file_name = "config-{}".format(platform.release())
+          running_kernel_config_file_path = os.path.join(BOOT_DIR, running_kernel_config_file_name)
+
+          kernel_configs = list()
+          for file_name in os.listdir(BOOT_DIR):
+              if file_name.startswith("config-"):
+                  config_file = ConfigFile(os.path.join(BOOT_DIR, file_name))
+                  kernel_configs.append(config_file)
+              if file_name == running_kernel_config_file_name:
+                  running_kernel_config_found = True
+
+          # Sort by mtime in descending order
+          kernel_configs.sort(key=lambda config: config.mtime, reverse=True)
+          kernel_configs = kernel_configs[:NUM_CONFIGS]
+
+          # Add the running kernel config if not already in the list
+          if os.path.exists(running_kernel_config_file_path) and \
+                  running_kernel_config_file_path not in [config_path.file_path for config_path in kernel_configs]:
+              kernel_configs.append(ConfigFile(running_kernel_config_file_path))
+
+          if not os.path.exists(gather_path):
+              os.makedirs(gather_path)
+
+          print("Running kernel: {}".format(running_kernel))
+          print("Gathering kernel configs:")
+          for config in kernel_configs:
+              print("\t{}".format(config.file_name))
+              shutil.copy2(config.file_path, gather_path)
+
+          print("Done!")
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+
 constraint:
   requires_ec2: !!str False
   domain: !!str os
-  class: !!str collect
+  class: !!str gather
   distro: !!str alami alami2 ubuntu rhel suse
   required: !!str
   optional: !!str

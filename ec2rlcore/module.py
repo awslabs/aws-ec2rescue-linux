@@ -235,6 +235,9 @@ class Module(object):
                   "EC2RL_CALLPATH"):
             envlist[x] = os.environ[x]
 
+        # Add the vendored Python modules to the Python search path
+        envlist["PYTHONPATH"] = os.environ["EC2RL_LIBDIR"]
+
         # Load the global values
         if options and options.global_args:
             for option, optionvalue in options.global_args.items():

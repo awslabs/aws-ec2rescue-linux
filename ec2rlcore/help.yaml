@@ -61,7 +61,7 @@ run_help:  !!str |+
   run:
       SYNOPSIS:
           ec2rl run [--only-modules=MODULEa ... MODULEx] [--only-domains=DOMAINa ... DOMAINx]
-          ec2rl run [--abc=param] [--no=abc] [--perfimpact=true]
+          ec2rl run [--abc=param] [--no=OPTIONa ... OPTIONx] [--perfimpact=true]
           ec2rl run [--concurrency=N] [--backup=ami | allvolumes]
 
       DESCRIPTION:
@@ -81,19 +81,19 @@ run_help:  !!str |+
           Switch Parameters:
               --abc       - pass "abc" variables to modules, set to true
                             enable modules with name or parameter of "abc"
-              --no=abc    - pass "abc" variable to modules, set to false
-                            disable modules with name or parameter of "abc"
               --perfimpact=true - enable the running of performance impacting
-                                  modules
+                            modules
               --backup=ami | allvolumes - creates a backup of the instance via
-                                  creating an AMI or snapshotting all volumes
-                                  if valid permissions are available. Select one
-                                  of ami or allvolumes
+                            creating an AMI or snapshotting all volumes
+                            if valid permissions are available. Select one
+                            of ami or allvolumes
               --remediate - enables remediation for modules that support it
 
           Key/Value Parameters:
-              --abc=xyz   - pass variable "abc" to modules, set to "xyz"
-                            to satisfy module constraints
+              --abc=xyz   - satisfy module constraints by passing variable "abc"
+                            with a value of "xyz"
+              --no=module1,option1 - disable modules by name and set a
+                            module-visible environment variable to "False"
               --only-modules=module1,module2 - only run modules in the
                             specified comma delimited list
               --only-domains=domain1,domain2 - only run the domains in the
@@ -101,9 +101,9 @@ run_help:  !!str |+
               --only-classes=class1,class2 - only run the classes in the
                             specified comma delimited list
               --backup=vol1,vol2 - backup the volumes specified by volume id
-                                   (e.g. vol-xxxxx) in a comma delimited list
+                            (e.g. vol-xxxxx) in a comma delimited list
               --concurrency=N - Integer value representing how many modules
-                                to run in parallel. The default is 10.
+                            to run in parallel. The default is 10.
 
 save_config_help:  !!str |+
   save-config:

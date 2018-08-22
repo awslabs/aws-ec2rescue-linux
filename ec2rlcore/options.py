@@ -123,10 +123,19 @@ class Options(object):
                 del parsed_arg_dict[key]
 
         for key in parsed_arg_dict.keys():
+            value = parsed_arg_dict[key]
             # If the "no" key has a value, handle the args.
-            if key == "no" and parsed_arg_dict[key]:
-                resultant_args_dict[parsed_arg_dict[key]] = "False"
-            elif parsed_arg_dict[key] is None:
+            if key == "no" and value:
+                do_not_run_list = value.rsplit(",")
+                for mod_name in do_not_run_list:
+                    resultant_args_dict[mod_name] = "False"
+                # No need to add the "no" arg to the resultant_args_dict
+                continue
+            if value is None:
+                # If not already set to "False" by a "no" arg
+                if key in resultant_args_dict.keys() and resultant_args_dict[key] == "False":
+                    # This condition may be missed in coverage due to the unordered nature of dict.keys()
+                    continue
                 parsed_arg_dict[key] = "True"
             # Remove underscores in the dict keys.
             resultant_args_dict[key.replace("_", "")] = parsed_arg_dict[key]

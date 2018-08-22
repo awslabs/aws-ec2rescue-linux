@@ -16,7 +16,7 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str tcprecycle
 path: !!str
-version: !!str 3.0
+version: !!str 3.1
 title: !!str Determines if aggressive TCP recycling is enabled
 helptext: !!str |
   Determines if aggressive TCP recycling is enabled.
@@ -52,16 +52,22 @@ content: !!str |
   from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import restore
 
+  SEARCH_STRING = r"net.ipv4.tcp_tw_recycle"
+
 
   def detect():
       """
       Detect if aggressive TCP recycling is enabled.
+      Note that this parameter was removed in the 4.12 kernel.
 
       Returns:
           (bool): True if aggressive TCP recycling is enabled.
       """
-      tcp_recycle = subprocess.check_output(["sysctl", "net.ipv4.tcp_tw_recycle"], universal_newlines=True)
-      return not bool(re.match(r"net.ipv4.tcp_tw_recycle = 0", tcp_recycle))
+      sysctl_all_out = subprocess.check_output(["sysctl", "-a"], universal_newlines=True, stderr=subprocess.STDOUT)
+      for line in sysctl_all_out.splitlines():
+          if re.match(SEARCH_STRING, line) and line.split("=")[1].strip()!= "0":
+              return True
+      return False
 
 
   def fix(config_file_path):

@@ -1,3 +1,39 @@
+# EC2 Rescue for Linux v1.1.3
+
+#### General
+* [Enhancement] Added pull request template with license wording.
+* [Enhancement] Added bundledpython Makefile target to create releases with a bundled copy of Python as an alternative to the binary build.
+* [Enhancement] Added several multi-action Makefile targets to simplify the CodeBuild buildspec.
+* [Enhancement] Updated CodeBuild buildspec to source make args from the environment.
+* [Enhancement] Added GPG signature verification details to README.
+* [Enhancement] Added bundled build details to README.
+* [Enhancement] Updated example configs to include run subcommand.
+* [Enhancement] Added new example configs for remediation oriented tasks.
+* [Bugfix] Added missing license files for vendored copies of pyyaml and requests.
+
+#### Framework
+* [Enhancement] Options class: Added support for providing a comma delimited list of exclusions with the --no argument.
+* [Enhancement] Main, ModuleDir classes: Merged all module validation tasks into one location.
+* [Enhancement] Binary build: include the requests certificate bundle to ensure SSL works.
+* [Enhancement] The prep Makefile target now removes the bin directory.
+* [Enhancement] Updated distribution detection for the Amazon Linux 2 LTS release.
+* [Enhancement] Make the vendored Python modules available to EC2RL modules via PYTHONPATH.
+* [Enhancement] Updated the ec2rl script to use a local copy of Python, if present. The local path for the local copy must be python/bin/python. This change is primarily intended to support the bundled build.
+
+#### Modules
+* [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
+* [Enhancement] Rewrote kernelconfig to gather the three most recently modified kernel configuration files from /boot plus the running kernel configuration if it is not amongst the initial three gathered configurations.
+* [New Module] Added dhclientleases module with remediation support.
+* [New Module] Added dpkgpackages module.
+* [New Module] Added rpmpackages module.
+* [New Module] Added workspacelogs module.
+* [New Module] Added localtime module.
+* [New Module] Added kerberosconfig module.
+* [New Module] Added libtirpcnetconfig module.
+
+#### Testing
+* None
+
 # EC2 Rescue for Linux v1.1.2
 
 #### General
@@ -13,10 +49,10 @@
 * [Bugfix] Module class: Removed unsuable environment variable, EC2RL_MODULE_PATH, which was exported by the run method
 
 #### Modules
-* [New Feature] OpenSSH module: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
-* [Enhancement] OpenSSH module: Refactored key injection to support key injection as a standalone action
-* [Enhancement] OpenSSH module: Modified method by which the privilege separation directory is obtained to support older distributions
-* [Bugfix] rebuildinitrd module: Added missing dracut kernel version argument
+* [New Feature] openssh: Added support for generation of a new RSA keypair. The new private key is stored as an SSM SecureString Parameter
+* [Enhancement] openssh: Refactored key injection to support key injection as a standalone action
+* [Enhancement] openssh: Modified method by which the privilege separation directory is obtained to support older distributions
+* [Bugfix] rebuildinitrd: Added missing dracut kernel version argument
 
 #### Testing
 * [Enhancement] Updated test runner script, run_module_unit_tests.py, to show missing coverage in test report
