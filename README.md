@@ -14,7 +14,7 @@ Two builds of the latest version are provided:
 | Build | Download | sha256 hash | GPG signature |
 |:---:|:---:|:---:|:---:|
 | Standard | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sig) |
-| Bundled | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-standard.tgz) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.tgz.sha256) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz.sig) |
+| Bundled | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz.sha256) | [Link](https://s3.amazonaws.com/ec2rescuelinux/ec2rl-bundled.tgz.sig) |
 
 Our GPG public key can be downloaded from [here](https://s3.amazonaws.com/ec2rescuelinux/ec2rl.key).
 
