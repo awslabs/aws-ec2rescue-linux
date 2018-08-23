@@ -1,0 +1,196 @@
+# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+#     http://aws.amazon.com/apache2.0/
+#
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+
+--- !ec2rlcore.module.Module
+# Module document. Translates directly into an almost-complete Module object
+name: !!str speculativeexecution
+path: !!str
+version: !!str 1.0
+title: !!str Determine status of Speculative Execution mitigations
+helptext: !!str |
+  Determine status of Speculative Execution mitigations.
+  This module is intended to determine these for performance related reasons to the mitigations, and is **not intended
+  to be used as a tool for checking compliance or security posture.**
+placement: !!str run
+package:
+  - !!str
+language: !!str python
+remediation: !!str False
+content: !!str |
+  """
+  Checks for status of speculative execution mitigations on the running instance.
+  This is intended for determining the possible performance impact of things such as KPTI, retpoline, etc.
+  It is **not intended to be used for determining compliance or security posture.**
+  Currently only checks for things relevant in EC2 where IBRS and IBPB are not passed through to instances.
+
+  Functions:
+      is_intel_cpu: Determine if utilizing an Intel CPU.
+      get_kpti_status: Determine if KPTI is in use to mitigate Meltdown
+      get_retpoline_status: Determine if retpoline was used to mitigate Spectre in the kernel
+      get_pcid_status: Determine if system has pcid and invpcid support
+      run:
+  """
+  from __future__ import print_function
+  import os
+  import re
+  import sys
+
+  def is_intel_cpu():
+      """
+      Determine if utilizing an Intel CPU.
+      Currently this should always be true in EC2. This might not always be the case, and this might need to later
+      be expanded when Intel provides more in-hardware solutions.
+
+      Returns:
+          True (bool): If using an Intel CPU
+      """
+      try:
+          with open("/proc/cpuinfo", "r") as cpuinfo_file:
+              if re.search("GenuineIntel", cpuinfo_file.read()):
+                  print("Running on an Intel CPU.\n")
+                  return True
+              elif re.search("AuthenticAMD", cpuinfo_file.read()):
+                  print("Running on an AMD CPU.\n")
+                  return False
+              else:
+                  print("Running on a non-Intel or AMD CPU. This is currently unsupported.\n")
+                  sys.exit(0)
+      except Exception:
+          print("[WARN] Unable to determine CPU vendor\n")
+          raise
+
+
+  def get_kpti_status():
+      """
+      Determines if KPTI is in use to mitigate Meltdown.
+
+      Returns:
+         True (bool): If KPTI is enabled
+      """
+      try:
+          with open("/sys/devices/system/cpu/vulnerabilities/meltdown", "r") as meltdown_file:
+              meltdown = meltdown_file.read()
+              print(meltdown)
+              if re.search("PTI", meltdown):
+                  print("Kernel Page Table Isolation is enabled as a Meltdown mitigation\n")
+                  return True
+              else:
+                  print("Kernel Page Table Isolation is disabled as a Meltdown mitigation\n")
+                  with open("/proc/cmdline", "r") as cmdline_file:
+                      if re.search("nopti", cmdline_file.read()):
+                          print("Kernel Page Table isolation is disabled via nopti on the kernel commandline.\n")
+                  return False
+      except Exception:
+          print("[WARN] Unable to determine Meltdown mitigation status\n")
+          raise
+
+  def get_retpoline_status():
+      """
+      Determines if retpoline is in use to mitigate Spectre.
+
+      Returns:
+         True (bool): If retpoline is in use in the kernel
+      """
+      try:
+          with open("/sys/devices/system/cpu/vulnerabilities/spectre_v2", "r") as spectrev2_file:
+              spectrev2 = spectrev2_file.read()
+              print(spectrev2)
+              if re.search("retpoline", spectrev2):
+                  print("Retpoline is in use to mitigate Spectre V2\n")
+                  return True
+              elif re.search("Vulnerable: Retpoline", spectrev2):
+                      print("Retpoline is in use to mitigate Spectre V2, but IBPB is not showing as enabled.\n")
+                      return True
+              else:
+                  print("Retpoline is not in use to mitigate Spectre V2\n")
+                  return False
+      except Exception:
+          print("[WARN] Unable to determine Spectre V2 mitigation status\n")
+          raise
+
+  def get_pcid_status():
+      """
+      Determine if the system supports pcid or nvpcid. Pre-Haswell CPUs should only have PCID support.
+
+      Returns:
+          pcid (string): Highest PCID implementation supported
+      """
+      try:
+          with open("/proc/cpuinfo", "r") as cpuinfo_file:
+              if re.search("invpcid", cpuinfo_file.read()):
+                  print("invpcid supported. This is the best case for Kernel Page Table Isolation performance.\n")
+                  pcid = "invpcid"
+                  return pcid
+              elif re.search("pcid", cpuinfo_file.read()):
+                  print("pcid supported. This is a moderate case for Kernel Page Table Isolation performance.\n")
+                  pcid = "pcid"
+                  return pcid
+              else:
+                  print("No pcid support detected. This is the worst case for Kernel Page Table Isolation performance.\n")
+                  pcid = "none"
+      except Exception:
+          print("[WARN] Unable to determine pcid support\n")
+          raise
+
+  def run():
+      """
+      Determines mitigation status for the speculative execution exploits as well as expected performance
+      characteristics.
+
+      Returns:
+          True (bool): If collection is successfull.
+      """
+      try:
+          kpti = False
+          if is_intel_cpu():
+              print("Continuing on to determine Meltdown related status\n")
+              if get_kpti_status():
+                  kpti = True
+              get_pcid_status()
+          else:
+              print("Skipping Meltdown related collection.\n")
+
+          if get_retpoline_status():
+              print("Retpoline is a high performance mitigation for Spectre v2 and should not result in negative"
+              "performance impact.\n")
+
+          if kpti:
+              print("Kernel Page Table Isolation can result in negative performance impact to certain workloads.\n")
+              print("We recommend "
+              "visiting https://aws.amazon.com/premiumsupport/knowledge-center/ec2-linux-performance/ for ways you can "
+              "increase EC2 instance performance.")
+
+          return True
+      except Exception as ex:
+          print(ex)
+          print("[WARN] module generated an exception and exited abnormally. "
+                "Review the logs to determine the cause of the issue.")
+          return False
+
+
+  if __name__ == "__main__":  # pragma: no coverage
+      run()
+
+constraint:
+  requires_ec2: !!str True
+  domain: !!str os
+  class: !!str collect
+  distro: !!str alami alami2 ubuntu rhel suse
+  required: !!str
+  optional: !!str
+  software: !!str
+  sudo: !!str True
+  perfimpact: !!str False
+  parallelexclusive: !!str
+
