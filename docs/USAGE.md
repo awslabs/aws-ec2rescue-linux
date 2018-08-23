@@ -141,7 +141,7 @@ Connection to amazon.com 80 port [tcp/http] succeeded!
 ```
 **Note**: Some modules require root access! These will require running EC2 Rescue For Linux as root or via sudo.
 
-##Upload the Results
+## Upload the Results
 
 The upload subcommand provides a method of uploading the results directory to S3.
 There are two main options for doing so: the first requires an S3 presigned URL, and the other requires a URL provided by AWS Premium Support.
