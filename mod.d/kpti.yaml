@@ -119,6 +119,7 @@ content: !!str |
           True (bool): If collection is successful.
       """
       try:
+          kpti = False
           if is_intel_cpu():
               print("Continuing on to determine Meltdown related status\n")
               kpti = get_kpti_status()
