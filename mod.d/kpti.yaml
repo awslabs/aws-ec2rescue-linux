@@ -40,7 +40,6 @@ content: !!str |
       run: Determines if KPTI is enabled and what level of pcid support is provided.
   """
   from __future__ import print_function
-  import os
   import re
   import sys
 
@@ -120,11 +119,9 @@ content: !!str |
           True (bool): If collection is successful.
       """
       try:
-          kpti = False
           if is_intel_cpu():
               print("Continuing on to determine Meltdown related status\n")
-              if get_kpti_status():
-                  kpti = True
+              kpti = get_kpti_status()
               get_pcid_status()
           else:
               print("Skipping Meltdown related collection.\n")

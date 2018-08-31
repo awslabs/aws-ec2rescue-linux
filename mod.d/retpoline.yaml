@@ -39,7 +39,6 @@ content: !!str |
       run: Determines if retpoline is in use and collects the result.
   """
   from __future__ import print_function
-  import os
   import re
   import sys
 
