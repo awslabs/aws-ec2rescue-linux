@@ -37,9 +37,9 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect ip route show all output from this $EC2RL_DISTRO box."
+  echo "I will collect ip route show table all output from this $EC2RL_DISTRO box."
 
-  ip -s route show all
+  ip route show table all
 constraint:
   requires_ec2: !!str False
   domain: !!str net
