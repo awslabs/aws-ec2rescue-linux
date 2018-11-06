@@ -14,12 +14,12 @@
 
 --- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
-name: !!str iproute
+name: !!str networkmanagerstatus
 path: !!str
 version: !!str 1.0
-title: !!str Collect output from ip route show all for system analysis
+title: !!str Collect output from systemctl status NetworkManager for system analysis
 helptext: !!str |
-  Collect output from ip route show all for system analysis
+  Collect output from systemctl status NetworkManager for system analysis
 placement: !!str run
 package: 
   - !!str
@@ -37,17 +37,17 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect ip route show table all output from this $EC2RL_DISTRO box."
+  echo "I will collect systemctl status NetworkManager from this $EC2RL_DISTRO box."
 
-  ip route show table all
+  systemctl status NetworkManager
 constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str collect
-  distro: !!str alami alami2 ubuntu rhel suse
+  distro: !!str alami2 ubuntu rhel suse
   required: !!str
   optional: !!str
-  software: !!str ip
+  software: !!str NetworkManager
   sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str
