@@ -115,7 +115,7 @@ It is recommended the resulting data be reviewed prior to being uploaded in orde
 SSL SNI (Server Name Indication) is required for the ec2rl's upload functionality, however, this wasn't added to Python 2.7 until 2.7.9. See [PEP 466](https://www.python.org/dev/peps/pep-0466/) for more information regarding the SSL changes in Python 2.7.9.
 
 ### What are the limitations of the bundled build?
-SSL and curses functionality may not work depending upon the versions of these libraries on the system. This impacts two subcommands:
+SSL and curses functionality may not work depending upon the versions of these libraries on the system. This impacts three subcommands:
 1. The "menu-config" subcommand may not function.
 2. The "upload" subcommand may not function.
 3. The "version-check" subcommand may not function.

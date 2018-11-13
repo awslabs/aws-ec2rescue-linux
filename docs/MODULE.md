@@ -32,7 +32,7 @@ A descriptor of how the module is grouped/classified. The set of included module
 #### class
 A descriptor of the type of task performed by the module. The set of included modules uses the classes "collect" (collects output from programs), "diagnose" (pass/fail based on a set of criteria), and "gather" (copies files and writes to specific file).
 #### distro
-The list of Linux distributions this module supports. The set of included modules use the distributions "alami" (Amazon Linux), "rhel", "ubuntu", and "suse"
+The list of Linux distributions this module supports. The set of included modules use the distributions "alami" (Amazon Linux), "alami2" (Amazon Linux 2), "rhel", "ubuntu", and "suse"
 #### required
 The required arguments the test is consuming from the CLI options.
 #### optional
