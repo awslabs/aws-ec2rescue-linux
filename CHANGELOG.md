@@ -9,9 +9,10 @@
 #### Modules
 * [Enhancement] Updated iproute module to collect additional route table details.
 * [Enhancement] Added all supported distros to bcc modules.
-* [New Module] Added kernel page table isolation module
-* [New Module] Added retpoline module
-* [New Module] Added networkmanagerstatus module
+* [New Module] Added kernel page table isolation module.
+* [New Module] Added retpoline module.
+* [New Module] Added networkmanagerstatus module.
+* [New Module] Added systemsmanager module.
 
 #### Testing
 * None
