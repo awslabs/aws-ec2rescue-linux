@@ -160,6 +160,16 @@ class TestMain(unittest.TestCase):
         self.assertEqual(self.ec2rl._prediags[0].name, "ex")
         self.assertEqual(self.ec2rl.subcommand, "run")
 
+    def test_main__get_workdir_default(self):
+        self.assertEqual(self.ec2rl._get_workdir(self.ec2rl.options), "/var/tmp/ec2rl")
+
+    @mock.patch("os.path.isdir", return_value=True)
+    def test_main__get_workdir_specified(self, isdir_mock):
+        """Test _get_workdir sets WORKDIR if specified by --output-dir."""
+        self.ec2rl.options.global_args["outputdir"] = "/somedir"
+        self.assertEqual(self.ec2rl._get_workdir(self.ec2rl.options), "/somedir")
+        self.assertTrue(isdir_mock.called)
+
     @mock.patch("os.mkdir", side_effect=simple_return)
     @mock.patch("os.chmod", side_effect=simple_return)
     def test_main__setup_paths_absolute_path(self, chmod_mock, mkdir_mock):
@@ -386,7 +396,7 @@ class TestMain(unittest.TestCase):
         """Test that the help function returns a help string when no subcommand is given."""
         output = self.ec2rl.get_help()
         self.assertIsInstance(output, str)
-        self.assertEqual(len(output), 8415)
+        self.assertEqual(len(output), 8528)
         self.assertTrue(output.startswith("ec2rl:  A framework for executing diagnostic and troubleshooting\n"))
         self.assertTrue(output.endswith("bug                    - enables debug level logging\n"))
 
@@ -432,7 +442,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl.help())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8416)
+        self.assertEqual(len(self.output.getvalue()), 8529)
 
     def test_main_help_module(self):
         """Test output from a single module."""
@@ -1850,7 +1860,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl())
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8416)
+        self.assertEqual(len(self.output.getvalue()), 8529)
         self.ec2rl.subcommand = original_subcommand
 
     def test_main___call__subcommand_arg(self):
@@ -1860,7 +1870,7 @@ class TestMain(unittest.TestCase):
             self.assertTrue(self.ec2rl(subcommand="help"))
         self.assertTrue(self.output.getvalue().startswith("ec2rl:  A framework for executing diagnostic and troublesh"))
         self.assertTrue(self.output.getvalue().endswith("- enables debug level logging\n\n"))
-        self.assertEqual(len(self.output.getvalue()), 8416)
+        self.assertEqual(len(self.output.getvalue()), 8529)
 
     @responses.activate
     @mock.patch("logging.FileHandler")

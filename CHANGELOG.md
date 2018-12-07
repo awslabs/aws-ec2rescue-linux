@@ -4,7 +4,7 @@
 * None
 
 #### Framework
-* None
+* [Enhancement] Added --output-dir option.
 
 #### Modules
 * [Enhancement] Updated iproute module to collect additional route table details.
