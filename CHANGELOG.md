@@ -1,3 +1,17 @@
+# EC2 Rescue for Linux v1.1.5
+
+#### General
+* None
+
+#### Framework
+* None
+
+#### Modules
+* None
+
+#### Testing
+* None
+
 # EC2 Rescue for Linux v1.1.4
 
 #### General
