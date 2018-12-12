@@ -126,11 +126,13 @@ class Main(object):
 
         self.pruned_modules = list()
         self.prune_stats = dict()
+        self.directories = dict()
 
         self.logger = ec2rlcore.logutil.LogUtil.get_root_logger()
-
         self.console = ec2rlcore.logutil.LogUtil.set_direct_console_logger(logging.INFO)
-        self.directories = {"WORKDIR": "/var/tmp/ec2rl"}
+
+        # Parse the commandline options and set the subcommand to be run, if it was specified as an argument
+        self.options = ec2rlcore.options.Options(subcommands=Main.subcommands)
 
         # if called with relative paths, build absolute path off current-working directory
         _callp = sys.argv[0]
@@ -140,8 +142,8 @@ class Main(object):
         # The modules directory neighbors the executable
         # (but the CWD/PWD will change, so we need a fully-specified path)
         self.directories["CALLPATH"] = os.path.split(_callp)[0]
-
         self.directories["LIBDIR"] = os.path.join(self.directories["CALLPATH"], "lib")
+        self.directories["WORKDIR"] = self._get_workdir(self.options.global_args)
 
         if "--debug" in sys.argv or debug:
             self.debug = True
@@ -156,9 +158,6 @@ class Main(object):
         # Help is the default subcommand
         self.subcommand = "default_help"
 
-        # Parse the commandline options and set the subcommand to be run, if it was specified as an argument
-        self.options = ec2rlcore.options.Options(subcommands=Main.subcommands)
-
         self.constraint = ec2rlcore.constraint.Constraint()
 
         # If the user specified a subcommand use that instead of the default.
@@ -167,6 +166,12 @@ class Main(object):
 
         if full_init:
             self.full_init()
+
+    def _get_workdir(self, global_args):
+        if "outputdir" in self.options.global_args and os.path.isdir(self.options.global_args["outputdir"]):
+            return self.options.global_args["outputdir"]
+        else:
+            return "/var/tmp/ec2rl"
 
     def full_init(self):
         """Perform the rest of the init"""

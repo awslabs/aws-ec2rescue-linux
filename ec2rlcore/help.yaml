@@ -37,6 +37,7 @@ help_footer:  !!str |
       OPTIONS:
           --config-file=filename     - loads a configuration file containing module-specific and global-module options
                                        this option is usable with the 'run' subcommand
+          --output-dir               - changes the output directory from /var/tmp/ec2rl to the specified directory
           --pdb                      - run framework inside the Python Debugger
           --not-an-instance          - skip instance-specific items in order to run ec2rl on bare hardware
           --debug                    - enables debug level logging
