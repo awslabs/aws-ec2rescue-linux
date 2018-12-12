@@ -5,6 +5,7 @@
 
 #### Framework
 * [Enhancement] Added --output-dir option.
+* [Enhancement] Updated Linux distribution detection to support the latest system-release string in Amazon Linux 2.
 
 #### Modules
 * [Enhancement] Updated iproute module to collect additional route table details.
