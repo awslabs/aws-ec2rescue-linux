@@ -14,19 +14,15 @@
 
 --- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
-name: !!str bcctcplife
+name: !!str networkmanagerstatus
 path: !!str
 version: !!str 1.0
-title: !!str Collect output from tcplife for system analysis
+title: !!str Collect output from systemctl status NetworkManager for system analysis
 helptext: !!str |
-  Collect output from tcplife for system analysis
-  Requires --period= for length of sample period
-  biotop is available from the bcc package https://github.com/iovisor/bcc
-  It requires a kernel that supports BPF, the relevant devel packages be installed,
-  debugfs mounted, and the tool in your path
+  Collect output from systemctl status NetworkManager for system analysis
 placement: !!str run
 package: 
-  - !!str bcc https://github.com/iovisor/bcc
+  - !!str
 language: !!str bash
 content: !!str |
   #!/bin/bash
@@ -41,18 +37,17 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect tcplife output from this $EC2RL_DISTRO box $times times."
+  echo "I will collect systemctl status NetworkManager from this $EC2RL_DISTRO box."
 
-  timeout --preserve-status $period tcplife -tw
-  exit 0
+  systemctl status NetworkManager
 constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str collect
-  distro: !!str alami alami2 ubuntu rhel suse
-  required: !!str period
+  distro: !!str alami2 ubuntu rhel suse
+  required: !!str
   optional: !!str
-  software: !!str tcplife
-  sudo: !!str True
+  software: !!str NetworkManager
+  sudo: !!str False
   perfimpact: !!str False
-  parallelexclusive: !!str bpf
+  parallelexclusive: !!str

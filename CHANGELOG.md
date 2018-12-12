@@ -1,3 +1,23 @@
+# EC2 Rescue for Linux v1.1.4
+
+#### General
+* None
+
+#### Framework
+* [Enhancement] Added --output-dir option.
+* [Enhancement] Updated Linux distribution detection to support the latest system-release string in Amazon Linux 2.
+
+#### Modules
+* [Enhancement] Updated iproute module to collect additional route table details.
+* [Enhancement] Added all supported distros to bcc modules.
+* [New Module] Added kernel page table isolation module.
+* [New Module] Added retpoline module.
+* [New Module] Added networkmanagerstatus module.
+* [New Module] Added systemsmanager module.
+
+#### Testing
+* None
+
 # EC2 Rescue for Linux v1.1.3
 
 #### General
