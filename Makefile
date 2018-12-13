@@ -15,7 +15,7 @@
 PYTHON2:=$(shell command -v python2 --version 2> /dev/null)
 PYTHON3:=$(shell command -v python3 --version 2> /dev/null)
 SHELL:=/bin/bash
-VERSION:=1.1.4
+VERSION:=1.1.5
 BASENAME=ec2rl-$(VERSION)
 
 ifdef PYTHON3
