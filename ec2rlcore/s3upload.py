@@ -31,27 +31,9 @@ Exceptions:
     S3UploadTarfileReadError: raised when an error occurs reading the archive file
     S3UploadTarfileWriteError: raised when an error occurs writing to the archive file
 """
-try:
-    # Python 3
-    import urllib
-    import urllib.error
-    import urllib.request as urllib_request
-    urllib_urlopen = urllib.request.urlopen
-    urllib_urlerror = urllib.error.URLError
-    import urllib.parse as urlparse
-except ImportError:  # pragma: no cover
-    # Python 2
-    import urllib2 as urllib
-    import urllib2 as urllib_request
-    urllib_urlopen = urllib.urlopen
-    urllib_urlerror = urllib.URLError
-    import urlparse
-
-
-import json
 import os
-import requests
 import tarfile
+import requests
 
 import ec2rlcore
 
@@ -104,37 +86,30 @@ def get_presigned_url(uploader_url, filename, region="us-east-1"):
     if region not in s3uploader_regions:
         region = "us-east-1"
 
-    query_str = urlparse.urlparse(uploader_url).query
-    put_dict = urlparse.parse_qs(query_str)
-
-    # If uploader_url is not parsable then maybe it is a shortened URL
     try:
-        if not put_dict:
-            the_request = urllib_request.Request(uploader_url)
-            uploader_url = urllib_urlopen(the_request).geturl()
-            query_str = urlparse.urlparse(uploader_url).query
-            put_dict = urlparse.parse_qs(query_str)
-    except urllib_urlerror:
-        pass
+        # Grabs the real URL if it has been shortened
+        uploader_url = requests.get(uploader_url).url
+        query_str = requests.utils.urlparse(uploader_url).query
+        put_dict = dict(x.split('=') for x in query_str.split('&'))
+    except requests.exceptions.Timeout:
+        raise requests.exceptions.Timeout("ERROR: Connection timed out.")
 
     if put_dict:
-        # urlparse.parse_qs returns dict values that are single value lists
-        # Reassign the values to the first value in the list
-        put_dict["accountId"] = put_dict["account-id"][0]
-        put_dict["caseId"] = put_dict["case-id"][0]
-        put_dict["key"] = put_dict["key"][0]
-        put_dict["expiration"] = int(put_dict["expiration"][0])
+        put_dict["accountId"] = put_dict["account-id"]
+        put_dict["caseId"] = put_dict["case-id"]
+        put_dict["key"] = put_dict["key"]
+        put_dict["expiration"] = int(put_dict["expiration"])
         put_dict["fileName"] = filename
         put_dict["region"] = region
     else:
         raise S3UploadUrlParsingFailure(uploader_url)
 
-    json_payload = json.dumps(put_dict)
+    payload = put_dict
 
     try:
-        response = requests.post(url=endpoint, data=json_payload)
-        # If the initial put was successful then proceed with uploading the file using the returned presigned URL
-        if response.status_code == 200:
+        response = requests.post(url=endpoint, json=payload)
+        # If the initial post was successful then proceed with uploading the file using the returned presigned URL
+        if(response.ok):
             presigned_url = response.text
             return presigned_url
         else:
@@ -161,7 +136,7 @@ def s3upload(presigned_url, filename):
         # The response puts the URL string in double quotes so cut off the first and last characters
         with open(filename, "rb") as payload:
             response = requests.put(url=presigned_url, data=payload)
-            if response.status_code == 200:
+            if(response.ok):
                 ec2rlcore.dual_log("Upload successful")
                 return True
             else:
