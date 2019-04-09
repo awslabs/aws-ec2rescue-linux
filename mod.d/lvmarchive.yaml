@@ -14,7 +14,7 @@
 
 --- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
-name: !!str lvm archives
+name: !!str lvmarchives
 path: !!str
 version: !!str 1.0
 title: !!str Gather /etc/lvm/archives/* files
