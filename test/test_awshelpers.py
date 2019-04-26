@@ -48,9 +48,15 @@ class TestAwshelpers(unittest.TestCase):
     @responses.activate
     def test_awshelpers_get_volume_ids(self):
         """Test that retrieving the volume ids for the instance works as expected."""
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
 
@@ -59,9 +65,15 @@ class TestAwshelpers(unittest.TestCase):
     @responses.activate
     def test_awshelpers_get_volume_mappings(self):
         """Test that retrieving the volume mappings for the instance works as expected."""
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
 
@@ -70,8 +82,14 @@ class TestAwshelpers(unittest.TestCase):
     @responses.activate
     def test_awshelpers_get_instance_region(self):
         """Test that attempting to retrieve the instance region works as expected."""
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
 
         resp = ec2rlcore.awshelpers.get_instance_region()
         self.assertEqual(resp, "us-east-1")
@@ -105,8 +123,14 @@ class TestAwshelpers(unittest.TestCase):
     @responses.activate
     def test_awshelpers_get_instance_region_httperror(self):
         """Test that get_instance_region raises AWSHelperMetadataHTTPError."""
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=404)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=404)
         with self.assertRaises(ec2rlcore.awshelpers.AWSHelperMetadataHTTPError):
             ec2rlcore.awshelpers.get_instance_region()
 
@@ -135,8 +159,14 @@ class TestAwshelpers(unittest.TestCase):
     @mock.patch("ec2rlcore.awshelpers.boto3.client", side_effect=botocore.exceptions.NoCredentialsError())
     @responses.activate
     def test_awshelpers_no_creds_get_volume_mappings(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -148,8 +178,14 @@ class TestAwshelpers(unittest.TestCase):
     @mock.patch("ec2rlcore.awshelpers.boto3.client", side_effect=botocore.exceptions.NoCredentialsError())
     @responses.activate
     def test_awshelpers_no_creds_get_volume_id(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
