@@ -4,7 +4,7 @@
 * None
 
 #### Framework
-* None
+* [Enhancement] Refactor get_instance_region() to utilize identity document
 
 #### Modules
 * None
