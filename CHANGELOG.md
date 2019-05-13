@@ -4,10 +4,10 @@
 * None
 
 #### Framework
-* [Enhancement] Refactor get_instance_region() to utilize identity document
+* [Enhancement] Refactor get_instance_region() to utilize identity document.
 
 #### Modules
-* None
+* [New Module] Add lvmarchive module.
 
 #### Testing
 * None
