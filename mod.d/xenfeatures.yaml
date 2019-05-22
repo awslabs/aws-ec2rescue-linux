@@ -39,7 +39,7 @@ content: !!str |
 
   echo "I will collect details on xen features from this $EC2RL_DISTRO box."
 
-  if [ "$EC2RL_VIRT_TYPE" = "hvm" ]; then
+  if [ "$EC2RL_VIRT_TYPE" = "nitro" ]; then
         echo "This is not a Xen based platform. Not possible to detect Xen features."
         exit 0
   fi

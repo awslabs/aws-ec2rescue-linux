@@ -5,12 +5,16 @@
 
 #### Framework
 * [Enhancement] Refactor get_instance_region() to utilize identity document.
+* [Enhancement] Add is_nitro() function to determine if instance is Nitro or bare-metal
+* [Bugfix] Fix is_an_instance() inaccurately categorized Nitro instances as not-an-instance.
+* [Bugfix] Fix EC2RL_VIRT_TYPE not taking into account change in metadata profile display of Nitro instances
 
 #### Modules
-* [New Module] Add lvmarchive module.
+* [New Module] Add lvmarchives module.
+* [Bugfix] Update xennetrocket, xenfeatures, ixgbevfversion to reflect proper EC2RL_VIRT_TYPE detection.
 
 #### Testing
-* None
+* [New Test] Add unit tests for is_nitro() function
 
 # EC2 Rescue for Linux v1.1.4
 

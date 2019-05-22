@@ -61,8 +61,49 @@ class TestPrediag(unittest.TestCase):
         self.assertFalse(ec2rlcore.prediag.verify_metadata())
         self.assertTrue(mock_get.called)
 
+    def test_prediag_is_nitro_true(self):
+        open_mock = mock.mock_open(read_data="i-deadbeef\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertTrue(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(open_mock.called)
+
+    def test_prediag_is_nitro_false_instance_not_in_asset(self):
+        open_mock = mock.mock_open(read_data="34589732\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(open_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.open", side_effect=IOError("No such file or directory"))
+    def test_prediag_is_nitro_false_no_asset_file(self, isfile_mock):
+        self.assertFalse(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(isfile_mock.called)
+
     @responses.activate
-    def test_prediag_is_an_instance_true(self):
+    def test_prediag_is_an_instance_true_xen(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
         open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
         # mock_open does not have support for iteration so it must be added manually
@@ -125,20 +166,27 @@ class TestPrediag(unittest.TestCase):
         self.assertTrue(get_mock.called)
 
     @responses.activate
-    def test_prediag_get_virt_type(self):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="hvm")
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_xen(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="default-hvm")
+        mock_nitro.return_value = False
         resp = ec2rlcore.prediag.get_virt_type()
-        self.assertEqual(resp, "hvm")
+        self.assertEqual(resp, "default-hvm")
 
     @responses.activate
-    def test_prediag_get_virt_type_error(self):
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_error(self, mock_nitro):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=404, body="hvm")
+        mock_nitro.return_value = False
         resp = ec2rlcore.prediag.get_virt_type()
         self.assertEqual(resp, "ERROR")
 
-    @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
-    def test_prediag_get_virt_type_connerror(self, mock_get):
+    @mock.patch('requests.get')
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_connerror(self, mock_get, mock_nitro):
+        mock_nitro.return_value = False
         with self.assertRaises(ec2rlcore.prediag.PrediagConnectionError):
+            mock_get.side_effect = requests.exceptions.ConnectionError
             ec2rlcore.prediag.get_virt_type()
         self.assertTrue(mock_get.called)
 
