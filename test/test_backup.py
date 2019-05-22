@@ -70,9 +70,14 @@ class TestBackup(unittest.TestCase):
 
     @responses.activate
     def test_backup_snapshot(self):
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
         with contextlib.redirect_stdout(self.output):
@@ -82,9 +87,14 @@ class TestBackup(unittest.TestCase):
 
     @responses.activate
     def test_backup_image(self):
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
 
@@ -96,8 +106,13 @@ class TestBackup(unittest.TestCase):
     @mock.patch("ec2rlcore.backup.boto3.client", side_effect=botocore.exceptions.NoCredentialsError())
     @responses.activate
     def test_backup_nocreds_snapshot(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -109,8 +124,13 @@ class TestBackup(unittest.TestCase):
     @mock.patch("ec2rlcore.backup.boto3.client", side_effect=botocore.exceptions.NoCredentialsError())
     @responses.activate
     def test_backup_nocreds_image(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -123,8 +143,13 @@ class TestBackup(unittest.TestCase):
         {"Error": {"Code": "ErrorCode", "Message": "Error Message"}}, "test"))
     @responses.activate
     def test_backup_clienterror_snapshot(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -137,8 +162,13 @@ class TestBackup(unittest.TestCase):
         {"Error": {"Code": "500", "Message": "Error"}}, "test"))
     @responses.activate
     def test_backup_clienterror_image(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -150,8 +180,13 @@ class TestBackup(unittest.TestCase):
     @mock.patch("ec2rlcore.backup.boto3.client", side_effect=TypeError)
     @responses.activate
     def test_backup_typeerror_snapshot(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -163,8 +198,13 @@ class TestBackup(unittest.TestCase):
     @mock.patch("ec2rlcore.backup.boto3.client", side_effect=TypeError)
     @responses.activate
     def test_backup_typeerror_image(self, mock_client):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
 
@@ -177,8 +217,13 @@ class TestBackup(unittest.TestCase):
     @responses.activate
     def test_backup_image_error(self, mock_describe_image_status):
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
 
@@ -193,9 +238,14 @@ class TestBackup(unittest.TestCase):
     @mock.patch("ec2rlcore.backup.describe_snapshot_status", side_effect=["error"])
     @responses.activate
     def test_backup_snapshot_error(self, mock_describe_snapshot_status):
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
 
