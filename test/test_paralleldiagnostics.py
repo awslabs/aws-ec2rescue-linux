@@ -273,7 +273,7 @@ class TestParallelDiagnostics(unittest.TestCase):
 
     def test_paralleldiagnostics_enqueue_batch(self):
         batch = [0, 1, 3]
-        modules = self.load_modules_from_list(["ex.yaml", "dig.yaml", "arptable.yaml", "dmesg.yaml"])
+        modules = self.load_modules_from_list(["ex.yaml", "dig.yaml", "arptable.yaml", "dmesgfiles.yaml"])
         ec2rlcore.paralleldiagnostics._enqueue_batch(batch, modules, self.work_queue)
         for i in batch:
             work_item = self.work_queue.get()
