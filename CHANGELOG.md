@@ -7,7 +7,10 @@
 * [Enhancement] Refactor get_instance_region() to utilize identity document.
 
 #### Modules
-* [New Module] Add lvmarchive module.
+* [New Module] Add lvmarchives module.
+* [New Module] Add dmesg collect module, rename old dmesg gather module to dmesgfiles. Output between the two is different and necessitates an additional module.
+* [New Module] Add cron gather module.
+* [New Module] Add numastat collect module.
 
 #### Testing
 * None
