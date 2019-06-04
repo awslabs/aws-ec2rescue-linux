@@ -12,6 +12,9 @@
 #### Modules
 * [New Module] Add lvmarchives module.
 * [Bugfix] Update xennetrocket, xenfeatures, ixgbevfversion to reflect proper EC2RL_VIRT_TYPE detection.
+* [New Module] Add dmesg collect module, rename old dmesg gather module to dmesgfiles. Output between the two is different and necessitates an additional module.
+* [New Module] Add cron gather module.
+* [New Module] Add numastat collect module.
 
 #### Testing
 * [New Test] Add unit tests for is_nitro() function
