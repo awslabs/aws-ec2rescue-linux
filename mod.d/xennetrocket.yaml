@@ -40,7 +40,7 @@ content: !!str |
 
   echo -e "Checking for SKB overflow bug: 'xennet: skb rides the rocket'\n\n"
 
-  if [ "$EC2RL_VIRT_TYPE" = "hvm" ]; then
+  if [ "$EC2RL_VIRT_TYPE" = "nitro" ]; then
         echo "[SUCCESS] This is not a Xen based platform. It cannot utilize the xennet drivers."
         exit 0
   fi

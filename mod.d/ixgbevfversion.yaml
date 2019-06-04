@@ -42,7 +42,7 @@ content: !!str |
 
   echo "Determining if ixgbevf version is below recommend value"
 
-  if [ "$EC2RL_VIRT_TYPE" = "hvm" ]; then
+  if [ "$EC2RL_VIRT_TYPE" = "nitro" ]; then
         echo "[SUCCESS] This platform is Elastic Network Adapter only."
         exit 0
   fi

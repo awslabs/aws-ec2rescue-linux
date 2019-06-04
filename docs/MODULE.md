@@ -110,7 +110,7 @@ The driver in use for the first alphabetically ordered non-virtual network inter
 #### EC2RL_SUDO
 True if ec2rl is running as root. False if not.
 #### EC2RL_VIRT_TYPE
-The virtualization type as provided by the instance metadata. Examples include "default-hvm" and "default-paravirtual".
+The virtualization type for the instance. Examples include "default-hvm" for Xen HVM instances, "default-paravirtual" for Xen PV instances, and "nitro" for Nitro and bare-metal instances.
 #### EC2RL_INTERFACES
 An enumerated list of interfaces on the system. String containing names, such as eth0, eth1, etc. This is generated via the functions.bash, 
 and is only available for modules that have sourced it.
