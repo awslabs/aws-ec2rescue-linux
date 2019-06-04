@@ -277,7 +277,7 @@ def get_virt_type():
 
 def is_nitro():
     """
-    Returns if the virtualization type is nitro as determined by /sys/devices/virtuak/dmi/id/board_asset_tag.
+    Returns if the virtualization type is nitro as determined by /sys/devices/virtual/dmi/id/board_asset_tag.
     Also returns true for bare metal instances as well, due to being part of the
     nitro ecosystem, even though they technically do not have the nitro hypervisor.
     """
