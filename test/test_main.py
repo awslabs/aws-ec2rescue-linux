@@ -1297,9 +1297,14 @@ class TestMain(unittest.TestCase):
     @moto.mock_ec2
     def test_main__run_backup_allvolumes(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that _run_backup() runs correctly when allvolumes are specified."""
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
@@ -1323,9 +1328,14 @@ class TestMain(unittest.TestCase):
     @moto.mock_ec2
     def test_main__run_backup_ami(self, main_log_handler_mock, debug_log_handler_mock, chmod_mock, mkdir_mock):
         """Test that _run_backup() runs correctly when ami is specified."""
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
@@ -1377,9 +1387,14 @@ class TestMain(unittest.TestCase):
                                                          chmod_mock,
                                                          mkdir_mock):
         """Test that an invalid EBS volume name raise a ClientError exception."""
+        document = {'privateIp': '172.16.1.128', 'devpayProductCodes': None, 'marketplaceProductCodes': None,
+                    'version': '2017-09-30', 'availabilityZone': 'us-east-1c', 'instanceId': 'i-deadbeef',
+                    'billingProducts': None, 'instanceType': 'm5.4xlarge', 'kernelId': None, 'ramdiskId': None,
+                    'accountId': '1234567890', 'architecture': 'x86_64', 'imageId': 'ami-deadbeef',
+                    'pendingTime': '2018-09-14T01:58:16Z', 'region': 'us-east-1'}
         instanceid = self.setup_ec2()
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/placement/availability-zone",
-                      body="us-east-1a", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                      json=document, status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body=instanceid,
                       status=200)
         ec2rl_prediag_test = ec2rlcore.main.Main(debug=True, full_init=True)
