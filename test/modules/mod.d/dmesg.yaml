@@ -17,9 +17,9 @@
 name: !!str dmesg
 path: !!str
 version: !!str 1.0
-title: !!str Collect dmesg files
+title: !!str Collect output from dmesg
 helptext: !!str |
-  Collect dmesg files
+  Collect output from dmesg
 placement: !!str run
 package: 
   - !!str
@@ -37,24 +37,17 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo module-function has argv:  $0 "${@}"
-  echo "I will collect dmesg files from this machine"
+  echo "I will collect dmesg output from this $EC2RL_DISTRO box."
 
-  if [ -r /var/log/dmesg ]
-      then
-          mkdir $EC2RL_GATHEREDDIR/dmesg
-          cp -r /var/log/dmesg* $EC2RL_GATHEREDDIR/dmesg
-      else
-          echo "No dmesg files available or permission denied"
-  fi
+  dmesg
 constraint:
   requires_ec2: !!str False
   domain: !!str os
-  class: !!str gather
-  distro: !!str alami ubuntu rhel suse
+  class: !!str collect
+  distro: !!str alami alami2 ubuntu rhel suse
   required: !!str
   optional: !!str
-  software: !!str
+  software: !!str dmesg
   sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str

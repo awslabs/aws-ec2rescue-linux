@@ -134,7 +134,7 @@ class TestMain(unittest.TestCase):
     def test_main_instantiation(self):
         """Test creating an instance of Main."""
         self.assertEqual(self.ec2rl.constraint, {"class": ["gather", "diagnose", "collect"],
-                                                 "distro": ["ubuntu", "alami", "rhel", "suse", "centos"],
+                                                 "distro": ["ubuntu", "alami", "rhel", "suse", "alami2", "centos"],
                                                  "domain": ["os", "net", "performance", "application"],
                                                  "software": ["ip", "arptables", "awk", "atop", "biolatency",
                                                               "biosnoop", "biotop", "bitesize", "cachestat", "dcsnoop",
