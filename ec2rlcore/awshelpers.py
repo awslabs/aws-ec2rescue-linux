@@ -46,9 +46,10 @@ def get_instance_region():
         Region (str): Region of the currently running instance
     """
     try:
-        r = requests.get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
+        r = requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document")
         r.raise_for_status()
-        return r.text[:-1]
+        document = r.json()
+        return document['region']
     except requests.exceptions.Timeout:
         raise AWSHelperMetadataTimeout()
     except requests.exceptions.HTTPError as err:
