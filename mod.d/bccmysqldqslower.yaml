@@ -52,7 +52,7 @@ constraint:
   domain: !!str net
   class: !!str performance
   distro: !!str alami alami2 ubuntu rhel suse
-  required: !!str period times threshold
+  required: !!str period threshold
   optional: !!str
   software: !!str mysqld_qslower
   sudo: !!str True
