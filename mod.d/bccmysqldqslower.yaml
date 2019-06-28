@@ -12,7 +12,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
- --- !ec2rlcore.module.Module
+--- !ec2rlcore.module.Module
 # Module document. Translates directly into an almost-complete Module object
 name: !!str bccmysqldqslower
 path: !!str
