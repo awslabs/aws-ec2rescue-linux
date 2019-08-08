@@ -8,7 +8,7 @@ troubleshooting modules to analyze and remediate issues on Linux instances on AW
 ## The Latest Version
 ### Builds
 Two builds of the latest version are provided:
-1. The standard build only includes the EC2 Rescue for Linux code and requires the system meet the [Prerequisites](#prerequisites).
+1. The standard build only includes the EC2 Rescue for Linux code and requires the system to meet the [Prerequisites](#prerequisites).
 2. The bundled build includes a minimal copy of Python. It is intended for use on systems that do not meet the Python version prerequisite. Please see the [FAQ](#what-are-the-limitations-of-the-bundled-build) for limitations associated with this build.
 ### Downloads
 | Build | Download | sha256 hash | GPG signature |
