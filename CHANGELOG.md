@@ -1,3 +1,18 @@
+# EC2 Rescue for Linux v1.1.6
+
+#### General
+* None
+
+#### Framework
+* [Enhancement] Modified get_instance_region() and get_instance_id() to support IMDSv2.
+* [Enhancement] Modified verify_metadata(), get_virt_type() and is_an_instance() to support IMDSv2
+
+#### Modules
+* None
+
+#### Testing
+* None
+
 # EC2 Rescue for Linux v1.1.5
 
 #### General
