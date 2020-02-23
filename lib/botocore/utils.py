@@ -174,15 +174,6 @@ class InstanceMetadataFetcher(object):
             else:
                 if response.status_code == 200:
                     return response
-                elif response.status_code == 401:
-                    token=(
-                        requests.put(
-                            "http://169.254.169.254/latest/api/token", 
-                            headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
-                            verify=False
-                        )
-                    ).text
-                    return requests.get(url, headers={'X-aws-ec2-metadata-token': token}, timeout=timeout)
         raise _RetriesExceededError()
 
     def retrieve_iam_role_credentials(self):
