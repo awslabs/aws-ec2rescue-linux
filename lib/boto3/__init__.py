@@ -17,7 +17,7 @@ from boto3.session import Session
 
 
 __author__ = 'Amazon Web Services'
-__version__ = '1.4.4'
+__version__ = '1.12.6'
 
 
 # The default Boto3 session; autoloaded when needed.
@@ -42,6 +42,14 @@ def set_stream_logger(name='boto3', level=logging.DEBUG, format_string=None):
         >>> import boto3
         >>> boto3.set_stream_logger('boto3.resources', logging.INFO)
 
+    For debugging purposes a good choice is to set the stream logger to ``''``
+    which is equivalent to saying "log everything".
+
+    .. WARNING::
+       Be aware that when logging anything from ``'botocore'`` the full wire
+       trace will appear in your logs. If your payloads contain sensitive data
+       this should not be used in production.
+
     :type name: string
     :param name: Log name
     :type level: int
@@ -65,7 +73,7 @@ def _get_default_session():
     """
     Get the default session, creating one if needed.
 
-    :rtype: :py:class:`~boto3.session.Sesssion`
+    :rtype: :py:class:`~boto3.session.Session`
     :return: The default session
     """
     if DEFAULT_SESSION is None:

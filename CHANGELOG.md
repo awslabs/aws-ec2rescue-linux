@@ -1,7 +1,8 @@
 # EC2 Rescue for Linux v1.1.5
 
 #### General
-* None
+* [Enhancement] Updated vendored version of boto3 to 1.12.6
+* [Enhancement] Updated vendored version of botocore to 1.15.6
 
 #### Framework
 * [Enhancement] Refactor get_instance_region() to utilize identity document.

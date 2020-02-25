@@ -180,7 +180,11 @@ class SigV4Auth(BaseSigner):
             if lname not in SIGNED_HEADERS_BLACKLIST:
                 header_map[lname] = value
         if 'host' not in header_map:
-            header_map['host'] = self._canonical_host(request.url)
+            # Ensure we sign the lowercased version of the host, as that
+            # is what will ultimately be sent on the wire.
+            # TODO: We should set the host ourselves, instead of relying on our
+            # HTTP client to set it for us.
+            header_map['host'] = self._canonical_host(request.url).lower()
         return header_map
 
     def _canonical_host(self, url):
@@ -264,20 +268,21 @@ class SigV4Auth(BaseSigner):
             # When payload signing is disabled, we use this static string in
             # place of the payload checksum.
             return UNSIGNED_PAYLOAD
-        if request.body and hasattr(request.body, 'seek'):
-            position = request.body.tell()
-            read_chunksize = functools.partial(request.body.read,
+        request_body = request.body
+        if request_body and hasattr(request_body, 'seek'):
+            position = request_body.tell()
+            read_chunksize = functools.partial(request_body.read,
                                                PAYLOAD_BUFFER)
             checksum = sha256()
             for chunk in iter(read_chunksize, b''):
                 checksum.update(chunk)
             hex_checksum = checksum.hexdigest()
-            request.body.seek(position)
+            request_body.seek(position)
             return hex_checksum
-        elif request.body:
+        elif request_body:
             # The request serialization has ensured that
             # request.body is a bytes() type.
-            return sha256(request.body).hexdigest()
+            return sha256(request_body).hexdigest()
         else:
             return EMPTY_SHA256_HASH
 
@@ -406,19 +411,6 @@ class SigV4Auth(BaseSigner):
 
 
 class S3SigV4Auth(SigV4Auth):
-    def __init__(self, credentials, service_name, region_name):
-        super(S3SigV4Auth, self).__init__(
-            credentials, service_name, region_name)
-        self._default_region_name = region_name
-
-    def add_auth(self, request):
-        # If we ever decide to share auth sessions, this could potentially be
-        # a source of concurrency bugs.
-        signing_context = request.context.get('signing', {})
-        self._region_name = signing_context.get(
-            'region', self._default_region_name)
-        super(S3SigV4Auth, self).add_auth(request)
-
     def _modify_request_before_signing(self, request):
         super(S3SigV4Auth, self)._modify_request_before_signing(request)
         if 'X-Amz-Content-SHA256' in request.headers:
@@ -636,7 +628,7 @@ class HmacV1Auth(BaseSigner):
                      'response-content-encoding', 'delete', 'lifecycle',
                      'tagging', 'restore', 'storageClass', 'notification',
                      'replication', 'requestPayment', 'analytics', 'metrics',
-                     'inventory']
+                     'inventory', 'select', 'select-type']
 
     def __init__(self, credentials, service_name=None, region_name=None):
         self.credentials = credentials

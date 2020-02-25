@@ -19,35 +19,128 @@ import binascii
 import functools
 import weakref
 import random
+import os
+import socket
+import cgi
 
 import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
 
 import botocore
-from botocore.exceptions import InvalidExpressionError, ConfigNotFound
-from botocore.exceptions import InvalidDNSNameError, ClientError
-from botocore.exceptions import MetadataRetrievalError
+import botocore.awsrequest
+import botocore.httpsession
 from botocore.compat import json, quote, zip_longest, urlsplit, urlunsplit
-from botocore.vendored import requests
-from botocore.compat import OrderedDict, six
-
+from botocore.compat import OrderedDict, six, urlparse
+from botocore.vendored.six.moves.urllib.request import getproxies, proxy_bypass
+from botocore.exceptions import (
+    InvalidExpressionError, ConfigNotFound, InvalidDNSNameError, ClientError,
+    MetadataRetrievalError, EndpointConnectionError, ReadTimeoutError,
+    ConnectionClosedError, ConnectTimeoutError, UnsupportedS3ArnError,
+    UnsupportedS3AccesspointConfigurationError
+)
 
 logger = logging.getLogger(__name__)
 DEFAULT_METADATA_SERVICE_TIMEOUT = 1
-METADATA_SECURITY_CREDENTIALS_URL = (
-    'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
-)
+METADATA_BASE_URL = 'http://169.254.169.254/'
+
 # These are chars that do not need to be urlencoded.
 # Based on rfc2986, section 2.3
 SAFE_CHARS = '-._~'
 LABEL_RE = re.compile(r'[a-z0-9][a-z0-9\-]*[a-z0-9]')
-RETRYABLE_HTTP_ERRORS = (requests.Timeout, requests.ConnectionError)
+RETRYABLE_HTTP_ERRORS = (
+    ReadTimeoutError, EndpointConnectionError, ConnectionClosedError,
+    ConnectTimeoutError,
+)
 S3_ACCELERATE_WHITELIST = ['dualstack']
+# In switching events from using service name / endpoint prefix to service
+# id, we have to preserve compatibility. This maps the instances where either
+# is different than the transformed service id.
+EVENT_ALIASES = {
+    "a4b": "alexa-for-business",
+    "alexaforbusiness": "alexa-for-business",
+    "api.mediatailor": "mediatailor",
+    "api.pricing": "pricing",
+    "api.sagemaker": "sagemaker",
+    "apigateway": "api-gateway",
+    "application-autoscaling": "application-auto-scaling",
+    "appstream2": "appstream",
+    "autoscaling": "auto-scaling",
+    "autoscaling-plans": "auto-scaling-plans",
+    "ce": "cost-explorer",
+    "cloudhsmv2": "cloudhsm-v2",
+    "cloudsearchdomain": "cloudsearch-domain",
+    "cognito-idp": "cognito-identity-provider",
+    "config": "config-service",
+    "cur": "cost-and-usage-report-service",
+    "data.iot": "iot-data-plane",
+    "data.jobs.iot": "iot-jobs-data-plane",
+    "data.mediastore": "mediastore-data",
+    "datapipeline": "data-pipeline",
+    "devicefarm": "device-farm",
+    "devices.iot1click": "iot-1click-devices-service",
+    "directconnect": "direct-connect",
+    "discovery": "application-discovery-service",
+    "dms": "database-migration-service",
+    "ds": "directory-service",
+    "dynamodbstreams": "dynamodb-streams",
+    "elasticbeanstalk": "elastic-beanstalk",
+    "elasticfilesystem": "efs",
+    "elasticloadbalancing": "elastic-load-balancing",
+    "elasticmapreduce": "emr",
+    "elastictranscoder": "elastic-transcoder",
+    "elb": "elastic-load-balancing",
+    "elbv2": "elastic-load-balancing-v2",
+    "email": "ses",
+    "entitlement.marketplace": "marketplace-entitlement-service",
+    "es": "elasticsearch-service",
+    "events": "eventbridge",
+    "cloudwatch-events": "eventbridge",
+    "iot-data": "iot-data-plane",
+    "iot-jobs-data": "iot-jobs-data-plane",
+    "iot1click-devices": "iot-1click-devices-service",
+    "iot1click-projects": "iot-1click-projects",
+    "kinesisanalytics": "kinesis-analytics",
+    "kinesisvideo": "kinesis-video",
+    "lex-models": "lex-model-building-service",
+    "lex-runtime": "lex-runtime-service",
+    "logs": "cloudwatch-logs",
+    "machinelearning": "machine-learning",
+    "marketplace-entitlement": "marketplace-entitlement-service",
+    "marketplacecommerceanalytics": "marketplace-commerce-analytics",
+    "metering.marketplace": "marketplace-metering",
+    "meteringmarketplace": "marketplace-metering",
+    "mgh": "migration-hub",
+    "models.lex": "lex-model-building-service",
+    "monitoring": "cloudwatch",
+    "mturk-requester": "mturk",
+    "opsworks-cm": "opsworkscm",
+    "projects.iot1click": "iot-1click-projects",
+    "resourcegroupstaggingapi": "resource-groups-tagging-api",
+    "route53": "route-53",
+    "route53domains": "route-53-domains",
+    "runtime.lex": "lex-runtime-service",
+    "runtime.sagemaker": "sagemaker-runtime",
+    "sdb": "simpledb",
+    "secretsmanager": "secrets-manager",
+    "serverlessrepo": "serverlessapplicationrepository",
+    "servicecatalog": "service-catalog",
+    "states": "sfn",
+    "stepfunctions": "sfn",
+    "storagegateway": "storage-gateway",
+    "streams.dynamodb": "dynamodb-streams",
+    "tagging": "resource-groups-tagging-api"
+}
 
 
-class _RetriesExceededError(Exception):
-    """Internal exception used when the number of retries are exceeded."""
-    pass
+def ensure_boolean(val):
+    """Ensures a boolean value if a string or boolean is provided
+
+    For strings, the value for True/False is case insensitive
+    """
+    if isinstance(val, bool):
+        return val
+    else:
+        return val.lower() == 'true'
 
 
 def is_json_value_header(shape):
@@ -157,66 +250,226 @@ def set_value_from_jmespath(source, expression, value, is_first=True):
     source[current_key] = value
 
 
-class InstanceMetadataFetcher(object):
+class _RetriesExceededError(Exception):
+    """Internal exception used when the number of retries are exceeded."""
+    pass
+
+
+class BadIMDSRequestError(Exception):
+    def __init__(self, request):
+        self.request = request
+
+
+class IMDSFetcher(object):
+
+    _RETRIES_EXCEEDED_ERROR_CLS = _RetriesExceededError
+    _TOKEN_PATH = 'latest/api/token'
+    _TOKEN_TTL = '21600'
+
     def __init__(self, timeout=DEFAULT_METADATA_SERVICE_TIMEOUT,
-                 num_attempts=1, url=METADATA_SECURITY_CREDENTIALS_URL):
+                 num_attempts=1, base_url=METADATA_BASE_URL,
+                 env=None, user_agent=None):
         self._timeout = timeout
         self._num_attempts = num_attempts
-        self._url = url
+        self._base_url = base_url
+        if env is None:
+            env = os.environ.copy()
+        self._disabled = env.get('AWS_EC2_METADATA_DISABLED', 'false').lower()
+        self._disabled = self._disabled == 'true'
+        self._user_agent = user_agent
+        self._session = botocore.httpsession.URLLib3Session(
+            timeout=self._timeout,
+            proxies=get_environ_proxies(self._base_url),
+        )
 
-    def _get_request(self, url, timeout, num_attempts=1):
-        for i in range(num_attempts):
+    def _fetch_metadata_token(self):
+        self._assert_enabled()
+        url = self._base_url + self._TOKEN_PATH
+        headers = {
+            'x-aws-ec2-metadata-token-ttl-seconds': self._TOKEN_TTL,
+        }
+        self._add_user_agent(headers)
+        request = botocore.awsrequest.AWSRequest(
+            method='PUT', url=url, headers=headers)
+        for i in range(self._num_attempts):
             try:
-                response = requests.get(url, timeout=timeout)
-            except RETRYABLE_HTTP_ERRORS as e:
-                logger.debug("Caught exception while trying to retrieve "
-                             "credentials: %s", e, exc_info=True)
-            else:
+                response = self._session.send(request.prepare())
                 if response.status_code == 200:
+                    return response.text
+                elif response.status_code in (404, 403, 405):
+                    return None
+                elif response.status_code in (400,):
+                    raise BadIMDSRequestError(request)
+            except ReadTimeoutError:
+                return None
+            except RETRYABLE_HTTP_ERRORS as e:
+                logger.debug(
+                    "Caught retryable HTTP exception while making metadata "
+                    "service request to %s: %s", url, e, exc_info=True)
+        return None
+
+    def _get_request(self, url_path, retry_func, token=None):
+        """Make a get request to the Instance Metadata Service.
+
+        :type url_path: str
+        :param url_path: The path component of the URL to make a get request.
+            This arg is appended to the base_url that was provided in the
+            initializer.
+
+        :type retry_func: callable
+        :param retry_func: A function that takes the response as an argument
+             and determines if it needs to retry. By default empty and non
+             200 OK responses are retried.
+
+        :type token: str
+        :param token: Metadata token to send along with GET requests to IMDS.
+        """
+        self._assert_enabled()
+        if retry_func is None:
+            retry_func = self._default_retry
+        url = self._base_url + url_path
+        headers = {}
+        if token is not None:
+            headers['x-aws-ec2-metadata-token'] = token
+        self._add_user_agent(headers)
+        for i in range(self._num_attempts):
+            try:
+                request = botocore.awsrequest.AWSRequest(
+                    method='GET', url=url, headers=headers)
+                response = self._session.send(request.prepare())
+                if not retry_func(response):
                     return response
-        raise _RetriesExceededError()
+            except RETRYABLE_HTTP_ERRORS as e:
+                logger.debug(
+                    "Caught retryable HTTP exception while making metadata "
+                    "service request to %s: %s", url, e, exc_info=True)
+        raise self._RETRIES_EXCEEDED_ERROR_CLS()
+
+    def _add_user_agent(self, headers):
+        if self._user_agent is not None:
+            headers['User-Agent'] = self._user_agent
+
+    def _assert_enabled(self):
+        if self._disabled:
+            logger.debug("Access to EC2 metadata has been disabled.")
+            raise self._RETRIES_EXCEEDED_ERROR_CLS()
+
+    def _default_retry(self, response):
+        return (
+            self._is_non_ok_response(response) or
+            self._is_empty(response)
+        )
+
+    def _is_non_ok_response(self, response):
+        if response.status_code != 200:
+            self._log_imds_response(response, 'non-200', log_body=True)
+            return True
+        return False
+
+    def _is_empty(self, response):
+        if not response.content:
+            self._log_imds_response(response, 'no body', log_body=True)
+            return True
+        return False
+
+    def _log_imds_response(self, response, reason_to_log, log_body=False):
+        statement = (
+            "Metadata service returned %s response "
+            "with status code of %s for url: %s"
+        )
+        logger_args = [
+            reason_to_log, response.status_code, response.url
+        ]
+        if log_body:
+            statement += ", content body: %s"
+            logger_args.append(response.content)
+        logger.debug(statement, *logger_args)
+
+
+class InstanceMetadataFetcher(IMDSFetcher):
+    _URL_PATH = 'latest/meta-data/iam/security-credentials/'
+    _REQUIRED_CREDENTIAL_FIELDS = [
+        'AccessKeyId', 'SecretAccessKey', 'Token', 'Expiration'
+    ]
 
     def retrieve_iam_role_credentials(self):
-        data = {}
-        url = self._url
-        timeout = self._timeout
-        num_attempts = self._num_attempts
         try:
-            r = self._get_request(url, timeout, num_attempts)
-            if r.content:
-                fields = r.content.decode('utf-8').split('\n')
-                for field in fields:
-                    if field.endswith('/'):
-                        data[field[0:-1]] = self.retrieve_iam_role_credentials(
-                            url + field, timeout, num_attempts)
-                    else:
-                        val = self._get_request(
-                            url + field,
-                            timeout=timeout,
-                            num_attempts=num_attempts).content.decode('utf-8')
-                        if val[0] == '{':
-                            val = json.loads(val)
-                        data[field] = val
+            token = self._fetch_metadata_token()
+            role_name = self._get_iam_role(token)
+            credentials = self._get_credentials(role_name, token)
+            if self._contains_all_credential_fields(credentials):
+                return {
+                    'role_name': role_name,
+                    'access_key': credentials['AccessKeyId'],
+                    'secret_key': credentials['SecretAccessKey'],
+                    'token': credentials['Token'],
+                    'expiry_time': credentials['Expiration'],
+                }
             else:
-                logger.debug("Metadata service returned non 200 status code "
-                             "of %s for url: %s, content body: %s",
-                             r.status_code, url, r.content)
-        except _RetriesExceededError:
+                # IMDS can return a 200 response that has a JSON formatted
+                # error message (i.e. if ec2 is not trusted entity for the
+                # attached role). We do not necessarily want to retry for
+                # these and we also do not necessarily want to raise a key
+                # error. So at least log the problematic response and return
+                # an empty dictionary to signal that it was not able to
+                # retrieve credentials. These error will contain both a
+                # Code and Message key.
+                if 'Code' in credentials and 'Message' in credentials:
+                    logger.debug('Error response received when retrieving'
+                                 'credentials: %s.', credentials)
+                return {}
+        except self._RETRIES_EXCEEDED_ERROR_CLS:
             logger.debug("Max number of attempts exceeded (%s) when "
                          "attempting to retrieve data from metadata service.",
-                         num_attempts)
-        # We sort for stable ordering. In practice, this should only consist
-        # of one role, but may need revisiting if this expands in the future.
-        final_data = {}
-        for role_name in sorted(data):
-            final_data = {
-                'role_name': role_name,
-                'access_key': data[role_name]['AccessKeyId'],
-                'secret_key': data[role_name]['SecretAccessKey'],
-                'token': data[role_name]['Token'],
-                'expiry_time': data[role_name]['Expiration'],
-            }
-        return final_data
+                         self._num_attempts)
+        except BadIMDSRequestError as e:
+            logger.debug("Bad IMDS request: %s", e.request)
+        return {}
+
+    def _get_iam_role(self, token=None):
+        return self._get_request(
+            url_path=self._URL_PATH,
+            retry_func=self._needs_retry_for_role_name,
+            token=token,
+        ).text
+
+    def _get_credentials(self, role_name, token=None):
+        r = self._get_request(
+            url_path=self._URL_PATH + role_name,
+            retry_func=self._needs_retry_for_credentials,
+            token=token,
+        )
+        return json.loads(r.text)
+
+    def _is_invalid_json(self, response):
+        try:
+            json.loads(response.text)
+            return False
+        except ValueError:
+            self._log_imds_response(response, 'invalid json')
+            return True
+
+    def _needs_retry_for_role_name(self, response):
+        return (
+            self._is_non_ok_response(response) or
+            self._is_empty(response)
+        )
+
+    def _needs_retry_for_credentials(self, response):
+        return (
+            self._is_non_ok_response(response) or
+            self._is_empty(response) or
+            self._is_invalid_json(response)
+        )
+
+    def _contains_all_credential_fields(self, credentials):
+        for field in self._REQUIRED_CREDENTIAL_FIELDS:
+            if field not in credentials:
+                logger.debug(
+                    'Retrieved credentials is missing required field: %s',
+                    field)
+                return False
+        return True
 
 
 def merge_dicts(dict1, dict2, append_lists=False):
@@ -246,6 +499,14 @@ def merge_dicts(dict1, dict2, append_lists=False):
             # At scalar types, we iterate and merge the
             # current dict that we're on.
             dict1[key] = dict2[key]
+
+
+def lowercase_dict(original):
+    """Copies the given dictionary ensuring all keys are lowercase strings. """
+    copy = {}
+    for key in original:
+        copy[key.lower()] = original[key]
+    return copy
 
 
 def parse_key_val_file(filename, _open=open):
@@ -317,7 +578,7 @@ def percent_encode(input_str, safe=SAFE_CHARS):
 
     If given the binary type, will simply URL encode it. If given the
     text type, will produce the binary type by UTF-8 encoding the
-    text. If given something else, will convert it to the the text type
+    text. If given something else, will convert it to the text type
     first.
     """
     # If its not a binary or text string, make it a text string.
@@ -658,9 +919,6 @@ def check_dns_name(bucket_name):
     if n < 3 or n > 63:
         # Wrong length
         return False
-    if n == 1:
-        if not bucket_name.isalnum():
-            return False
     match = LABEL_RE.match(bucket_name)
     if match is None or match.end() != len(bucket_name):
         return False
@@ -858,6 +1116,14 @@ def deep_merge(base, extra):
         base[key] = extra[key]
 
 
+def hyphenize_service_id(service_id):
+    """Translate the form used for event emitters.
+
+    :param service_id: The service_id to convert.
+    """
+    return service_id.replace(' ', '-').lower()
+
+
 class S3RegionRedirector(object):
     def __init__(self, endpoint_bridge, client, cache=None):
         self._endpoint_resolver = endpoint_bridge
@@ -888,8 +1154,20 @@ class S3RegionRedirector(object):
             # transport error.
             return
 
+        if self._is_s3_accesspoint(request_dict.get('context', {})):
+            logger.debug(
+                'S3 request was previously to an accesspoint, not redirecting.'
+            )
+            return
+
+        if request_dict.get('context', {}).get('s3_redirected'):
+            logger.debug(
+                'S3 request was previously redirected, not redirecting.')
+            return
+
         error = response[1].get('Error', {})
         error_code = error.get('Code')
+        response_metadata = response[1].get('ResponseMetadata', {})
 
         # We have to account for 400 responses because
         # if we sign a Head* request with the wrong region,
@@ -897,15 +1175,23 @@ class S3RegionRedirector(object):
         # body saying it's an "AuthorizationHeaderMalformed".
         is_special_head_object = (
             error_code in ['301', '400'] and
-            operation.name in ['HeadObject', 'HeadBucket']
+            operation.name == 'HeadObject'
+        )
+        is_special_head_bucket = (
+            error_code in ['301', '400'] and
+            operation.name == 'HeadBucket' and
+            'x-amz-bucket-region' in response_metadata.get('HTTPHeaders', {})
         )
         is_wrong_signing_region = (
             error_code == 'AuthorizationHeaderMalformed' and
             'Region' in error
         )
+        is_redirect_status = response[0] is not None and \
+            response[0].status_code in [301, 302, 307]
         is_permanent_redirect = error_code == 'PermanentRedirect'
         if not any([is_special_head_object, is_wrong_signing_region,
-                    is_permanent_redirect]):
+                    is_permanent_redirect, is_special_head_bucket,
+                    is_redirect_status]):
             return
 
         bucket = request_dict['context']['signing']['bucket']
@@ -936,6 +1222,8 @@ class S3RegionRedirector(object):
 
         self._cache[bucket] = signing_context
         self.set_request_url(request_dict, request_dict['context'])
+
+        request_dict['context']['s3_redirected'] = True
 
         # Return 0 so it doesn't wait to retry
         return 0
@@ -983,12 +1271,297 @@ class S3RegionRedirector(object):
         This handler retrieves a given bucket's signing context from the cache
         and adds it into the request context.
         """
+        if self._is_s3_accesspoint(context):
+            return
         bucket = params.get('Bucket')
         signing_context = self._cache.get(bucket)
         if signing_context is not None:
             context['signing'] = signing_context
         else:
             context['signing'] = {'bucket': bucket}
+
+    def _is_s3_accesspoint(self, context):
+        return 's3_accesspoint' in context
+
+
+class InvalidArnException(ValueError):
+    pass
+
+
+class ArnParser(object):
+    def parse_arn(self, arn):
+        arn_parts = arn.split(':', 5)
+        if len(arn_parts) < 6:
+            raise InvalidArnException(
+                'Provided ARN: %s must be of the format: '
+                'arn:partition:service:region:account:resource' % arn
+            )
+        return {
+            'partition': arn_parts[1],
+            'service': arn_parts[2],
+            'region': arn_parts[3],
+            'account': arn_parts[4],
+            'resource': arn_parts[5],
+        }
+
+
+class S3ArnParamHandler(object):
+    _ACCESSPOINT_RESOURCE_REGEX = re.compile(
+        r'^accesspoint[/:](?P<resource_name>.+)$'
+    )
+    _BLACKLISTED_OPERATIONS = [
+        'CreateBucket'
+    ]
+
+    def __init__(self, arn_parser=None):
+        self._arn_parser = arn_parser
+        if arn_parser is None:
+            self._arn_parser = ArnParser()
+
+    def register(self, event_emitter):
+        event_emitter.register('before-parameter-build.s3', self.handle_arn)
+
+    def handle_arn(self, params, model, context, **kwargs):
+        if model.name in self._BLACKLISTED_OPERATIONS:
+            return
+        arn_details = self._get_arn_details_from_bucket_param(params)
+        if arn_details is None:
+            return
+        if arn_details['resource_type'] == 'accesspoint':
+            self._store_accesspoint(params, context, arn_details)
+
+    def _get_arn_details_from_bucket_param(self, params):
+        if 'Bucket' in params:
+            try:
+                arn = params['Bucket']
+                arn_details = self._arn_parser.parse_arn(arn)
+                self._add_resource_type_and_name(arn, arn_details)
+                return arn_details
+            except InvalidArnException:
+                pass
+        return None
+
+    def _add_resource_type_and_name(self, arn, arn_details):
+        match = self._ACCESSPOINT_RESOURCE_REGEX.match(arn_details['resource'])
+        if match:
+            arn_details['resource_type'] = 'accesspoint'
+            arn_details['resource_name'] = match.group('resource_name')
+        else:
+            raise UnsupportedS3ArnError(arn=arn)
+
+    def _store_accesspoint(self, params, context, arn_details):
+        # Ideally the access-point would be stored as a parameter in the
+        # request where the serializer would then know how to serialize it,
+        # but access-points are not modeled in S3 operations so it would fail
+        # validation. Instead, we set the access-point to the bucket parameter
+        # to have some value set when serializing the request and additional
+        # information on the context from the arn to use in forming the
+        # access-point endpoint.
+        params['Bucket'] = arn_details['resource_name']
+        context['s3_accesspoint'] = {
+            'name': arn_details['resource_name'],
+            'account': arn_details['account'],
+            'partition': arn_details['partition'],
+            'region': arn_details['region'],
+        }
+
+
+class S3EndpointSetter(object):
+    _DEFAULT_PARTITION = 'aws'
+    _DEFAULT_DNS_SUFFIX = 'amazonaws.com'
+
+    def __init__(self, endpoint_resolver, region=None,
+                 s3_config=None, endpoint_url=None, partition=None):
+        self._endpoint_resolver = endpoint_resolver
+        self._region = region
+        self._s3_config = s3_config
+        if s3_config is None:
+            self._s3_config = {}
+        self._endpoint_url = endpoint_url
+        self._partition = partition
+        if partition is None:
+            self._partition = self._DEFAULT_PARTITION
+
+    def register(self, event_emitter):
+        event_emitter.register('before-sign.s3', self.set_endpoint)
+
+    def set_endpoint(self, request, **kwargs):
+        if self._use_accesspoint_endpoint(request):
+            self._validate_accesspoint_supported(request)
+            region_name = self._resolve_region_for_accesspoint_endpoint(
+                request)
+            self._switch_to_accesspoint_endpoint(request, region_name)
+            return
+        if self._use_accelerate_endpoint:
+            switch_host_s3_accelerate(request=request, **kwargs)
+        if self._s3_addressing_handler:
+            self._s3_addressing_handler(request=request, **kwargs)
+
+    def _use_accesspoint_endpoint(self, request):
+        return 's3_accesspoint' in request.context
+
+    def _validate_accesspoint_supported(self, request):
+        if self._endpoint_url:
+            raise UnsupportedS3AccesspointConfigurationError(
+                msg=(
+                    'Client cannot use a custom "endpoint_url" when '
+                    'specifying an access-point ARN.'
+                )
+            )
+        if self._use_accelerate_endpoint:
+            raise UnsupportedS3AccesspointConfigurationError(
+                msg=(
+                    'Client does not support s3 accelerate configuration '
+                    'when and access-point ARN is specified.'
+                )
+            )
+        request_partion = request.context['s3_accesspoint']['partition']
+        if request_partion != self._partition:
+            raise UnsupportedS3AccesspointConfigurationError(
+                msg=(
+                    'Client is configured for "%s" partition, but access-point'
+                    ' ARN provided is for "%s" partition. The client and '
+                    ' access-point partition must be the same.' % (
+                        self._partition, request_partion)
+                )
+            )
+
+    def _resolve_region_for_accesspoint_endpoint(self, request):
+        if self._s3_config.get('use_arn_region', True):
+            accesspoint_region = request.context['s3_accesspoint']['region']
+            # If we are using the region from the access point,
+            # we will also want to make sure that we set it as the
+            # signing region as well
+            self._override_signing_region(request, accesspoint_region)
+            return accesspoint_region
+        return self._region
+
+    def _switch_to_accesspoint_endpoint(self, request, region_name):
+        original_components = urlsplit(request.url)
+        accesspoint_endpoint = urlunsplit((
+            original_components.scheme,
+            self._get_accesspoint_netloc(request.context, region_name),
+            self._get_accesspoint_path(
+                original_components.path, request.context),
+            original_components.query,
+            ''
+        ))
+        logger.debug(
+            'Updating URI from %s to %s' % (request.url, accesspoint_endpoint))
+        request.url = accesspoint_endpoint
+
+    def _get_accesspoint_netloc(self, request_context, region_name):
+        s3_accesspoint = request_context['s3_accesspoint']
+        accesspoint_netloc_components = [
+            '%s-%s' % (s3_accesspoint['name'], s3_accesspoint['account']),
+            's3-accesspoint'
+        ]
+        if self._s3_config.get('use_dualstack_endpoint'):
+            accesspoint_netloc_components.append('dualstack')
+        accesspoint_netloc_components.extend(
+            [
+                region_name,
+                self._get_dns_suffix(region_name)
+            ]
+        )
+        return '.'.join(accesspoint_netloc_components)
+
+    def _get_accesspoint_path(self, original_path, request_context):
+        # The Bucket parameter was substituted with the access-point name as
+        # some value was required in serializing the bucket name. Now that
+        # we are making the request directly to the access point, we will
+        # want to remove that access-point name from the path.
+        name = request_context['s3_accesspoint']['name']
+        # All S3 operations require at least a / in their path.
+        return original_path.replace('/' + name, '', 1) or '/'
+
+    def _get_dns_suffix(self, region_name):
+        resolved = self._endpoint_resolver.construct_endpoint(
+            's3', region_name)
+        dns_suffix = self._DEFAULT_DNS_SUFFIX
+        if resolved and 'dnsSuffix' in resolved:
+            dns_suffix = resolved['dnsSuffix']
+        return dns_suffix
+
+    def _override_signing_region(self, request, region_name):
+        signing_context = {
+            'region': region_name,
+        }
+        # S3SigV4Auth will use the context['signing']['region'] value to
+        # sign with if present. This is used by the Bucket redirector
+        # as well but we should be fine because the redirector is never
+        # used in combination with the accesspoint setting logic.
+        request.context['signing'] = signing_context
+
+
+    @CachedProperty
+    def _use_accelerate_endpoint(self):
+        # Enable accelerate if the configuration is set to to true or the
+        # endpoint being used matches one of the accelerate endpoints.
+
+        # Accelerate has been explicitly configured.
+        if self._s3_config.get('use_accelerate_endpoint'):
+            return True
+
+        # Accelerate mode is turned on automatically if an endpoint url is
+        # provided that matches the accelerate scheme.
+        if self._endpoint_url is None:
+            return False
+
+        # Accelerate is only valid for Amazon endpoints.
+        netloc = urlsplit(self._endpoint_url).netloc
+        if not netloc.endswith('amazonaws.com'):
+            return False
+
+        # The first part of the url should always be s3-accelerate.
+        parts = netloc.split('.')
+        if parts[0] != 's3-accelerate':
+            return False
+
+        # Url parts between 's3-accelerate' and 'amazonaws.com' which
+        # represent different url features.
+        feature_parts = parts[1:-2]
+
+        # There should be no duplicate url parts.
+        if len(feature_parts) != len(set(feature_parts)):
+            return False
+
+        # Remaining parts must all be in the whitelist.
+        return all(p in S3_ACCELERATE_WHITELIST for p in feature_parts)
+
+    @CachedProperty
+    def _addressing_style(self):
+        # Use virtual host style addressing if accelerate is enabled or if
+        # the given endpoint url is an accelerate endpoint.
+        if self._use_accelerate_endpoint:
+            return 'virtual'
+
+        # If a particular addressing style is configured, use it.
+        configured_addressing_style = self._s3_config.get('addressing_style')
+        if configured_addressing_style:
+            return configured_addressing_style
+
+    @CachedProperty
+    def _s3_addressing_handler(self):
+        # If virtual host style was configured, use it regardless of whether
+        # or not the bucket looks dns compatible.
+        if self._addressing_style == 'virtual':
+            logger.debug("Using S3 virtual host style addressing.")
+            return switch_to_virtual_host_style
+
+        # If path style is configured, no additional steps are needed. If
+        # endpoint_url was specified, don't default to virtual. We could
+        # potentially default provided endpoint urls to virtual hosted
+        # style, but for now it is avoided.
+        if self._addressing_style == 'path' or self._endpoint_url is not None:
+            logger.debug("Using S3 path style addressing.")
+            return None
+
+        logger.debug("Defaulting to S3 virtual host style addressing with "
+                     "path style addressing fallback.")
+
+        # By default, try to use virtual style with path fallback.
+        return fix_s3_host
 
 
 class ContainerMetadataFetcher(object):
@@ -1001,7 +1574,9 @@ class ContainerMetadataFetcher(object):
 
     def __init__(self, session=None, sleep=time.sleep):
         if session is None:
-            session = requests.Session()
+            session = botocore.httpsession.URLLib3Session(
+                timeout=self.TIMEOUT_SECONDS
+            )
         self._session = session
         self._sleep = sleep
 
@@ -1051,7 +1626,8 @@ class ContainerMetadataFetcher(object):
         attempts = 0
         while True:
             try:
-                return self._get_response(full_url, headers, self.TIMEOUT_SECONDS)
+                return self._get_response(
+                    full_url, headers, self.TIMEOUT_SECONDS)
             except MetadataRetrievalError as e:
                 logger.debug("Received error when attempting to retrieve "
                              "container metadata: %s", e, exc_info=True)
@@ -1062,18 +1638,23 @@ class ContainerMetadataFetcher(object):
 
     def _get_response(self, full_url, headers, timeout):
         try:
-            response = self._session.get(full_url, headers=headers,
-                                         timeout=timeout)
+            AWSRequest = botocore.awsrequest.AWSRequest
+            request = AWSRequest(method='GET', url=full_url, headers=headers)
+            response = self._session.send(request.prepare())
+            response_text = response.content.decode('utf-8')
             if response.status_code != 200:
                 raise MetadataRetrievalError(
-                    error_msg="Received non 200 response (%s) from ECS metadata: %s"
-                    % (response.status_code, response.text))
+                    error_msg=(
+                        "Received non 200 response (%s) from ECS metadata: %s"
+                    ) % (response.status_code, response_text))
             try:
-                return json.loads(response.text)
+                return json.loads(response_text)
             except ValueError:
-                raise MetadataRetrievalError(
-                    error_msg=("Unable to parse JSON returned from "
-                               "ECS metadata: %s" % response.text))
+                error_msg = (
+                    "Unable to parse JSON returned from ECS metadata services"
+                )
+                logger.debug('%s:%s', error_msg, response_text)
+                raise MetadataRetrievalError(error_msg=error_msg)
         except RETRYABLE_HTTP_ERRORS as e:
             error_msg = ("Received error when attempting to retrieve "
                          "ECS metadata: %s" % e)
@@ -1081,3 +1662,62 @@ class ContainerMetadataFetcher(object):
 
     def full_url(self, relative_uri):
         return 'http://%s%s' % (self.IP_ADDRESS, relative_uri)
+
+
+def get_environ_proxies(url):
+    if should_bypass_proxies(url):
+        return {}
+    else:
+        return getproxies()
+
+
+def should_bypass_proxies(url):
+    """
+    Returns whether we should bypass proxies or not.
+    """
+    # NOTE: requests allowed for ip/cidr entries in no_proxy env that we don't
+    # support current as urllib only checks DNS suffix
+    # If the system proxy settings indicate that this URL should be bypassed,
+    # don't proxy.
+    # The proxy_bypass function is incredibly buggy on OS X in early versions
+    # of Python 2.6, so allow this call to fail. Only catch the specific
+    # exceptions we've seen, though: this call failing in other ways can reveal
+    # legitimate problems.
+    try:
+        if proxy_bypass(urlparse(url).netloc):
+            return True
+    except (TypeError, socket.gaierror):
+        pass
+
+    return False
+
+
+def get_encoding_from_headers(headers, default='ISO-8859-1'):
+    """Returns encodings from given HTTP Header Dict.
+
+    :param headers: dictionary to extract encoding from.
+    :param default: default encoding if the content-type is text
+    """
+
+    content_type = headers.get('content-type')
+
+    if not content_type:
+        return None
+
+    content_type, params = cgi.parse_header(content_type)
+
+    if 'charset' in params:
+        return params['charset'].strip("'\"")
+
+    if 'text' in content_type:
+        return default
+
+
+class FileWebIdentityTokenLoader(object):
+    def __init__(self, web_identity_token_path, _open=open):
+        self._web_identity_token_path = web_identity_token_path
+        self._open = _open
+
+    def __call__(self):
+        with self._open(self._web_identity_token_path) as token_file:
+            return token_file.read()
