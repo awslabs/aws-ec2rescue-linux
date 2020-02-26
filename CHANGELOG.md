@@ -20,6 +20,7 @@
 
 #### Testing
 * [New Test] Add unit tests for is_nitro() function
+* [Enhancement] Lock down the versions of setuptools and mock for Python 2.7 as the maintainers have discontinued support for Python 2.
 
 # EC2 Rescue for Linux v1.1.4
 
