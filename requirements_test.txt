@@ -18,4 +18,4 @@ mock < 4.0.0 ; python_version == '2.7'
 moto == 0.4.31
 responses >= 0.5.1, < 0.10.3
 requests >= 2.9.0
-setuptools > 44, < 45 ; python_version == '2.7'
+setuptools >= 44, < 45 ; python_version == '2.7'
