@@ -47,7 +47,7 @@ constraint:
   distro: !!str alami2
   required: !!str
   optional: !!str
-  software: !!str 
+  software: !!str kpatch
   sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str
