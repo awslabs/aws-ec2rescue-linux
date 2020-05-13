@@ -49,7 +49,7 @@ constraint:
   distro: !!str alami alami2 rhel
   required: !!str
   optional: !!str
-  software: !!str
+  software: !!str yum
   sudo: !!str False
   perfimpact: !!str False
   parallelexclusive: !!str
