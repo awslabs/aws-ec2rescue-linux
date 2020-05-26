@@ -47,6 +47,18 @@ def get_instance_region():
     """
     try:
         r = requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document")
+        if r.status_code == 401:
+            token=(
+                requests.put(
+                    "http://169.254.169.254/latest/api/token", 
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                    verify=False
+                )
+            ).text
+            r = requests.get(
+                "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                headers={'X-aws-ec2-metadata-token': token}
+            )
         r.raise_for_status()
         document = r.json()
         return document['region']
@@ -67,6 +79,18 @@ def get_instance_id():
     """
     try:
         r = requests.get("http://169.254.169.254/latest/meta-data/instance-id")
+        if r.status_code == 401:
+            token=(
+                requests.put(
+                    "http://169.254.169.254/latest/api/token", 
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                    verify=False
+                )
+            ).text
+            r = requests.get(
+                "http://169.254.169.254/latest/meta-data/instance-id",
+                headers={'X-aws-ec2-metadata-token': token}
+            )
         r.raise_for_status()
         return r.text
     except requests.exceptions.Timeout:
