@@ -56,6 +56,20 @@ class TestPrediag(unittest.TestCase):
         resp = ec2rlcore.prediag.verify_metadata()
         self.assertTrue(resp)
 
+    @responses.activate
+    def test_prediag_verify_metadata_token(self):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=200)
+        resp = ec2rlcore.prediag.verify_metadata()
+        self.assertTrue(resp)
+
+    @responses.activate
+    def test_prediag_verify_metadata_unknown_response(self):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=101)
+        resp = ec2rlcore.prediag.verify_metadata()
+        self.assertFalse(resp)
+
     @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
     def test_prediag_verify_metadata_connerror(self, mock_get):
         self.assertFalse(ec2rlcore.prediag.verify_metadata())
@@ -122,6 +136,58 @@ class TestPrediag(unittest.TestCase):
             self.assertTrue(ec2rlcore.prediag.is_an_instance())
         self.assertTrue(open_mock.called)
 
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_true_nitro(self, mock_nitro):
+        mock_nitro.return_value = True
+        self.assertTrue(ec2rlcore.prediag.is_an_instance())
+
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_true_xen_token(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
+        mock_nitro.return_value = False
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_unknown_response(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=101)
+        mock_nitro.return_value = False
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
     @mock.patch("ec2rlcore.prediag.open", side_effect=IOError("No such file or directory"))
     def test_prediag_is_an_instance_false_no_sys_hypervisor_uuid(self, isfile_mock):
         self.assertFalse(ec2rlcore.prediag.is_an_instance())
@@ -167,8 +233,26 @@ class TestPrediag(unittest.TestCase):
 
     @responses.activate
     @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_nitro(self, mock_nitro):
+        mock_nitro.return_value = True
+        resp = ec2rlcore.prediag.get_virt_type()
+        self.assertEqual(resp, "nitro")
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
     def test_prediag_get_virt_type_xen(self, mock_nitro):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="default-hvm")
+        mock_nitro.return_value = False
+        resp = ec2rlcore.prediag.get_virt_type()
+        self.assertEqual(resp, "default-hvm")
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_xen_token(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200,
+                      body="default-hvm")
         mock_nitro.return_value = False
         resp = ec2rlcore.prediag.get_virt_type()
         self.assertEqual(resp, "default-hvm")

@@ -9,6 +9,8 @@
 * [Enhancement] Add is_nitro() function to determine if instance is Nitro or bare-metal
 * [Bugfix] Fix is_an_instance() inaccurately categorized Nitro instances as not-an-instance.
 * [Bugfix] Fix EC2RL_VIRT_TYPE not taking into account change in metadata profile display of Nitro instances
+* [Enhancement] Modified get_instance_region() and get_instance_id() to support IMDSv2.
+* [Enhancement] Modified verify_metadata(), get_virt_type() and is_an_instance() to support IMDSv2
 
 #### Modules
 * [New Module] Add lvmarchives module.

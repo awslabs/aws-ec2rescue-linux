@@ -134,7 +134,21 @@ def check_root():
 def verify_metadata():
     """Return whether the system can access the EC2 meta data and user data."""
     try:
-        return requests.get("http://169.254.169.254/latest/meta-data/instance-id").status_code == 200
+        resp = requests.get("http://169.254.169.254/latest/meta-data/instance-id").status_code
+        if resp == 200:
+            return True
+        elif resp == 401:
+            token = (
+                requests.put(
+                    "http://169.254.169.254/latest/api/token",
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
+                    verify=False
+                )
+            ).text
+            return requests.get("http://169.254.169.254/latest/meta-data/instance-id",
+                                headers={'X-aws-ec2-metadata-token': token}).status_code == 200
+        else:
+            return False
     except requests.exceptions.ConnectionError:
         return False
 
@@ -153,7 +167,23 @@ def is_an_instance():
             with open(sys_hypervisor_uuid) as uuid_file:
                 if not uuid_file.readline().startswith("ec2"):
                     return False
-            return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document").status_code == 200
+            resp = requests.get(
+                "http://169.254.169.254/latest/dynamic/instance-identity/document").status_code
+            if resp == 200:
+                return True
+            elif resp == 401:
+                token = (
+                    requests.put(
+                        "http://169.254.169.254/latest/api/token",
+                        headers={
+                            'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
+                        verify=False
+                    )
+                ).text
+                return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document",
+                                    headers={'X-aws-ec2-metadata-token': token}).status_code == 200
+            else:
+                return False
     except (IOError, OSError, requests.RequestException):
         # Python2: IOError
         # Python3: OSError -> FileNotFoundError
@@ -269,6 +299,18 @@ def get_virt_type():
             profile_request = requests.get("http://169.254.169.254/latest/meta-data/profile")
             if profile_request.status_code == 200:
                 profile = profile_request.text
+            elif profile_request.status_code == 401:
+                token=(
+                    requests.put(
+                        "http://169.254.169.254/latest/api/token", 
+                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                        verify=False
+                    )
+                ).text
+                profile = requests.get(
+                    "http://169.254.169.254/latest/meta-data/profile", 
+                    headers={'X-aws-ec2-metadata-token': token}
+                ).text
             else:
                 profile = "ERROR"
     except requests.exceptions.ConnectionError:
