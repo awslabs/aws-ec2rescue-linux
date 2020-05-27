@@ -2,7 +2,7 @@
 
 ## Problem Description
 
-Certain kernel versions have changed the default behavior for clearing arp caches. In environments where IPs are likely to be re-used, such as EC2 when using autoscaling, this can cause communication failure due to the cached MAC adress being incorrect.
+Certain kernel versions have changed the default behavior for clearing arp caches. In environments where IPs are likely to be re-used, such as EC2 when using autoscaling, this can cause communication failure due to the cached MAC address being incorrect.
 
 ## Detecting with EC2 Rescue for Linux
 
@@ -56,7 +56,7 @@ The first will disable it for the current run
 $ sudo sysctl -w net.ipv4.neigh.default.gc_thresh1=0
 ```
 
-The next will make it persistant across reboots
+The next will make it persistent across reboots
 
 ```commandline
 echo "net.ipv4.neigh.default.gc_thresh1 = 0" | sudo tee /etc/sysctl.d/55-arp-gc_thresh1.conf
