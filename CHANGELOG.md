@@ -19,6 +19,9 @@
 * [New Module] Add cron gather module.
 * [New Module] Add numastat collect module.
 * [New Module] Add bccmysqldqslower performance module
+* [New Module] Add amazonlinuxextras os collect module.
+* [New Module] Add kpatch os collect module.
+* [New Module] Add yumconfiguration os collect module.
 
 #### Testing
 * [New Test] Add unit tests for is_nitro() function
