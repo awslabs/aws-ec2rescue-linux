@@ -56,7 +56,7 @@ The first will disable it for the current run. Replace the # with the interface 
 $ sudo sysctl -w net.ipv4.conf.eth#.arp_ignore=0
 ```
 
-The next will make it persistant across reboots
+The next will make it persistent across reboots
 
 ```commandline
 echo "net.ipv4.conf.eth#.arp_ignore = 0" | sudo tee /etc/sysctl.d/55-arp-ignore.conf
