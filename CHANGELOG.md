@@ -3,6 +3,7 @@
 #### General
 * [Enhancement] Updated vendored version of boto3 to 1.12.6
 * [Enhancement] Updated vendored version of botocore to 1.15.6
+* [Enhancement] Add urllib3 version 1.25.9 to vended packages
 
 #### Framework
 * [Enhancement] Refactor get_instance_region() to utilize identity document.
