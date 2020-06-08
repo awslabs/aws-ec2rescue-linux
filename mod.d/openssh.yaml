@@ -378,6 +378,7 @@ content: !!str |
                       "CREATE_NEW_KEYS": False,
                       "NEW_KEY": None,
                       "PRIV_SEP_DIR": "/var/empty/sshd",
+                      "EXCLUDED_USERNAMES": {"ssm-user"},
                       # Define bitmasks for verifying permission modes
                       # Verification is performed via bitwise AND-ing the mode and bitmask to check if
                       # the bits of interest are set
@@ -1535,6 +1536,8 @@ content: !!str |
           # Verify the /home directory belongs to a user account
           try:
               user_name = os.path.basename(file)
+              if user_name in config_dict["EXCLUDED_USERNAMES"]:
+                  continue
               this_uid = pwd.getpwnam(user_name).pw_uid
               this_gid = pwd.getpwnam(user_name).pw_gid
           except KeyError:

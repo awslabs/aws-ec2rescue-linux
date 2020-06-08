@@ -91,6 +91,7 @@ class TestSSH(unittest.TestCase):
                                                        "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
                                                        "LOG_DIR": "/var/tmp/ec2rl_ssh",
                                                        "PRIV_SEP_DIR": "/var/empty/sshd",
+                                                       "EXCLUDED_USERNAMES": {"ssm-user"},
                                                        "ALL_SET_BITMASK": 0b111111111111111,
                                                        "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
                                                        "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO}
@@ -1874,6 +1875,140 @@ class TestSSH(unittest.TestCase):
         self.assertTrue(os_path_isdir_mock.called)
         self.assertTrue(os_path_realpath_mock.called)
         self.assertTrue(glob_mock.called)
+
+
+    @mock.patch("glob.glob")
+    @mock.patch("os.path.realpath", side_effect=["/home/testuser",
+                                                 "/home/ssm-user",
+                                                 "/one/two/three/file1",
+                                                 "/usr/secrets/file2",
+                                                 "walkroot",
+                                                 "/etc/ssh/walkfile1",
+                                                 "/etc/ssh/walkfile2_key",
+                                                 "/etc/ssh/walkdir",
+                                                 "/etc/ssh/ssh_host_dsa_key"])
+    @mock.patch("os.path.isdir", side_effect=[True, True, True, False])
+    @mock.patch("pwd.getpwnam")
+    @mock.patch("os.walk")
+    @mock.patch("os.stat", get_mocked_stat)
+    @mock.patch("os.path.isfile", side_effect=[True])
+    def test_ssh_get_dag_excluded_users(self,
+                                        os_path_isfile_mock,
+                                        os_walk_mock,
+                                        pwd_getpwnam_mock,
+                                        os_path_isdir_mock,
+                                        os_path_realpath_mock,
+                                        glob_mock):
+        os_walk_mock.return_value = (("walkroot", ("walkdir",), ("walkfile1", "walkfile2_key")),)
+        pwd_getpwnam_mock.return_value = mock.Mock(pw_uid=0, pw_gid=0, pw_nam="testuser")
+        glob_mock.return_value = ["/home/testuser", "/home/ssm-user"]
+        self.problem.CONFIG_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key"]
+        with contextlib.redirect_stdout(StringIO()):
+            test_dag = moduletests.src.openssh.get_dag(self.problem.CONFIG_DICT)
+
+        vertex_dict = {"missing_sshd": ["missing_config_file",
+                                        "bad_mode_/etc/ssh/ssh_host_dsa_key",
+                                        "bad_uid_/etc/ssh/ssh_host_dsa_key"],
+                       "bad_mode_/etc/ssh/ssh_host_dsa_key": [],
+                       "bad_uid_/etc/ssh/ssh_host_dsa_key": [],
+
+                       "missing_config_file": ["bad_config_options"],
+                       "bad_config_options": ["missing_priv_sep_dir",
+                                              "duplicate_keyfile_lines"],
+                       "missing_priv_sep_dir":
+                           ["missing_host_keys",
+                            "bad_mode_/var/empty/sshd",
+                            "bad_uid_/var/empty/sshd"],
+                       "missing_host_keys": ["missing_priv_sep_user"],
+                       "missing_priv_sep_user": [],
+                       "bad_mode_/var/empty/sshd": [],
+                       "bad_uid_/var/empty/sshd": [],
+
+                       "missing_dir_/home":
+                           ["bad_uid_/home",
+                            "bad_mode_/home",
+                            "missing_dir_/home/testuser"],
+                       "bad_uid_/home": [],
+                       "bad_mode_/home": [],
+
+                       "duplicate_keyfile_lines":
+                           ["missing_dir_/home",
+                            "missing_dir_/one"],
+                       "missing_dir_/home/testuser":
+                           ["bad_mode_/home/testuser",
+                            "bad_uid_/home/testuser",
+                            "missing_dir_/home/testuser/.ssh",
+                            "missing_key_/home/testuser/.keyfile1"],
+                       "bad_uid_/home/testuser": [],
+                       "bad_mode_/home/testuser": [],
+
+                       "missing_dir_/home/testuser/.ssh":
+                           ["bad_mode_/home/testuser/.ssh",
+                            "bad_uid_/home/testuser/.ssh",
+                            "missing_key_/home/testuser/.ssh/authorized_keys"],
+                       "bad_uid_/home/testuser/.ssh": [],
+                       "bad_mode_/home/testuser/.ssh": [],
+
+                       "missing_key_/home/testuser/.ssh/authorized_keys":
+                           ["bad_mode_/home/testuser/.ssh/authorized_keys",
+                            "bad_uid_/home/testuser/.ssh/authorized_keys"],
+                       "bad_uid_/home/testuser/.ssh/authorized_keys": [],
+                       "bad_mode_/home/testuser/.ssh/authorized_keys": [],
+
+                       "missing_key_/home/testuser/.keyfile1":
+                           ["bad_mode_/home/testuser/.keyfile1",
+                            "bad_uid_/home/testuser/.keyfile1"],
+                       "bad_mode_/home/testuser/.keyfile1": [],
+                       "bad_uid_/home/testuser/.keyfile1": [],
+
+                       "missing_dir_/one":
+                           ["bad_uid_/one",
+                            "bad_mode_/one",
+                            "missing_dir_/one/two"],
+                       "bad_uid_/one": [],
+                       "bad_mode_/one": [],
+
+                       "missing_dir_/one/two":
+                           ["bad_uid_/one/two",
+                            "bad_mode_/one/two",
+                            "missing_dir_/one/two/three"],
+                       "bad_uid_/one/two": [],
+                       "bad_mode_/one/two": [],
+
+                       "missing_dir_/one/two/three":
+                           ["bad_uid_/one/two/three",
+                            "bad_mode_/one/two/three",
+                            "missing_key_/one/two/three/file1"],
+                       "bad_uid_/one/two/three": [],
+                       "bad_mode_/one/two/three": [],
+
+                       "missing_key_/one/two/three/file1":
+                           ["bad_uid_/one/two/three/file1",
+                            "bad_mode_/one/two/three/file1"],
+                       "bad_uid_/one/two/three/file1": [],
+                       "bad_mode_/one/two/three/file1": [],
+
+                       "bad_mode_/etc/ssh": [],
+                       "bad_mode_/etc/ssh/walkdir": [],
+                       "bad_mode_/etc/ssh/walkfile1": [],
+                       "bad_mode_/etc/ssh/walkfile2_key": [],
+                       "bad_uid_/etc/ssh": [],
+                       "bad_uid_/etc/ssh/walkdir": [],
+                       "bad_uid_/etc/ssh/walkfile1": [],
+                       "bad_uid_/etc/ssh/walkfile2_key": []}
+
+        self.assertEqual(len(test_dag), 46)
+        self.assertEqual(set(test_dag.vertices.keys()), set(vertex_dict.keys()))
+        for key in vertex_dict:
+            self.assertEqual(set(test_dag.vertices[key]), set(vertex_dict[key]))
+
+        self.assertTrue(os_walk_mock.called)
+        self.assertTrue(pwd_getpwnam_mock.called)
+        self.assertTrue(os_path_isfile_mock.called)
+        self.assertTrue(os_path_isdir_mock.called)
+        self.assertTrue(os_path_realpath_mock.called)
+        self.assertTrue(glob_mock.called)
+
 
     @mock.patch("glob.glob")
     @mock.patch("os.path.realpath", side_effect=["/home/testuser",

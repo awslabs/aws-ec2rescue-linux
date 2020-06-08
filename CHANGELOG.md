@@ -24,6 +24,7 @@
 * [New Module] Add kpatch os collect module.
 * [New Module] Add yumconfiguration os collect module.
 * [New Module] Add xennetsgmtu net diagnostic module.
+* [Enhancement] Add user exclude list to OpenSSH module, add non-ssh user ssm-user to exclude list.
 
 #### Testing
 * [New Test] Add unit tests for is_nitro() function
