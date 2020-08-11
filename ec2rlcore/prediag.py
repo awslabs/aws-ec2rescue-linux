@@ -44,6 +44,8 @@ import re
 import shutil
 import sys
 
+import ec2rlcore.constants
+
 try:
     import requests
 except ImportError as ie:  # pragma: no cover
@@ -71,12 +73,12 @@ def get_distro():
             # This file is a single line
             distro_str = fp.readline()
             if re.match(alami_regex, distro_str):
-                distro = "alami"
+                distro = ec2rlcore.constants.DISTRO_ALAMI
             elif re.match(alami2_regex, distro_str):
-                distro = "alami2"
+                distro = ec2rlcore.constants.DISTRO_ALAMI2
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
-                distro = "rhel"
+                distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/system-release"
     # SUSE
@@ -87,7 +89,7 @@ def get_distro():
             distro_str = fp.readline()
             regex = re.compile(r"^SUSE Linux Enterprise Server \d{2}")
             if re.match(regex, distro_str):
-                distro = "suse"
+                distro = ec2rlcore.constants.DISTRO_SUSE
             else:
                 distro = "unknown for /etc/SuSE-release"
     # Ubuntu
@@ -98,16 +100,16 @@ def get_distro():
             distro = "unknown for /etc/lsb-release"
             for line in lines:
                 if re.match(r"DISTRIB_ID=Ubuntu", line):
-                    distro = "ubuntu"
+                    distro = ec2rlcore.constants.DISTRO_UBUNTU
                     break
     # Older Amazon Linux & RHEL
     elif os.path.isfile("/etc/issue"):
         with open("/etc/issue", "r") as fp:
             distro_str = fp.readline()
             if re.match(alami_regex, distro_str):
-                distro = "alami"
+                distro = ec2rlcore.constants.DISTRO_ALAMI
             elif re.match(rhel_regex, distro_str) or re.match(r"^CentOS release \d\.\d+", distro_str):
-                distro = "rhel"
+                distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/issue"
     # Amazon Linux & SUSE
@@ -118,10 +120,10 @@ def get_distro():
             distro = "unknown for /etc/os-release"
             for line in lines:
                 if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server \d{2}", line):
-                    distro = "suse"
+                    distro = ec2rlcore.constants.DISTRO_SUSE
                     break
                 elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
-                    distro = "alami"
+                    distro = ec2rlcore.constants.DISTRO_ALAMI
                     break
     return distro
 
