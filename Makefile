@@ -157,6 +157,9 @@ test:
 	$(COVERAGE) run --source=ec2rlcore --branch -m unittest discover
 	$(COVERAGE) report -m
 
+yaml2py:
+	$(PYTHON) tools/moduletests/yaml2py.py; \
+
 test_modules_unit:
 	@cd tools; \
 	$(PYTHON) run_module_unit_tests.py; \
