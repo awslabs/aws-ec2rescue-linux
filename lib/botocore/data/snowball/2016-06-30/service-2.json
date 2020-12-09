@@ -7,6 +7,7 @@
     "protocol":"json",
     "serviceAbbreviation":"Amazon Snowball",
     "serviceFullName":"Amazon Import/Export Snowball",
+    "serviceId":"Snowball",
     "signatureVersion":"v4",
     "targetPrefix":"AWSIESnowballJobManagementService",
     "uid":"snowball-2016-06-30"
@@ -40,7 +41,7 @@
         {"shape":"InvalidJobStateException"},
         {"shape":"KMSRequestFailedException"}
       ],
-      "documentation":"<p>Cancels the specified job. You can only cancel a job before its <code>JobState</code> value changes to <code>PreparingAppliance</code>. Requesting the <code>ListJobs</code> or <code>DescribeJob</code> action will return a job's <code>JobState</code> as part of the response element data returned.</p>"
+      "documentation":"<p>Cancels the specified job. You can only cancel a job before its <code>JobState</code> value changes to <code>PreparingAppliance</code>. Requesting the <code>ListJobs</code> or <code>DescribeJob</code> action returns a job's <code>JobState</code> as part of the response element data returned.</p>"
     },
     "CreateAddress":{
       "name":"CreateAddress",
@@ -67,7 +68,8 @@
       "errors":[
         {"shape":"InvalidResourceException"},
         {"shape":"KMSRequestFailedException"},
-        {"shape":"InvalidInputCombinationException"}
+        {"shape":"InvalidInputCombinationException"},
+        {"shape":"Ec2RequestFailedException"}
       ],
       "documentation":"<p>Creates an empty cluster. Each cluster supports five nodes. You use the <a>CreateJob</a> action separately to create the jobs for each of these nodes. The cluster does not ship until these five node jobs have been created.</p>"
     },
@@ -83,7 +85,8 @@
         {"shape":"InvalidResourceException"},
         {"shape":"KMSRequestFailedException"},
         {"shape":"InvalidInputCombinationException"},
-        {"shape":"ClusterLimitExceededException"}
+        {"shape":"ClusterLimitExceededException"},
+        {"shape":"Ec2RequestFailedException"}
       ],
       "documentation":"<p>Creates a job to import or export data between Amazon S3 and your on-premises data center. Your AWS account must have the right trust policies and permissions in place to create a job for Snowball. If you're creating a job for a node in a cluster, you only need to provide the <code>clusterId</code> value; the other job attributes are inherited from the cluster. </p>"
     },
@@ -178,6 +181,20 @@
       "output":{"shape":"GetSnowballUsageResult"},
       "documentation":"<p>Returns information about the Snowball service limit for your account, and also the number of Snowballs your account has in use.</p> <p>The default service limit for the number of Snowballs that you can have at one time is 1. If you want to increase your service limit, contact AWS Support.</p>"
     },
+    "GetSoftwareUpdates":{
+      "name":"GetSoftwareUpdates",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetSoftwareUpdatesRequest"},
+      "output":{"shape":"GetSoftwareUpdatesResult"},
+      "errors":[
+        {"shape":"InvalidResourceException"},
+        {"shape":"InvalidJobStateException"}
+      ],
+      "documentation":"<p>Returns an Amazon S3 presigned URL for an update file associated with a specified <code>JobId</code>.</p>"
+    },
     "ListClusterJobs":{
       "name":"ListClusterJobs",
       "http":{
@@ -205,6 +222,20 @@
       ],
       "documentation":"<p>Returns an array of <code>ClusterListEntry</code> objects of the specified length. Each <code>ClusterListEntry</code> object contains a cluster's state, a cluster's ID, and other important status information.</p>"
     },
+    "ListCompatibleImages":{
+      "name":"ListCompatibleImages",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListCompatibleImagesRequest"},
+      "output":{"shape":"ListCompatibleImagesResult"},
+      "errors":[
+        {"shape":"InvalidNextTokenException"},
+        {"shape":"Ec2RequestFailedException"}
+      ],
+      "documentation":"<p>This action returns a list of the different Amazon EC2 Amazon Machine Images (AMIs) that are owned by your AWS account that would be supported for use on a Snowball Edge device. Currently, supported AMIs are based on the CentOS 7 (x86_64) - with Updates HVM, Ubuntu Server 14.04 LTS (HVM), and Ubuntu 16.04 LTS - Xenial (HVM) images, available on the AWS Marketplace.</p>"
+    },
     "ListJobs":{
       "name":"ListJobs",
       "http":{
@@ -230,7 +261,8 @@
         {"shape":"InvalidResourceException"},
         {"shape":"InvalidJobStateException"},
         {"shape":"KMSRequestFailedException"},
-        {"shape":"InvalidInputCombinationException"}
+        {"shape":"InvalidInputCombinationException"},
+        {"shape":"Ec2RequestFailedException"}
       ],
       "documentation":"<p>While a cluster's <code>ClusterState</code> value is in the <code>AwaitingQuorum</code> state, you can update some of the information associated with a cluster. Once the cluster changes to a different job state, usually 60 minutes after the cluster being created, this action is no longer available.</p>"
     },
@@ -247,7 +279,8 @@
         {"shape":"InvalidJobStateException"},
         {"shape":"KMSRequestFailedException"},
         {"shape":"InvalidInputCombinationException"},
-        {"shape":"ClusterLimitExceededException"}
+        {"shape":"ClusterLimitExceededException"},
+        {"shape":"Ec2RequestFailedException"}
       ],
       "documentation":"<p>While a job's <code>JobState</code> value is <code>New</code>, you can update some of the information associated with a job. Once the job changes to a different job state, usually within 60 minutes of the job being created, this action is no longer available.</p>"
     }
@@ -324,6 +357,12 @@
     "AddressList":{
       "type":"list",
       "member":{"shape":"Address"}
+    },
+    "AmiId":{
+      "type":"string",
+      "max":21,
+      "min":12,
+      "pattern":"(ami-[0-9a-f]{8})|(ami-[0-9a-f]{17})"
     },
     "Boolean":{"type":"boolean"},
     "CancelClusterRequest":{
@@ -409,11 +448,11 @@
         },
         "KmsKeyARN":{
           "shape":"KmsKeyARN",
-          "documentation":"<p>The <code>KmsKeyARN</code> Amazon Resource Name (ARN) associated with this cluster. This ARN was created using the <a href=\"http://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS Key Management Service (AWS KMS).</p>"
+          "documentation":"<p>The <code>KmsKeyARN</code> Amazon Resource Name (ARN) associated with this cluster. This ARN was created using the <a href=\"https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS Key Management Service (AWS KMS).</p>"
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The role ARN associated with this cluster. This ARN was created using the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
+          "documentation":"<p>The role ARN associated with this cluster. This ARN was created using the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
         },
         "ClusterState":{
           "shape":"ClusterState",
@@ -425,7 +464,7 @@
         },
         "SnowballType":{
           "shape":"SnowballType",
-          "documentation":"<p>The type of AWS Snowball appliance to use for this cluster. Currently, the only supported appliance type for cluster jobs is <code>EDGE</code>.</p>"
+          "documentation":"<p>The type of AWS Snowball device to use for this cluster. Currently, the only supported device type for cluster jobs is <code>EDGE</code>.</p> <p>For more information, see <a href=\"https://docs.aws.amazon.com/snowball/latest/developer-guide/device-differences.html\">Snowball Edge Device Options</a> in the Snowball Edge Developer Guide.</p>"
         },
         "CreationDate":{
           "shape":"Timestamp",
@@ -441,7 +480,7 @@
         },
         "ShippingOption":{
           "shape":"ShippingOption",
-          "documentation":"<p>The shipping speed for each node in this cluster. This speed doesn't dictate how soon you'll get each Snowball Edge appliance, rather it represents how quickly each appliance moves to its destination while in transit. Regional shipping speeds are as follows:</p> <ul> <li> <p>In Australia, you have access to express shipping. Typically, appliances shipped express are delivered in about a day.</p> </li> <li> <p>In the European Union (EU), you have access to express shipping. Typically, Snowball Edges shipped express are delivered in about a day. In addition, most countries in the EU have access to standard shipping, which typically takes less than a week, one way.</p> </li> <li> <p>In India, Snowball Edges are delivered in one to seven days.</p> </li> <li> <p>In the US, you have access to one-day shipping and two-day shipping.</p> </li> </ul>"
+          "documentation":"<p>The shipping speed for each node in this cluster. This speed doesn't dictate how soon you'll get each Snowball Edge device, rather it represents how quickly each device moves to its destination while in transit. Regional shipping speeds are as follows:</p> <ul> <li> <p>In Australia, you have access to express shipping. Typically, devices shipped express are delivered in about a day.</p> </li> <li> <p>In the European Union (EU), you have access to express shipping. Typically, Snowball Edges shipped express are delivered in about a day. In addition, most countries in the EU have access to standard shipping, which typically takes less than a week, one way.</p> </li> <li> <p>In India, Snowball Edges are delivered in one to seven days.</p> </li> <li> <p>In the US, you have access to one-day shipping and two-day shipping.</p> </li> </ul>"
         },
         "Notification":{
           "shape":"Notification",
@@ -450,6 +489,10 @@
         "ForwardingAddressId":{
           "shape":"AddressId",
           "documentation":"<p>The ID of the address that you want a cluster shipped to, after it will be shipped to its primary address. This field is not supported in most regions.</p>"
+        },
+        "TaxDocuments":{
+          "shape":"TaxDocuments",
+          "documentation":"<p>The tax documents required in your AWS Region.</p>"
         }
       },
       "documentation":"<p>Contains metadata about a specific cluster.</p>"
@@ -463,6 +506,24 @@
         "Complete",
         "Cancelled"
       ]
+    },
+    "CompatibleImage":{
+      "type":"structure",
+      "members":{
+        "AmiId":{
+          "shape":"String",
+          "documentation":"<p>The unique identifier for an individual Snowball Edge AMI.</p>"
+        },
+        "Name":{
+          "shape":"String",
+          "documentation":"<p>The optional name of a compatible image.</p>"
+        }
+      },
+      "documentation":"<p>A JSON-formatted object that describes a compatible Amazon Machine Image (AMI), including the ID and name for a Snowball Edge AMI. This AMI is compatible with the device's physical hardware requirements, and it should be able to be run in an SBE1 instance on the device.</p>"
+    },
+    "CompatibleImageList":{
+      "type":"list",
+      "member":{"shape":"CompatibleImage"}
     },
     "CreateAddressRequest":{
       "type":"structure",
@@ -511,19 +572,19 @@
         },
         "KmsKeyARN":{
           "shape":"KmsKeyARN",
-          "documentation":"<p>The <code>KmsKeyARN</code> value that you want to associate with this cluster. <code>KmsKeyARN</code> values are created by using the <a href=\"http://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS Key Management Service (AWS KMS). </p>"
+          "documentation":"<p>The <code>KmsKeyARN</code> value that you want to associate with this cluster. <code>KmsKeyARN</code> values are created by using the <a href=\"https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS Key Management Service (AWS KMS). </p>"
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The <code>RoleARN</code> that you want to associate with this cluster. <code>RoleArn</code> values are created by using the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
+          "documentation":"<p>The <code>RoleARN</code> that you want to associate with this cluster. <code>RoleArn</code> values are created by using the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
         },
         "SnowballType":{
           "shape":"SnowballType",
-          "documentation":"<p>The type of AWS Snowball appliance to use for this cluster. Currently, the only supported appliance type for cluster jobs is <code>EDGE</code>.</p>"
+          "documentation":"<p>The type of AWS Snowball device to use for this cluster. Currently, the only supported device type for cluster jobs is <code>EDGE</code>.</p> <p>For more information, see <a href=\"https://docs.aws.amazon.com/snowball/latest/developer-guide/device-differences.html\">Snowball Edge Device Options</a> in the Snowball Edge Developer Guide.</p>"
         },
         "ShippingOption":{
           "shape":"ShippingOption",
-          "documentation":"<p>The shipping speed for each node in this cluster. This speed doesn't dictate how soon you'll get each Snowball Edge appliance, rather it represents how quickly each appliance moves to its destination while in transit. Regional shipping speeds are as follows:</p> <ul> <li> <p>In Australia, you have access to express shipping. Typically, appliances shipped express are delivered in about a day.</p> </li> <li> <p>In the European Union (EU), you have access to express shipping. Typically, Snowball Edges shipped express are delivered in about a day. In addition, most countries in the EU have access to standard shipping, which typically takes less than a week, one way.</p> </li> <li> <p>In India, Snowball Edges are delivered in one to seven days.</p> </li> <li> <p>In the US, you have access to one-day shipping and two-day shipping.</p> </li> </ul>"
+          "documentation":"<p>The shipping speed for each node in this cluster. This speed doesn't dictate how soon you'll get each Snowball Edge device, rather it represents how quickly each device moves to its destination while in transit. Regional shipping speeds are as follows:</p> <ul> <li> <p>In Australia, you have access to express shipping. Typically, devices shipped express are delivered in about a day.</p> </li> <li> <p>In the European Union (EU), you have access to express shipping. Typically, Snowball Edges shipped express are delivered in about a day. In addition, most countries in the EU have access to standard shipping, which typically takes less than a week, one way.</p> </li> <li> <p>In India, Snowball Edges are delivered in one to seven days.</p> </li> <li> <p>In the US, you have access to one-day shipping and two-day shipping.</p> </li> </ul>"
         },
         "Notification":{
           "shape":"Notification",
@@ -532,6 +593,10 @@
         "ForwardingAddressId":{
           "shape":"AddressId",
           "documentation":"<p>The forwarding address ID for a cluster. This field is not supported in most regions.</p>"
+        },
+        "TaxDocuments":{
+          "shape":"TaxDocuments",
+          "documentation":"<p>The tax documents required in your AWS Region.</p>"
         }
       }
     },
@@ -565,11 +630,11 @@
         },
         "KmsKeyARN":{
           "shape":"KmsKeyARN",
-          "documentation":"<p>The <code>KmsKeyARN</code> that you want to associate with this job. <code>KmsKeyARN</code>s are created using the <a href=\"http://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> AWS Key Management Service (KMS) API action.</p>"
+          "documentation":"<p>The <code>KmsKeyARN</code> that you want to associate with this job. <code>KmsKeyARN</code>s are created using the <a href=\"https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> AWS Key Management Service (KMS) API action.</p>"
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The <code>RoleARN</code> that you want to associate with this job. <code>RoleArn</code>s are created using the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> AWS Identity and Access Management (IAM) API action.</p>"
+          "documentation":"<p>The <code>RoleARN</code> that you want to associate with this job. <code>RoleArn</code>s are created using the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> AWS Identity and Access Management (IAM) API action.</p>"
         },
         "SnowballCapacityPreference":{
           "shape":"SnowballCapacity",
@@ -589,11 +654,15 @@
         },
         "SnowballType":{
           "shape":"SnowballType",
-          "documentation":"<p>The type of AWS Snowball appliance to use for this job. Currently, the only supported appliance type for cluster jobs is <code>EDGE</code>.</p>"
+          "documentation":"<p>The type of AWS Snowball device to use for this job. Currently, the only supported device type for cluster jobs is <code>EDGE</code>.</p> <p>For more information, see <a href=\"https://docs.aws.amazon.com/snowball/latest/developer-guide/device-differences.html\">Snowball Edge Device Options</a> in the Snowball Edge Developer Guide.</p>"
         },
         "ForwardingAddressId":{
           "shape":"AddressId",
           "documentation":"<p>The forwarding address ID for a job. This field is not supported in most regions.</p>"
+        },
+        "TaxDocuments":{
+          "shape":"TaxDocuments",
+          "documentation":"<p>The tax documents required in your AWS Region.</p>"
         }
       }
     },
@@ -626,7 +695,7 @@
           "documentation":"<p>The total number of objects for a transfer between a Snowball and Amazon S3. This value is set to 0 (zero) until all the keys that will be transferred have been listed.</p>"
         }
       },
-      "documentation":"<p>Defines the real-time status of a Snowball's data transfer while the appliance is at AWS. This data is only available while a job has a <code>JobState</code> value of <code>InProgress</code>, for both import and export jobs.</p>"
+      "documentation":"<p>Defines the real-time status of a Snowball's data transfer while the device is at AWS. This data is only available while a job has a <code>JobState</code> value of <code>InProgress</code>, for both import and export jobs.</p>"
     },
     "DescribeAddressRequest":{
       "type":"structure",
@@ -715,6 +784,33 @@
         }
       }
     },
+    "Ec2AmiResource":{
+      "type":"structure",
+      "required":["AmiId"],
+      "members":{
+        "AmiId":{
+          "shape":"AmiId",
+          "documentation":"<p>The ID of the AMI in Amazon EC2.</p>"
+        },
+        "SnowballAmiId":{
+          "shape":"String",
+          "documentation":"<p>The ID of the AMI on the Snowball Edge device.</p>"
+        }
+      },
+      "documentation":"<p>A JSON-formatted object that contains the IDs for an Amazon Machine Image (AMI), including the Amazon EC2 AMI ID and the Snowball Edge AMI ID. Each AMI has these two IDs to simplify identifying the AMI in both the AWS Cloud and on the device.</p>"
+    },
+    "Ec2AmiResourceList":{
+      "type":"list",
+      "member":{"shape":"Ec2AmiResource"}
+    },
+    "Ec2RequestFailedException":{
+      "type":"structure",
+      "members":{
+        "Message":{"shape":"String"}
+      },
+      "documentation":"<p>Your IAM user lacks the necessary Amazon EC2 permissions to perform the attempted action.</p>",
+      "exception":true
+    },
     "EventTriggerDefinition":{
       "type":"structure",
       "members":{
@@ -728,6 +824,10 @@
     "EventTriggerDefinitionList":{
       "type":"list",
       "member":{"shape":"EventTriggerDefinition"}
+    },
+    "GSTIN":{
+      "type":"string",
+      "pattern":"\\d{2}[A-Z]{5}\\d{4}[A-Z]{1}[A-Z\\d]{1}[Z]{1}[A-Z\\d]{1}"
     },
     "GetJobManifestRequest":{
       "type":"structure",
@@ -785,6 +885,35 @@
         }
       }
     },
+    "GetSoftwareUpdatesRequest":{
+      "type":"structure",
+      "required":["JobId"],
+      "members":{
+        "JobId":{
+          "shape":"JobId",
+          "documentation":"<p>The ID for a job that you want to get the software update file for, for example <code>JID123e4567-e89b-12d3-a456-426655440000</code>.</p>"
+        }
+      }
+    },
+    "GetSoftwareUpdatesResult":{
+      "type":"structure",
+      "members":{
+        "UpdatesURI":{
+          "shape":"String",
+          "documentation":"<p>The Amazon S3 presigned URL for the update file associated with the specified <code>JobId</code> value. The software update will be available for 2 days after this request is made. To access an update after the 2 days have passed, you'll have to make another call to <code>GetSoftwareUpdates</code>.</p>"
+        }
+      }
+    },
+    "INDTaxDocuments":{
+      "type":"structure",
+      "members":{
+        "GSTIN":{
+          "shape":"GSTIN",
+          "documentation":"<p>The Goods and Services Tax (GST) documents required in AWS Regions in India.</p>"
+        }
+      },
+      "documentation":"<p>The tax documents required in AWS Regions in India.</p>"
+    },
     "Integer":{"type":"integer"},
     "InvalidAddressException":{
       "type":"structure",
@@ -821,7 +950,11 @@
     "InvalidResourceException":{
       "type":"structure",
       "members":{
-        "Message":{"shape":"String"}
+        "Message":{"shape":"String"},
+        "ResourceType":{
+          "shape":"String",
+          "documentation":"<p>The provided resource value is invalid.</p>"
+        }
       },
       "documentation":"<p>The specified resource can't be found. Check the information you provided in your last request, and try again.</p>",
       "exception":true
@@ -853,7 +986,7 @@
         },
         "SnowballType":{
           "shape":"SnowballType",
-          "documentation":"<p>The type of appliance used with this job.</p>"
+          "documentation":"<p>The type of device used with this job.</p>"
         },
         "CreationDate":{
           "shape":"Timestamp",
@@ -905,7 +1038,7 @@
         },
         "SnowballType":{
           "shape":"SnowballType",
-          "documentation":"<p>The type of appliance used with this job.</p>"
+          "documentation":"<p>The type of device used with this job.</p>"
         },
         "CreationDate":{
           "shape":"Timestamp",
@@ -921,11 +1054,11 @@
         },
         "KmsKeyARN":{
           "shape":"KmsKeyARN",
-          "documentation":"<p>The Amazon Resource Name (ARN) for the AWS Key Management Service (AWS KMS) key associated with this job. This ARN was created using the <a href=\"http://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS KMS.</p>"
+          "documentation":"<p>The Amazon Resource Name (ARN) for the AWS Key Management Service (AWS KMS) key associated with this job. This ARN was created using the <a href=\"https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html\">CreateKey</a> API action in AWS KMS.</p>"
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The role ARN associated with this job. This ARN was created using the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
+          "documentation":"<p>The role ARN associated with this job. This ARN was created using the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
         },
         "AddressId":{
           "shape":"AddressId",
@@ -945,7 +1078,7 @@
         },
         "DataTransferProgress":{
           "shape":"DataTransfer",
-          "documentation":"<p>A value that defines the real-time status of a Snowball's data transfer while the appliance is at AWS. This data is only available while a job has a <code>JobState</code> value of <code>InProgress</code>, for both import and export jobs.</p>"
+          "documentation":"<p>A value that defines the real-time status of a Snowball's data transfer while the device is at AWS. This data is only available while a job has a <code>JobState</code> value of <code>InProgress</code>, for both import and export jobs.</p>"
         },
         "JobLogInfo":{
           "shape":"JobLogs",
@@ -958,6 +1091,10 @@
         "ForwardingAddressId":{
           "shape":"AddressId",
           "documentation":"<p>The ID of the address that you want a job shipped to, after it will be shipped to its primary address. This field is not supported in most regions.</p>"
+        },
+        "TaxDocuments":{
+          "shape":"TaxDocuments",
+          "documentation":"<p>The metadata associated with the tax documents required in your AWS Region.</p>"
         }
       },
       "documentation":"<p>Contains information about a specific job including shipping information, job status, and other important metadata. This information is returned as a part of the response syntax of the <code>DescribeJob</code> action.</p>"
@@ -976,9 +1113,13 @@
         "LambdaResources":{
           "shape":"LambdaResourceList",
           "documentation":"<p>The Python-language Lambda functions for this job.</p>"
+        },
+        "Ec2AmiResources":{
+          "shape":"Ec2AmiResourceList",
+          "documentation":"<p>The Amazon Machine Images (AMIs) associated with this job.</p>"
         }
       },
-      "documentation":"<p>Contains an array of <code>S3Resource</code> objects. Each <code>S3Resource</code> object represents an Amazon S3 bucket that your transferred data will be exported from or imported into.</p>"
+      "documentation":"<p>Contains an array of AWS resource objects. Each object represents an Amazon S3 bucket, an AWS Lambda function, or an Amazon Machine Image (AMI) based on Amazon EC2 that is associated with a particular job.</p>"
     },
     "JobState":{
       "type":"string",
@@ -989,6 +1130,7 @@
         "InTransitToCustomer",
         "WithCustomer",
         "InTransitToAWS",
+        "WithAWSSortingFacility",
         "WithAWS",
         "InProgress",
         "Complete",
@@ -1111,6 +1253,32 @@
         }
       }
     },
+    "ListCompatibleImagesRequest":{
+      "type":"structure",
+      "members":{
+        "MaxResults":{
+          "shape":"ListLimit",
+          "documentation":"<p>The maximum number of results for the list of compatible images. Currently, a Snowball Edge device can store 10 AMIs.</p>"
+        },
+        "NextToken":{
+          "shape":"String",
+          "documentation":"<p>HTTP requests are stateless. To identify what object comes \"next\" in the list of compatible images, you can specify a value for <code>NextToken</code> as the starting point for your list of returned images.</p>"
+        }
+      }
+    },
+    "ListCompatibleImagesResult":{
+      "type":"structure",
+      "members":{
+        "CompatibleImages":{
+          "shape":"CompatibleImageList",
+          "documentation":"<p>A JSON-formatted object that describes a compatible AMI, including the ID and name for a Snowball Edge AMI.</p>"
+        },
+        "NextToken":{
+          "shape":"String",
+          "documentation":"<p>Because HTTP requests are stateless, this is the starting point for your next list of returned images.</p>"
+        }
+      }
+    },
     "ListJobsRequest":{
       "type":"structure",
       "members":{
@@ -1148,7 +1316,7 @@
       "members":{
         "SnsTopicARN":{
           "shape":"SnsTopicARN",
-          "documentation":"<p>The new SNS <code>TopicArn</code> that you want to associate with this job. You can create Amazon Resource Names (ARNs) for topics by using the <a href=\"http://docs.aws.amazon.com/sns/latest/api/API_CreateTopic.html\">CreateTopic</a> Amazon SNS API action.</p> <p>You can subscribe email addresses to an Amazon SNS topic through the AWS Management Console, or by using the <a href=\"http://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html\">Subscribe</a> AWS Simple Notification Service (SNS) API action.</p>"
+          "documentation":"<p>The new SNS <code>TopicArn</code> that you want to associate with this job. You can create Amazon Resource Names (ARNs) for topics by using the <a href=\"https://docs.aws.amazon.com/sns/latest/api/API_CreateTopic.html\">CreateTopic</a> Amazon SNS API action.</p> <p>You can subscribe email addresses to an Amazon SNS topic through the AWS Management Console, or by using the <a href=\"https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html\">Subscribe</a> AWS Simple Notification Service (SNS) API action.</p>"
         },
         "JobStatesToNotify":{
           "shape":"JobStateList",
@@ -1235,6 +1403,7 @@
         "T50",
         "T80",
         "T100",
+        "T42",
         "NoPreference"
       ]
     },
@@ -1242,7 +1411,9 @@
       "type":"string",
       "enum":[
         "STANDARD",
-        "EDGE"
+        "EDGE",
+        "EDGE_C",
+        "EDGE_CG"
       ]
     },
     "SnsTopicARN":{
@@ -1253,6 +1424,16 @@
     "String":{
       "type":"string",
       "min":1
+    },
+    "TaxDocuments":{
+      "type":"structure",
+      "members":{
+        "IND":{
+          "shape":"INDTaxDocuments",
+          "documentation":"<p>The tax documents required in AWS Regions in India.</p>"
+        }
+      },
+      "documentation":"<p>The tax documents required in your AWS Region.</p>"
     },
     "Timestamp":{"type":"timestamp"},
     "UnsupportedAddressException":{
@@ -1273,7 +1454,7 @@
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The new role Amazon Resource Name (ARN) that you want to associate with this cluster. To create a role ARN, use the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
+          "documentation":"<p>The new role Amazon Resource Name (ARN) that you want to associate with this cluster. To create a role ARN, use the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a> API action in AWS Identity and Access Management (IAM).</p>"
         },
         "Description":{
           "shape":"String",
@@ -1316,7 +1497,7 @@
         },
         "RoleARN":{
           "shape":"RoleARN",
-          "documentation":"<p>The new role Amazon Resource Name (ARN) that you want to associate with this job. To create a role ARN, use the <a href=\"http://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a>AWS Identity and Access Management (IAM) API action.</p>"
+          "documentation":"<p>The new role Amazon Resource Name (ARN) that you want to associate with this job. To create a role ARN, use the <a href=\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\">CreateRole</a>AWS Identity and Access Management (IAM) API action.</p>"
         },
         "Notification":{
           "shape":"Notification",
@@ -1324,7 +1505,7 @@
         },
         "Resources":{
           "shape":"JobResource",
-          "documentation":"<p>The updated <a>S3Resource</a> object (for a single Amazon S3 bucket or key range), or the updated <a>JobResource</a> object (for multiple buckets or key ranges). </p>"
+          "documentation":"<p>The updated <code>JobResource</code> object, or the updated <a>JobResource</a> object. </p>"
         },
         "AddressId":{
           "shape":"AddressId",
@@ -1354,5 +1535,5 @@
       }
     }
   },
-  "documentation":"<p>AWS Snowball is a petabyte-scale data transport solution that uses secure appliances to transfer large amounts of data between your on-premises data centers and Amazon Simple Storage Service (Amazon S3). The Snowball commands described here provide access to the same functionality that is available in the AWS Snowball Management Console, which enables you to create and manage jobs for Snowball. To transfer data locally with a Snowball appliance, you'll need to use the Snowball client or the Amazon S3 API adapter for Snowball. For more information, see the <a href=\"http://docs.aws.amazon.com/AWSImportExport/latest/ug/api-reference.html\">User Guide</a>.</p>"
+  "documentation":"<p>AWS Snowball is a petabyte-scale data transport solution that uses secure devices to transfer large amounts of data between your on-premises data centers and Amazon Simple Storage Service (Amazon S3). The Snowball commands described here provide access to the same functionality that is available in the AWS Snowball Management Console, which enables you to create and manage jobs for Snowball. To transfer data locally with a Snowball device, you'll need to use the Snowball client or the Amazon S3 API adapter for Snowball. For more information, see the <a href=\"https://docs.aws.amazon.com/AWSImportExport/latest/ug/api-reference.html\">User Guide</a>.</p>"
 }

@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -46,9 +46,22 @@ def get_instance_region():
         Region (str): Region of the currently running instance
     """
     try:
-        r = requests.get("http://169.254.169.254/latest/meta-data/placement/availability-zone")
+        r = requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document")
+        if r.status_code == 401:
+            token=(
+                requests.put(
+                    "http://169.254.169.254/latest/api/token", 
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                    verify=False
+                )
+            ).text
+            r = requests.get(
+                "http://169.254.169.254/latest/dynamic/instance-identity/document",
+                headers={'X-aws-ec2-metadata-token': token}
+            )
         r.raise_for_status()
-        return r.text[:-1]
+        document = r.json()
+        return document['region']
     except requests.exceptions.Timeout:
         raise AWSHelperMetadataTimeout()
     except requests.exceptions.HTTPError as err:
@@ -66,6 +79,18 @@ def get_instance_id():
     """
     try:
         r = requests.get("http://169.254.169.254/latest/meta-data/instance-id")
+        if r.status_code == 401:
+            token=(
+                requests.put(
+                    "http://169.254.169.254/latest/api/token", 
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                    verify=False
+                )
+            ).text
+            r = requests.get(
+                "http://169.254.169.254/latest/meta-data/instance-id",
+                headers={'X-aws-ec2-metadata-token': token}
+            )
         r.raise_for_status()
         return r.text
     except requests.exceptions.Timeout:

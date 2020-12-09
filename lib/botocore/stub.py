@@ -17,7 +17,7 @@ from pprint import pformat
 from botocore.validate import validate_parameters
 from botocore.exceptions import ParamValidationError, \
     StubResponseError, StubAssertionError, UnStubbedResponseError
-from botocore.vendored.requests.models import Response
+from botocore.awsrequest import AWSResponse
 
 
 class _ANY(object):
@@ -116,9 +116,9 @@ class Stubber(object):
         assert service_response == response
 
 
-    If you have an input paramter that is a randomly generated value, or you
-    otherwise don't care about its value, you can use stub.ANY to ignore it in
-    validation.
+    If you have an input parameter that is a randomly generated value, or you
+    otherwise don't care about its value, you can use ``stub.ANY`` to ignore
+    it in validation.
 
     **Example:**
     ::
@@ -233,9 +233,7 @@ class Stubber(object):
                 % (self.client.meta.service_model.service_name, method))
 
         # Create a successful http response
-        http_response = Response()
-        http_response.status_code = 200
-        http_response.reason = 'OK'
+        http_response = AWSResponse(None, 200, {}, None)
 
         operation_name = self.client.meta.method_to_api_mapping.get(method)
         self._validate_response(operation_name, service_response)
@@ -285,8 +283,7 @@ class Stubber(object):
         :type response_meta: dict
 
         """
-        http_response = Response()
-        http_response.status_code = http_status_code
+        http_response = AWSResponse(None, http_status_code, {}, None)
 
         # We don't look to the model to build this because the caller would
         # need to know the details of what the HTTP body would need to
@@ -329,7 +326,7 @@ class Stubber(object):
             raise UnStubbedResponseError(
                 operation_name=model.name,
                 reason=(
-                        'Unexpected API Call: A call was made but no additional calls expected.'
+                        'Unexpected API Call: A call was made but no additional calls expected. '
                         'Either the API Call was not stubbed or it was called multiple times.'
                         )
             )

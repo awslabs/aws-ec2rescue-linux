@@ -1,3 +1,36 @@
+# EC2 Rescue for Linux v1.1.5
+
+#### General
+* [Enhancement] Updated vendored version of boto3 to 1.12.6
+* [Enhancement] Updated vendored version of botocore to 1.15.6
+* [Enhancement] Add urllib3 version 1.25.9 to vended packages
+
+#### Framework
+* [Enhancement] Refactor get_instance_region() to utilize identity document.
+* [Enhancement] Add is_nitro() function to determine if instance is Nitro or bare-metal
+* [Bugfix] Fix is_an_instance() inaccurately categorized Nitro instances as not-an-instance.
+* [Bugfix] Fix EC2RL_VIRT_TYPE not taking into account change in metadata profile display of Nitro instances
+* [Enhancement] Modified get_instance_region() and get_instance_id() to support IMDSv2.
+* [Enhancement] Modified verify_metadata(), get_virt_type() and is_an_instance() to support IMDSv2
+
+#### Modules
+* [New Module] Add lvmarchives module.
+* [Bugfix] Update xennetrocket, xenfeatures, ixgbevfversion to reflect proper EC2RL_VIRT_TYPE detection.
+* [New Module] Add dmesg collect module, rename old dmesg gather module to dmesgfiles. Output between the two is different and necessitates an additional module.
+* [New Module] Add cron gather module.
+* [New Module] Add numastat collect module.
+* [New Module] Add bccmysqldqslower performance module
+* [New Module] Add amazonlinuxextras os collect module.
+* [New Module] Add kpatch os collect module.
+* [New Module] Add yumconfiguration os collect module.
+* [New Module] Add xennetsgmtu net diagnostic module.
+* [Enhancement] Add user exclude list to OpenSSH module, add non-ssh user ssm-user to exclude list.
+* [Enhancement] Update OpenSSH module to account for new OpenSSH packaging in ALAMI2.
+
+#### Testing
+* [New Test] Add unit tests for is_nitro() function
+* [Enhancement] Lock down the versions of setuptools and mock for Python 2.7 as the maintainers have discontinued support for Python 2.
+
 # EC2 Rescue for Linux v1.1.4
 
 #### General

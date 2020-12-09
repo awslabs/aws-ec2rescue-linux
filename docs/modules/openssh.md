@@ -195,6 +195,8 @@ The /etc/ssh directory and the files contained within must only be writable by r
 
 The example below shows a configuration that meets the file mode and ownership requirements.
 
+**NOTE:** In some distribuions, these keys are instead group readable for the ssh_keys group. This is due to a packaging change with the openssh module.
+
 ```
 [ec2-user@localhost ~]$ ls -ld /etc/ssh/
 drwxr-xr-x 4 root root 4096 Sep 10 22:47 /etc/ssh/
@@ -321,6 +323,7 @@ Change the owner of the directory to root and set the permission mode.
 
 Change ownership of /etc/ssh and its contents to root. Make /etc/ssh writable only by root. Set the group and other permission for all files contained within to read only then remove the group and other permissions from the private keys.
 
+**NOTE:** In some distribuions, these keys hould instead be group readable for the ssh_keys group. This is due to a packaging change with the openssh module. 
 ```
 [ec2-user@localhost ~]$ sudo chown -R root:root /etc/ssh
 [ec2-user@localhost ~]$ sudo chmod go-w /etc/ssh

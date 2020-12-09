@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -39,6 +39,7 @@ import botocore
 import mock
 import responses
 
+import ec2rlcore.constants
 import moduletests.src.openssh
 
 
@@ -51,6 +52,10 @@ class TestSSH(unittest.TestCase):
     def get_mocked_stat(*args, **kwargs):
         TestSSH.mock_counter += 1
         return mock.Mock(st_dev=TestSSH.mock_counter, st_ino=TestSSH.mock_counter)
+
+    @staticmethod
+    def get_normal_hostkey_permission_mode(*args, **kwargs):
+        return stat.S_IWGRP | stat.S_IWOTH
 
     @staticmethod
     def return_true(*args, **kwargs):
@@ -81,6 +86,7 @@ class TestSSH(unittest.TestCase):
                                                                                   ".keyfile1"]},
                                                        "CONFIG_PATH": "/etc/ssh/sshd_config",
                                                        "CONFIG_DICT": dict(),
+                                                       "DISTRO": ec2rlcore.constants.DISTRO_ALAMI,
                                                        "REMEDIATE": False,
                                                        "INJECT_KEY": False,
                                                        "INJECT_KEY_ONLY": False,
@@ -91,9 +97,11 @@ class TestSSH(unittest.TestCase):
                                                        "BACKUP_DIR": "/var/tmp/ec2rl_ssh/backup",
                                                        "LOG_DIR": "/var/tmp/ec2rl_ssh",
                                                        "PRIV_SEP_DIR": "/var/empty/sshd",
+                                                       "EXCLUDED_USERNAMES": {"ssm-user"},
                                                        "ALL_SET_BITMASK": 0b111111111111111,
                                                        "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
-                                                       "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO}
+                                                       "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO,
+                                                       "O_ALL_CHECKING_BITMASK": stat.S_IRWXO}
         self.vertex = moduletests.src.openssh.Vertex("example vertex", [1, 2, 3])
         self.dag = moduletests.src.openssh.DirectedAcyclicGraph()
 
@@ -584,7 +592,14 @@ class TestSSH(unittest.TestCase):
         self.assertTrue(isinstance(problem, moduletests.src.openssh.Problem))
         self.assertEqual(problem.info_msg, "Permission mode includes permissions for groups and/or other users")
 
-        this_path = moduletests.src.openssh.Path(path_str="/tmp", e_uid=0, e_gid=0, v_bitmask=stat.S_IWGRP)
+        this_path = moduletests.src.openssh.Path(
+            path_str="/tmp", e_uid=0, e_gid=0, v_bitmask=stat.S_IRWXO)
+        problem = moduletests.src.openssh.Problem.get_mode_problem(this_path)
+        self.assertTrue(isinstance(problem, moduletests.src.openssh.Problem))
+        self.assertEqual(problem.info_msg, "Permission mode includes permissions for other users")
+
+        this_path = moduletests.src.openssh.Path(
+            path_str="/tmp", e_uid=0, e_gid=0, v_bitmask=stat.S_IWGRP)
         problem = moduletests.src.openssh.Problem.get_mode_problem(this_path)
         self.assertTrue(isinstance(problem, moduletests.src.openssh.Problem))
         self.assertEqual(problem.info_msg, "Permission mode includes write for groups and/or other users")
@@ -1446,17 +1461,8 @@ class TestSSH(unittest.TestCase):
         with contextlib.redirect_stdout(StringIO()):
             self.assertTrue(moduletests.src.openssh.key_injection_driver(sys_config_dict))
 
-        self.assertEqual(str(client_mock.mock_calls),
-                         "[call('ssm', region_name='us-east-1'),\n "
-                         "call().put_parameter("
-                         "Description='Private key added to instance i-test_id by EC2 Rescue for Linux.', "
-                         "Name='/ec2rl/openssh/i-test_id/key', "
-                         "Overwrite=True, "
-                         "Type='SecureString', "
-                         "Value='priv_key')]")
-
+        self.assertEqual(len(client_mock.mock_calls), 2)
         self.assertTrue(inject_key_mock.called)
-        self.assertTrue(client_mock.called)
         self.assertTrue(get_instance_region_mock.called)
         self.assertTrue(get_instance_id_mock.called)
         self.assertTrue(gen_key_pair_mock.called)
@@ -1758,6 +1764,7 @@ class TestSSH(unittest.TestCase):
     @mock.patch("os.walk")
     @mock.patch("os.stat", get_mocked_stat)
     @mock.patch("os.path.isfile", side_effect=[True])
+    @mock.patch("moduletests.src.openssh.Path.get_hostkey_v_bitmask", get_normal_hostkey_permission_mode)
     def test_ssh_get_dag(self,
                          os_path_isfile_mock,
                          os_walk_mock,
@@ -1768,6 +1775,139 @@ class TestSSH(unittest.TestCase):
         os_walk_mock.return_value = (("walkroot", ("walkdir",), ("walkfile1", "walkfile2_key")),)
         pwd_getpwnam_mock.return_value = mock.Mock(pw_uid=0, pw_gid=0, pw_nam="testuser")
         glob_mock.return_value = ["/home/testuser"]
+        self.problem.CONFIG_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key"]
+        with contextlib.redirect_stdout(StringIO()):
+            test_dag = moduletests.src.openssh.get_dag(self.problem.CONFIG_DICT)
+
+        vertex_dict = {"missing_sshd": ["missing_config_file",
+                                        "bad_mode_/etc/ssh/ssh_host_dsa_key",
+                                        "bad_uid_/etc/ssh/ssh_host_dsa_key"],
+                       "bad_mode_/etc/ssh/ssh_host_dsa_key": [],
+                       "bad_uid_/etc/ssh/ssh_host_dsa_key": [],
+
+                       "missing_config_file": ["bad_config_options"],
+                       "bad_config_options": ["missing_priv_sep_dir",
+                                              "duplicate_keyfile_lines"],
+                       "missing_priv_sep_dir":
+                           ["missing_host_keys",
+                            "bad_mode_/var/empty/sshd",
+                            "bad_uid_/var/empty/sshd"],
+                       "missing_host_keys": ["missing_priv_sep_user"],
+                       "missing_priv_sep_user": [],
+                       "bad_mode_/var/empty/sshd": [],
+                       "bad_uid_/var/empty/sshd": [],
+
+                       "missing_dir_/home":
+                           ["bad_uid_/home",
+                            "bad_mode_/home",
+                            "missing_dir_/home/testuser"],
+                       "bad_uid_/home": [],
+                       "bad_mode_/home": [],
+
+                       "duplicate_keyfile_lines":
+                           ["missing_dir_/home",
+                            "missing_dir_/one"],
+                       "missing_dir_/home/testuser":
+                           ["bad_mode_/home/testuser",
+                            "bad_uid_/home/testuser",
+                            "missing_dir_/home/testuser/.ssh",
+                            "missing_key_/home/testuser/.keyfile1"],
+                       "bad_uid_/home/testuser": [],
+                       "bad_mode_/home/testuser": [],
+
+                       "missing_dir_/home/testuser/.ssh":
+                           ["bad_mode_/home/testuser/.ssh",
+                            "bad_uid_/home/testuser/.ssh",
+                            "missing_key_/home/testuser/.ssh/authorized_keys"],
+                       "bad_uid_/home/testuser/.ssh": [],
+                       "bad_mode_/home/testuser/.ssh": [],
+
+                       "missing_key_/home/testuser/.ssh/authorized_keys":
+                           ["bad_mode_/home/testuser/.ssh/authorized_keys",
+                            "bad_uid_/home/testuser/.ssh/authorized_keys"],
+                       "bad_uid_/home/testuser/.ssh/authorized_keys": [],
+                       "bad_mode_/home/testuser/.ssh/authorized_keys": [],
+
+                       "missing_key_/home/testuser/.keyfile1":
+                           ["bad_mode_/home/testuser/.keyfile1",
+                            "bad_uid_/home/testuser/.keyfile1"],
+                       "bad_mode_/home/testuser/.keyfile1": [],
+                       "bad_uid_/home/testuser/.keyfile1": [],
+
+                       "missing_dir_/one":
+                           ["bad_uid_/one",
+                            "bad_mode_/one",
+                            "missing_dir_/one/two"],
+                       "bad_uid_/one": [],
+                       "bad_mode_/one": [],
+
+                       "missing_dir_/one/two":
+                           ["bad_uid_/one/two",
+                            "bad_mode_/one/two",
+                            "missing_dir_/one/two/three"],
+                       "bad_uid_/one/two": [],
+                       "bad_mode_/one/two": [],
+
+                       "missing_dir_/one/two/three":
+                           ["bad_uid_/one/two/three",
+                            "bad_mode_/one/two/three",
+                            "missing_key_/one/two/three/file1"],
+                       "bad_uid_/one/two/three": [],
+                       "bad_mode_/one/two/three": [],
+
+                       "missing_key_/one/two/three/file1":
+                           ["bad_uid_/one/two/three/file1",
+                            "bad_mode_/one/two/three/file1"],
+                       "bad_uid_/one/two/three/file1": [],
+                       "bad_mode_/one/two/three/file1": [],
+
+                       "bad_mode_/etc/ssh": [],
+                       "bad_mode_/etc/ssh/walkdir": [],
+                       "bad_mode_/etc/ssh/walkfile1": [],
+                       "bad_mode_/etc/ssh/walkfile2_key": [],
+                       "bad_uid_/etc/ssh": [],
+                       "bad_uid_/etc/ssh/walkdir": [],
+                       "bad_uid_/etc/ssh/walkfile1": [],
+                       "bad_uid_/etc/ssh/walkfile2_key": []}
+
+        self.assertEqual(len(test_dag), 46)
+        self.assertEqual(set(test_dag.vertices.keys()), set(vertex_dict.keys()))
+        for key in vertex_dict:
+            self.assertEqual(set(test_dag.vertices[key]), set(vertex_dict[key]))
+
+        self.assertTrue(os_walk_mock.called)
+        self.assertTrue(pwd_getpwnam_mock.called)
+        self.assertTrue(os_path_isfile_mock.called)
+        self.assertTrue(os_path_isdir_mock.called)
+        self.assertTrue(os_path_realpath_mock.called)
+        self.assertTrue(glob_mock.called)
+
+    @mock.patch("glob.glob")
+    @mock.patch("os.path.realpath", side_effect=["/home/testuser",
+                                                 "/home/ssm-user",
+                                                 "/one/two/three/file1",
+                                                 "/usr/secrets/file2",
+                                                 "walkroot",
+                                                 "/etc/ssh/walkfile1",
+                                                 "/etc/ssh/walkfile2_key",
+                                                 "/etc/ssh/walkdir",
+                                                 "/etc/ssh/ssh_host_dsa_key"])
+    @mock.patch("os.path.isdir", side_effect=[True, True, True, False])
+    @mock.patch("pwd.getpwnam")
+    @mock.patch("os.walk")
+    @mock.patch("os.stat", get_mocked_stat)
+    @mock.patch("os.path.isfile", side_effect=[True])
+    @mock.patch("moduletests.src.openssh.Path.get_hostkey_v_bitmask", get_normal_hostkey_permission_mode)
+    def test_ssh_get_dag_excluded_users(self,
+                                        os_path_isfile_mock,
+                                        os_walk_mock,
+                                        pwd_getpwnam_mock,
+                                        os_path_isdir_mock,
+                                        os_path_realpath_mock,
+                                        glob_mock):
+        os_walk_mock.return_value = (("walkroot", ("walkdir",), ("walkfile1", "walkfile2_key")),)
+        pwd_getpwnam_mock.return_value = mock.Mock(pw_uid=0, pw_gid=0, pw_nam="testuser")
+        glob_mock.return_value = ["/home/testuser", "/home/ssm-user"]
         self.problem.CONFIG_DICT["HOSTKEYS"] = ["/etc/ssh/ssh_host_dsa_key"]
         with contextlib.redirect_stdout(StringIO()):
             test_dag = moduletests.src.openssh.get_dag(self.problem.CONFIG_DICT)
@@ -1891,6 +2031,7 @@ class TestSSH(unittest.TestCase):
     @mock.patch("os.stat")
     @mock.patch("os.path.islink", side_effect=[True, True])
     @mock.patch("os.path.isfile", side_effect=[False, True])
+    @mock.patch("moduletests.src.openssh.Path.get_hostkey_v_bitmask", get_normal_hostkey_permission_mode)
     def test_ssh_get_dag_skips(self,
                                os_path_isfile_mock,
                                os_path_islink_mock,
@@ -2222,3 +2363,29 @@ class TestSSH(unittest.TestCase):
         self.assertTrue(key_injection_driver_mock.called)
         self.assertTrue(setup_run_vars_mock.called)
         self.assertTrue(setup_config_vars_mock.called)
+
+    def test_get_hostkey_v_bitmask(self):
+        config_dict = moduletests.src.openssh.Problem.CONFIG_DICT
+        path = "/etc/ssh/ssh_host_key"
+        with contextlib.redirect_stdout(StringIO()):
+            self.assertEqual(moduletests.src.openssh.Path.get_hostkey_v_bitmask(path, config_dict),
+                             moduletests.src.openssh.Problem.CONFIG_DICT["G_O_ALL_CHECKING_BITMASK"])
+
+    @mock.patch("os.stat")
+    @mock.patch("pwd.getpwuid")
+    def test_get_hostkey_v_bitmask_alami2_special_case(self, pwd_getpwuid_mock, os_mock):
+        os_mock.return_value.st_gid = 1000
+        pwd_getpwuid_mock.return_value.pw_name = "ssh_keys"
+
+        config_dict = dict()
+        config_dict.update(moduletests.src.openssh.Problem.CONFIG_DICT)
+        config_dict["DISTRO"] = ec2rlcore.constants.DISTRO_ALAMI2
+        path = "/etc/ssh/ssh_host_key"
+
+        with contextlib.redirect_stdout(StringIO()):
+            bitmask = moduletests.src.openssh.Path.get_hostkey_v_bitmask(path, config_dict)
+
+        self.assertTrue(os_mock.called)
+        self.assertTrue(pwd_getpwuid_mock.called)
+        self.assertEqual(bitmask,
+                         moduletests.src.openssh.Problem.CONFIG_DICT["O_ALL_CHECKING_BITMASK"])

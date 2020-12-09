@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -44,6 +44,8 @@ import re
 import shutil
 import sys
 
+import ec2rlcore.constants
+
 try:
     import requests
 except ImportError as ie:  # pragma: no cover
@@ -71,12 +73,12 @@ def get_distro():
             # This file is a single line
             distro_str = fp.readline()
             if re.match(alami_regex, distro_str):
-                distro = "alami"
+                distro = ec2rlcore.constants.DISTRO_ALAMI
             elif re.match(alami2_regex, distro_str):
-                distro = "alami2"
+                distro = ec2rlcore.constants.DISTRO_ALAMI2
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
-                distro = "rhel"
+                distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/system-release"
     # SUSE
@@ -87,7 +89,7 @@ def get_distro():
             distro_str = fp.readline()
             regex = re.compile(r"^SUSE Linux Enterprise Server \d{2}")
             if re.match(regex, distro_str):
-                distro = "suse"
+                distro = ec2rlcore.constants.DISTRO_SUSE
             else:
                 distro = "unknown for /etc/SuSE-release"
     # Ubuntu
@@ -98,16 +100,16 @@ def get_distro():
             distro = "unknown for /etc/lsb-release"
             for line in lines:
                 if re.match(r"DISTRIB_ID=Ubuntu", line):
-                    distro = "ubuntu"
+                    distro = ec2rlcore.constants.DISTRO_UBUNTU
                     break
     # Older Amazon Linux & RHEL
     elif os.path.isfile("/etc/issue"):
         with open("/etc/issue", "r") as fp:
             distro_str = fp.readline()
             if re.match(alami_regex, distro_str):
-                distro = "alami"
+                distro = ec2rlcore.constants.DISTRO_ALAMI
             elif re.match(rhel_regex, distro_str) or re.match(r"^CentOS release \d\.\d+", distro_str):
-                distro = "rhel"
+                distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/issue"
     # Amazon Linux & SUSE
@@ -118,10 +120,10 @@ def get_distro():
             distro = "unknown for /etc/os-release"
             for line in lines:
                 if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server \d{2}", line):
-                    distro = "suse"
+                    distro = ec2rlcore.constants.DISTRO_SUSE
                     break
                 elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
-                    distro = "alami"
+                    distro = ec2rlcore.constants.DISTRO_ALAMI
                     break
     return distro
 
@@ -134,7 +136,21 @@ def check_root():
 def verify_metadata():
     """Return whether the system can access the EC2 meta data and user data."""
     try:
-        return requests.get("http://169.254.169.254/latest/meta-data/instance-id").status_code == 200
+        resp = requests.get("http://169.254.169.254/latest/meta-data/instance-id").status_code
+        if resp == 200:
+            return True
+        elif resp == 401:
+            token = (
+                requests.put(
+                    "http://169.254.169.254/latest/api/token",
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
+                    verify=False
+                )
+            ).text
+            return requests.get("http://169.254.169.254/latest/meta-data/instance-id",
+                                headers={'X-aws-ec2-metadata-token': token}).status_code == 200
+        else:
+            return False
     except requests.exceptions.ConnectionError:
         return False
 
@@ -147,10 +163,29 @@ def is_an_instance():
     """
     sys_hypervisor_uuid = "/sys/hypervisor/uuid"
     try:
-        with open(sys_hypervisor_uuid) as uuid_file:
-            if not uuid_file.readline().startswith("ec2"):
+        if is_nitro():
+            return True
+        else:
+            with open(sys_hypervisor_uuid) as uuid_file:
+                if not uuid_file.readline().startswith("ec2"):
+                    return False
+            resp = requests.get(
+                "http://169.254.169.254/latest/dynamic/instance-identity/document").status_code
+            if resp == 200:
+                return True
+            elif resp == 401:
+                token = (
+                    requests.put(
+                        "http://169.254.169.254/latest/api/token",
+                        headers={
+                            'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
+                        verify=False
+                    )
+                ).text
+                return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document",
+                                    headers={'X-aws-ec2-metadata-token': token}).status_code == 200
+            else:
                 return False
-        return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document").status_code == 200
     except (IOError, OSError, requests.RequestException):
         # Python2: IOError
         # Python3: OSError -> FileNotFoundError
@@ -259,16 +294,48 @@ def get_virt_type():
     """
 
     try:
-        profile_request = requests.get("http://169.254.169.254/latest/meta-data/profile")
+        # This path is only exposed on Nitro instance types.
+        if is_nitro():
+            profile = "nitro"
+        else:
+            profile_request = requests.get("http://169.254.169.254/latest/meta-data/profile")
+            if profile_request.status_code == 200:
+                profile = profile_request.text
+            elif profile_request.status_code == 401:
+                token=(
+                    requests.put(
+                        "http://169.254.169.254/latest/api/token", 
+                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                        verify=False
+                    )
+                ).text
+                profile = requests.get(
+                    "http://169.254.169.254/latest/meta-data/profile", 
+                    headers={'X-aws-ec2-metadata-token': token}
+                ).text
+            else:
+                profile = "ERROR"
     except requests.exceptions.ConnectionError:
         raise PrediagConnectionError("Failed to connect to AWS EC2 metadata service.")
-
-    if profile_request.status_code == 200:
-        profile = profile_request.text
-    else:
-        profile = "ERROR"
     return profile
 
+def is_nitro():
+    """
+    Returns if the virtualization type is nitro as determined by /sys/devices/virtual/dmi/id/board_asset_tag.
+    Also returns true for bare metal instances as well, due to being part of the
+    nitro ecosystem, even though they technically do not have the nitro hypervisor.
+    """
+    try:
+        nitro_asset = "/sys/devices/virtual/dmi/id/board_asset_tag"
+        with open(nitro_asset) as asset_file:
+            if asset_file.readline().startswith("i-"):
+                return True
+            else:
+                return False
+    except (IOError, OSError):
+        # Python2: IOError
+        # Python3: OSError -> FileNotFoundError
+        return False
 
 def print_indent(str_arg, level=0):
     """Print str_arg indented two spaces per level."""

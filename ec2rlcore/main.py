@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -108,7 +108,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.4")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.5")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
@@ -639,7 +639,7 @@ class Main(object):
     def version(self):
         """Print the version and licensing information and return True."""
         print("ec2rl {}".format(self.PROGRAM_VERSION))
-        print("Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All rights reserved.")
+        print("Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All rights reserved.")
         print("This software is distributed under the Apache License, Version 2.0.")
         print("")
         print("This file is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, "

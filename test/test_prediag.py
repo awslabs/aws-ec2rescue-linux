@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -35,6 +35,7 @@ import mock
 import requests
 import responses
 
+import ec2rlcore.constants
 import ec2rlcore.prediag
 
 
@@ -56,13 +57,68 @@ class TestPrediag(unittest.TestCase):
         resp = ec2rlcore.prediag.verify_metadata()
         self.assertTrue(resp)
 
+    @responses.activate
+    def test_prediag_verify_metadata_token(self):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=200)
+        resp = ec2rlcore.prediag.verify_metadata()
+        self.assertTrue(resp)
+
+    @responses.activate
+    def test_prediag_verify_metadata_unknown_response(self):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=101)
+        resp = ec2rlcore.prediag.verify_metadata()
+        self.assertFalse(resp)
+
     @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
     def test_prediag_verify_metadata_connerror(self, mock_get):
         self.assertFalse(ec2rlcore.prediag.verify_metadata())
         self.assertTrue(mock_get.called)
 
+    def test_prediag_is_nitro_true(self):
+        open_mock = mock.mock_open(read_data="i-deadbeef\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertTrue(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(open_mock.called)
+
+    def test_prediag_is_nitro_false_instance_not_in_asset(self):
+        open_mock = mock.mock_open(read_data="34589732\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(open_mock.called)
+
+    @mock.patch("ec2rlcore.prediag.open", side_effect=IOError("No such file or directory"))
+    def test_prediag_is_nitro_false_no_asset_file(self, isfile_mock):
+        self.assertFalse(ec2rlcore.prediag.is_nitro())
+        self.assertTrue(isfile_mock.called)
+
     @responses.activate
-    def test_prediag_is_an_instance_true(self):
+    def test_prediag_is_an_instance_true_xen(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
         open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
         # mock_open does not have support for iteration so it must be added manually
@@ -79,6 +135,58 @@ class TestPrediag(unittest.TestCase):
             open_mock.return_value.__next__ = py3_next_func
         with mock.patch("ec2rlcore.prediag.open", open_mock):
             self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_true_nitro(self, mock_nitro):
+        mock_nitro.return_value = True
+        self.assertTrue(ec2rlcore.prediag.is_an_instance())
+
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_true_xen_token(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
+        mock_nitro.return_value = False
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        self.assertTrue(open_mock.called)
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_is_an_instance_unknown_response(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=101)
+        mock_nitro.return_value = False
+        open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
+        # mock_open does not have support for iteration so it must be added manually
+        # readline() until a blank line is reached (the sentinel)
+
+        def iter_func(self):
+            return iter(self.readline, "")
+        open_mock.return_value.__iter__ = iter_func
+
+        def py3_next_func(self):
+            return next(iter(self.readline, ""))
+
+        if sys.hexversion >= 0x3000000:
+            open_mock.return_value.__next__ = py3_next_func
+        with mock.patch("ec2rlcore.prediag.open", open_mock):
+            self.assertFalse(ec2rlcore.prediag.is_an_instance())
         self.assertTrue(open_mock.called)
 
     @mock.patch("ec2rlcore.prediag.open", side_effect=IOError("No such file or directory"))
@@ -125,64 +233,89 @@ class TestPrediag(unittest.TestCase):
         self.assertTrue(get_mock.called)
 
     @responses.activate
-    def test_prediag_get_virt_type(self):
-        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="hvm")
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_nitro(self, mock_nitro):
+        mock_nitro.return_value = True
         resp = ec2rlcore.prediag.get_virt_type()
-        self.assertEqual(resp, "hvm")
+        self.assertEqual(resp, "nitro")
 
     @responses.activate
-    def test_prediag_get_virt_type_error(self):
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_xen(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200, body="default-hvm")
+        mock_nitro.return_value = False
+        resp = ec2rlcore.prediag.get_virt_type()
+        self.assertEqual(resp, "default-hvm")
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_xen_token(self, mock_nitro):
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=401)
+        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
+        responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200,
+                      body="default-hvm")
+        mock_nitro.return_value = False
+        resp = ec2rlcore.prediag.get_virt_type()
+        self.assertEqual(resp, "default-hvm")
+
+    @responses.activate
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_error(self, mock_nitro):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=404, body="hvm")
+        mock_nitro.return_value = False
         resp = ec2rlcore.prediag.get_virt_type()
         self.assertEqual(resp, "ERROR")
 
-    @mock.patch("requests.get", side_effect=requests.exceptions.ConnectionError)
-    def test_prediag_get_virt_type_connerror(self, mock_get):
+    @mock.patch('requests.get')
+    @mock.patch('ec2rlcore.prediag.is_nitro')
+    def test_prediag_get_virt_type_connerror(self, mock_get, mock_nitro):
+        mock_nitro.return_value = False
         with self.assertRaises(ec2rlcore.prediag.PrediagConnectionError):
+            mock_get.side_effect = requests.exceptions.ConnectionError
             ec2rlcore.prediag.get_virt_type()
         self.assertTrue(mock_get.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux AMI release 2016.09"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux release 2 (Karoo)"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami2_lts_release_new(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami2")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI2)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux 2"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami2_lts_release(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami2")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI2)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open",
                 mock.mock_open(read_data="Amazon Linux release 2.0 (2017.12) LTS Release Candidate"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami2_release_candidate(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami2")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI2)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Red Hat Enterprise Linux Server release 7.0"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_rhel(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="CentOS Linux release 7.1.1503"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_cent7(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="CentOS release 6.9 (Final)\n"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_cent6(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
@@ -194,7 +327,7 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="SUSE Linux Enterprise Server 10 (x86_64)"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, True))
     def test_prediag_os_suse(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "suse")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
@@ -206,7 +339,7 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="DISTRIB_ID=Ubuntu"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, True))
     def test_prediag_os_ubuntu(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "ubuntu")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_UBUNTU)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
@@ -218,13 +351,13 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux AMI release 2012.09"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, True))
     def test_prediag_os_old_alami(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Red Hat Enterprise Linux Server release 5.11"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, True))
     def test_prediag_os_old_rhel(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "rhel")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
@@ -236,13 +369,13 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data='PRETTY_NAME="Amazon Linux AMI 2017.03"'))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
     def test_prediag_osrelease_alami(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "alami")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data='PRETTY_NAME="SUSE Linux Enterprise Server 12 SP2"'))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
     def test_prediag_osrelease_suse(self, mock_isfile):
-        self.assertEqual(ec2rlcore.prediag.get_distro(), "suse")
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))

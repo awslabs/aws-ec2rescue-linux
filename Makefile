@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -15,7 +15,7 @@
 PYTHON2:=$(shell command -v python2 --version 2> /dev/null)
 PYTHON3:=$(shell command -v python3 --version 2> /dev/null)
 SHELL:=/bin/bash
-VERSION:=1.1.4
+VERSION:=1.1.5
 BASENAME=ec2rl-$(VERSION)
 
 ifdef PYTHON3
@@ -156,6 +156,9 @@ rpm: prep python
 test:
 	$(COVERAGE) run --source=ec2rlcore --branch -m unittest discover
 	$(COVERAGE) report -m
+
+yaml2py:
+	$(PYTHON) tools/moduletests/yaml2py.py; \
 
 test_modules_unit:
 	@cd tools; \

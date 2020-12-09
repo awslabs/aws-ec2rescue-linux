@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -91,6 +91,7 @@ content: !!str |
   from ec2rlcore.prediag import get_config_dict
   from ec2rlcore.prediag import print_indent
   from ec2rlcore.prediag import restore
+  import ec2rlcore.constants
 
   import boto3
   import botocore
@@ -321,6 +322,23 @@ content: !!str |
           self.e_gid = e_gid
           self.v_bitmask = v_bitmask
 
+      @staticmethod
+      def get_hostkey_v_bitmask(path, config_dict):
+          """
+          A vanilla openssh configuration should have a 0o600 hostkey permission mode, however, some distros have custom
+          packaging that deviates from this configuration. This is where these special edge cases are checked and the
+          appropriate mode verification bitmask determined.
+
+          Returns:
+              (int): The expected hostkey permission mode verification bitmask.
+          """
+          # TODO determine if ALAMI2 is actually using this new packaging config (how?)
+          if config_dict["DISTRO"] == ec2rlcore.constants.DISTRO_ALAMI2 \
+                  and pwd.getpwuid(os.stat(path).st_gid).pw_name == "ssh_keys":
+              return config_dict["O_ALL_CHECKING_BITMASK"]
+
+          return config_dict["G_O_ALL_CHECKING_BITMASK"]
+
       @property
       def mode(self):
           return os.stat(self.path_str).st_mode
@@ -378,12 +396,14 @@ content: !!str |
                       "CREATE_NEW_KEYS": False,
                       "NEW_KEY": None,
                       "PRIV_SEP_DIR": "/var/empty/sshd",
+                      "EXCLUDED_USERNAMES": {"ssm-user"},
                       # Define bitmasks for verifying permission modes
                       # Verification is performed via bitwise AND-ing the mode and bitmask to check if
                       # the bits of interest are set
                       "ALL_SET_BITMASK": 0b111111111111111,
                       "G_O_WRITE_CHECKING_BITMASK": stat.S_IWGRP | stat.S_IWOTH,
-                      "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO})
+                      "G_O_ALL_CHECKING_BITMASK": stat.S_IRWXG | stat.S_IRWXO,
+                      "O_ALL_CHECKING_BITMASK": stat.S_IRWXO})
 
       @classmethod
       def setup_config_vars(cls):
@@ -671,6 +691,8 @@ content: !!str |
       def get_mode_problem(cls, this_path):
           if this_path.v_bitmask == cls.CONFIG_DICT["G_O_ALL_CHECKING_BITMASK"]:
               info_msg = "Permission mode includes permissions for groups and/or other users"
+          elif this_path.v_bitmask == cls.CONFIG_DICT["O_ALL_CHECKING_BITMASK"]:
+              info_msg = "Permission mode includes permissions for other users"
           # The only other checking bitmask is for write checking
           else:
               info_msg = "Permission mode includes write for groups and/or other users"
@@ -1535,6 +1557,8 @@ content: !!str |
           # Verify the /home directory belongs to a user account
           try:
               user_name = os.path.basename(file)
+              if user_name in config_dict["EXCLUDED_USERNAMES"]:
+                  continue
               this_uid = pwd.getpwnam(user_name).pw_uid
               this_gid = pwd.getpwnam(user_name).pw_gid
           except KeyError:
@@ -1609,8 +1633,9 @@ content: !!str |
               this_path = Path(path_str=real_file_path, e_uid=0, e_gid=0)
 
               if this_path.path_str.endswith("_key"):
-                  # Private keys cannot have any group/other bits set
-                  this_path.v_bitmask = config_dict["G_O_ALL_CHECKING_BITMASK"]
+                  # Private keys cannot have any group/other bits set except in special cases where the distro package
+                  # maintainers have done something non-vanilla
+                  this_path.v_bitmask = Path.get_hostkey_v_bitmask(this_path.path_str, config_dict)
               else:
                   # Other files should not have group/other write bits set
                   this_path.v_bitmask = config_dict["G_O_WRITE_CHECKING_BITMASK"]
@@ -1657,7 +1682,7 @@ content: !!str |
           this_path = Path(path_str=real_hostkey_path,
                            e_uid=0,
                            e_gid=0,
-                           v_bitmask=config_dict["G_O_ALL_CHECKING_BITMASK"])
+                           v_bitmask=Path.get_hostkey_v_bitmask(this_path.path_str, config_dict))
 
           bad_mode = Vertex("bad_mode_{}".format(this_path), Problem.get_mode_problem(this_path))
           problem_dag.add_vertex(bad_mode)

@@ -12,7 +12,20 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 from __future__ import unicode_literals
-from botocore.vendored.requests.exceptions import ConnectionError
+from botocore.vendored import requests
+from botocore.vendored.requests.packages import urllib3
+
+
+def _exception_from_packed_args(exception_cls, args=None, kwargs=None):
+    # This is helpful for reducing Exceptions that only accept kwargs as
+    # only positional arguments can be provided for __reduce__
+    # Ideally, this would also be a class method on the BotoCoreError
+    # but instance methods cannot be pickled.
+    if args is None:
+        args = ()
+    if kwargs is None:
+        kwargs = {}
+    return exception_cls(*args, **kwargs)
 
 
 class BotoCoreError(Exception):
@@ -27,6 +40,9 @@ class BotoCoreError(Exception):
         msg = self.fmt.format(**kwargs)
         Exception.__init__(self, msg)
         self.kwargs = kwargs
+
+    def __reduce__(self):
+        return _exception_from_packed_args, (self.__class__, None, self.kwargs)
 
 
 class DataNotFoundError(BotoCoreError):
@@ -60,20 +76,47 @@ class ApiVersionNotFoundError(BotoCoreError):
     fmt = 'Unable to load data {data_path} for: {api_version}'
 
 
-class EndpointConnectionError(BotoCoreError):
-    fmt = (
-        'Could not connect to the endpoint URL: "{endpoint_url}"')
+class HTTPClientError(BotoCoreError):
+    fmt = 'An HTTP Client raised and unhandled exception: {error}'
+    def __init__(self, request=None, response=None, **kwargs):
+        self.request = request
+        self.response = response
+        super(HTTPClientError, self).__init__(**kwargs)
+
+    def __reduce__(self):
+        return _exception_from_packed_args, (
+            self.__class__, (self.request, self.response), self.kwargs)
 
 
-class ConnectionClosedError(ConnectionError):
+class ConnectionError(BotoCoreError):
+    fmt = 'An HTTP Client failed to establish a connection: {error}'
+
+
+class EndpointConnectionError(ConnectionError):
+    fmt = 'Could not connect to the endpoint URL: "{endpoint_url}"'
+
+
+class SSLError(ConnectionError, requests.exceptions.SSLError):
+    fmt = 'SSL validation failed for {endpoint_url} {error}'
+
+
+class ConnectionClosedError(HTTPClientError):
     fmt = (
         'Connection was closed before we received a valid response '
         'from endpoint URL: "{endpoint_url}".')
 
-    def __init__(self, **kwargs):
-        msg = self.fmt.format(**kwargs)
-        kwargs.pop('endpoint_url')
-        super(ConnectionClosedError, self).__init__(msg, **kwargs)
+
+class ReadTimeoutError(HTTPClientError, requests.exceptions.ReadTimeout,
+                       urllib3.exceptions.ReadTimeoutError):
+    fmt = 'Read timeout on endpoint URL: "{endpoint_url}"'
+
+
+class ConnectTimeoutError(ConnectionError, requests.exceptions.ConnectTimeout):
+    fmt = 'Connect timeout on endpoint URL: "{endpoint_url}"'
+
+
+class ProxyConnectionError(ConnectionError, requests.exceptions.ProxyError):
+    fmt = 'Failed to connect to proxy URL: "{proxy_url}"'
 
 
 class NoCredentialsError(BotoCoreError):
@@ -371,6 +414,16 @@ class ClientError(Exception):
                                   metadata['RetryAttempts'])
         return retry_info
 
+    def __reduce__(self):
+        # Subclasses of ClientError's are dynamically generated and
+        # cannot be pickled unless they are attributes of a
+        # module. So at the very least return a ClientError back.
+        return ClientError, (self.response, self.operation_name)
+
+
+class EventStreamError(ClientError):
+    pass
+
 
 class UnsupportedTLSVersionWarning(Warning):
     """Warn when an openssl version that uses TLS 1.2 is required"""
@@ -400,6 +453,21 @@ class InvalidS3AddressingStyleError(BotoCoreError):
     )
 
 
+class UnsupportedS3ArnError(BotoCoreError):
+    """Error when S3 arn provided to Bucket parameter is not supported"""
+    fmt = (
+        'S3 ARN {arn} provided to "Bucket" parameter is invalid. Only '
+        'ARNs for S3 access-points are supported.'
+    )
+
+
+class UnsupportedS3AccesspointConfigurationError(BotoCoreError):
+    """Error when an unsupported configuration is used with access-points"""
+    fmt = (
+        'Unsupported configuration when using S3 access-points: {msg}'
+    )
+
+
 class InvalidRetryConfigurationError(BotoCoreError):
     """Error when invalid retry configuration is specified"""
     fmt = (
@@ -412,8 +480,34 @@ class InvalidMaxRetryAttemptsError(InvalidRetryConfigurationError):
     """Error when invalid retry configuration is specified"""
     fmt = (
         'Value provided to "max_attempts": {provided_max_attempts} must '
-        'be an integer greater than or equal to zero.'
+        'be an integer greater than or equal to {min_value}.'
     )
+
+
+class InvalidRetryModeError(InvalidRetryConfigurationError):
+    """Error when invalid retry mode configuration is specified"""
+    fmt = (
+        'Invalid value provided to "mode": "{provided_retry_mode}" must '
+        'be one of: "legacy", "standard", "adaptive"'
+    )
+
+
+class InvalidS3UsEast1RegionalEndpointConfigError(BotoCoreError):
+    """Error for invalid s3 us-east-1 regional endpoints configuration"""
+    fmt = (
+        'S3 us-east-1 regional endpoint option '
+        '{s3_us_east_1_regional_endpoint_config} is '
+        'invaild. Valid options are: legacy and regional'
+    )
+
+
+class InvalidSTSRegionalEndpointsConfigError(BotoCoreError):
+    """Error when invalid sts regional endpoints configuration is specified"""
+    fmt = (
+        'STS regional endpoints option {sts_regional_endpoints_config} is '
+        'invaild. Valid options are: legacy and regional'
+    )
+
 
 class StubResponseError(BotoCoreError):
     fmt = 'Error getting response stub for operation {operation_name}: {reason}'
@@ -447,3 +541,25 @@ class MD5UnavailableError(BotoCoreError):
 
 class MetadataRetrievalError(BotoCoreError):
     fmt = "Error retrieving metadata: {error_msg}"
+
+
+class UndefinedModelAttributeError(Exception):
+    pass
+
+
+class MissingServiceIdError(UndefinedModelAttributeError):
+    fmt = (
+        "The model being used for the service {service_name} is missing the "
+        "serviceId metadata property, which is required."
+    )
+
+    def __init__(self, **kwargs):
+        msg = self.fmt.format(**kwargs)
+        Exception.__init__(self, msg)
+        self.kwargs = kwargs
+
+
+class CapacityNotAvailableError(BotoCoreError):
+    fmt = (
+        'Insufficient request capacity available.'
+    )

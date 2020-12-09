@@ -17,6 +17,7 @@ from botocore.endpoint import DEFAULT_TIMEOUT, MAX_POOL_CONNECTIONS
 from botocore.exceptions import InvalidS3AddressingStyleError
 from botocore.exceptions import InvalidRetryConfigurationError
 from botocore.exceptions import InvalidMaxRetryAttemptsError
+from botocore.exceptions import InvalidRetryModeError
 
 
 class Config(object):
@@ -35,12 +36,12 @@ class Config(object):
     :param user_agent_extra: The value to append to the current User-Agent
         header value.
 
-    :type connect_timeout: int
+    :type connect_timeout: float or int
     :param connect_timeout: The time in seconds till a timeout exception is
         thrown when attempting to make a connection. The default is 60
         seconds.
 
-    :type read_timeout: int
+    :type read_timeout: float or int
     :param read_timeout: The time in seconds till a timeout exception is
         thrown when attempting to read from a connection. The default is
         60 seconds.
@@ -91,10 +92,30 @@ class Config(object):
           * path -- Addressing style is always by path. Endpoints will be
             addressed as such: s3.amazonaws.com/mybucket
 
+        * 'us_east_1_regional_endpoint' - Refers to what S3 endpoint to use
+          when the region is configured to be us-east-1. Values must be a
+          string that equals:
+
+           * regional -- Use the us-east-1.amazonaws.com endpoint if the
+             client is configured to use the us-east-1 region.
+
+           * legacy -- Use the s3.amazonaws.com endpoint if the client is
+             configured to use the us-east-1 region. This is the default if
+             the configuration option is not specified.
+
+
     :type retries: dict
     :param retries: A dictionary for retry specific configurations.
         Valid keys are:
 
+        * 'total_max_attempts' -- An integer representing the maximum number of
+          total attempts that will be made on a single request.  This includes
+          the initial request, so a value of 1 indicates that no requests
+          will be retried.  If ``total_max_attempts`` and ``max_attempts``
+          are both provided, ``total_max_attempts`` takes precedence.
+          ``total_max_attempts`` is preferred over ``max_attempts`` because
+          it maps to the ``AWS_MAX_ATTEMPTS`` environment variable and
+          the ``max_attempts`` config file value.
         * 'max_attempts' -- An integer representing the maximum number of
           retry attempts that will be made on a single request. For
           example, setting this value to 2 will result in the request
@@ -102,6 +123,32 @@ class Config(object):
           this value to 0 will result in no retries ever being attempted on
           the initial request. If not provided, the number of retries will
           default to whatever is modeled, which is typically four retries.
+        * 'mode' -- A string representing the type of retry mode botocore
+          should use.  Valid values are:
+              * ``legacy`` - The pre-existing retry behavior.
+              * ``standard`` - The standardized set of retry rules.  This
+                will also default to 3 max attempts unless overridden.
+              * ``adaptive`` - Retries with additional client side throttling.
+
+    :type client_cert: str, (str, str)
+    :param client_cert: The path to a certificate for TLS client authentication.
+
+        When a str is provided it is treated as a path to a client certificate
+        to be used when creating a TLS connection.
+
+        If a client key is to be provided alongside the client certificate the
+        client_cert should be set to a tuple of length two where the first
+        element is the path to the client certificate and the second element is
+        the path to the certificate key.
+
+    :type inject_host_prefix: bool
+    :param inject_host_prefix: Whether host prefix injection should occur.
+
+        Defaults to True.
+
+        Setting this to False disables the injection of operation parameters
+        into the prefix of the hostname. This is useful for clients providing
+        custom endpoints that should not have their host prefix modified.
     """
     OPTION_DEFAULTS = OrderedDict([
         ('region_name', None),
@@ -114,7 +161,10 @@ class Config(object):
         ('max_pool_connections', MAX_POOL_CONNECTIONS),
         ('proxies', None),
         ('s3', None),
-        ('retries', None)
+        ('retries', None),
+        ('client_cert', None),
+        ('inject_host_prefix', True),
+        ('endpoint_discovery_enabled', None),
     ])
 
     def __init__(self, *args, **kwargs):
@@ -176,13 +226,24 @@ class Config(object):
 
     def _validate_retry_configuration(self, retries):
         if retries is not None:
-            for key in retries:
-                if key not in ['max_attempts']:
+            for key, value in retries.items():
+                if key not in ['max_attempts', 'mode', 'total_max_attempts']:
                     raise InvalidRetryConfigurationError(
                         retry_config_option=key)
-                if key == 'max_attempts' and retries[key] < 0:
+                if key == 'max_attempts' and value < 0:
                     raise InvalidMaxRetryAttemptsError(
-                        provided_max_attempts=retries[key]
+                        provided_max_attempts=value,
+                        min_value=0,
+                    )
+                if key == 'total_max_attempts' and value < 1:
+                    raise InvalidMaxRetryAttemptsError(
+                        provided_max_attempts=value,
+                        min_value=1,
+                    )
+                if key == 'mode' and value not in ['legacy', 'standard',
+                                                   'adaptive']:
+                    raise InvalidRetryModeError(
+                        provided_retry_mode=value
                     )
 
     def merge(self, other_config):

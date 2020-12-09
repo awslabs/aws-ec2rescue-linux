@@ -110,7 +110,7 @@ The driver in use for the first alphabetically ordered non-virtual network inter
 #### EC2RL_SUDO
 True if ec2rl is running as root. False if not.
 #### EC2RL_VIRT_TYPE
-The virtualization type as provided by the instance metadata. Examples include "default-hvm" and "default-paravirtual".
+The virtualization type for the instance. Examples include "default-hvm" for Xen HVM instances, "default-paravirtual" for Xen PV instances, and "nitro" for Nitro and bare-metal instances.
 #### EC2RL_INTERFACES
 An enumerated list of interfaces on the system. String containing names, such as eth0, eth1, etc. This is generated via the functions.bash, 
 and is only available for modules that have sourced it.
@@ -163,7 +163,7 @@ arg3 = Grep arguments (optional)
 3. Modules must not expose sensitive data. An example would be copying a sensitive file to a world readable location such as /tmp.
 ### Remediation Requirements
 1. Always test that the remediation procedure was successful rather than assuming it was successful.
-2. In the event the remediation procedure does not succeed, undo any changes made to the system such as file changs and system configuration settings. A remediation failure should not change the system state.
+2. In the event the remediation procedure does not succeed, undo any changes made to the system such as file changes and system configuration settings. A remediation failure should not change the system state.
 3. If the module edits any files, create backup copies before making any changes. If the remediation steps fail to resolve the problem or an error occurs, restore the backup file copies. The functions ec2rlcore.prediag.backup and ec2rlcore.prediag.restore are provided for this purpose.
 4. Where possible, remediation modules should include functional tests in addition to unit tests.
 ### Gather Module Requirements
