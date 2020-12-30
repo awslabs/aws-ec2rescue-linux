@@ -5,6 +5,7 @@
 #### Framework
 
 #### Modules
+* [Misc] Create Ubuntu specific copies of bcc modules to reflect the Debian package adding -bpfcc to the binary file names.
 
 #### Testing
 
