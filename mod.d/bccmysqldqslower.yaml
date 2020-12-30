@@ -51,7 +51,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str performance
-  distro: !!str alami alami2 ubuntu rhel suse
+  distro: !!str alami alami2 rhel suse
   required: !!str period threshold
   optional: !!str
   software: !!str mysqld_qslower
