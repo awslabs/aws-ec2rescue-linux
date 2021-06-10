@@ -4,9 +4,19 @@ jobs:
   Build_rpm:
     runs-on: ubuntu-latest
     steps:
-      - run: pwd ls cd ..
-      - run: pwd ls cd ..
-      - run: pwd ls cd ..
-      - run: pwd ls cd ..
-      - run: pwd ls cd ..
-      - run: make --makefile="~/aws-ec2rescue-linux/Makefile" rpm
+      - run: pwd
+      - run: ls
+      - run: cd ..
+- run: pwd 
+      - run: ls
+      - run: cd ..
+- run: pwd 
+      - run: ls
+      - run: cd ..
+- run: pwd 
+      - run: ls
+      - run: cd ..
+- run: pwd 
+      - run: ls
+      - run: cd ..
+      - run: make --makefile="~/work/aws-ec2rescue-linux/Makefile" rpm
