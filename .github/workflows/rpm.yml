@@ -8,5 +8,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: pwd
-      - name: make rpm
-         run: make rpm
+      - run: make rpm
