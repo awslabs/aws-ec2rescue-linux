@@ -5,5 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: make rpm
-	working-directory: .
         run: make rpm
