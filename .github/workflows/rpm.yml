@@ -11,7 +11,7 @@ jobs:
       id: rpm
       uses: naveenrajm7/rpmbuild@master
       with:
-        spec_file: "rpmbuild/ec2rl.spec"
+        spec_file: "ec2rl.spec"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
