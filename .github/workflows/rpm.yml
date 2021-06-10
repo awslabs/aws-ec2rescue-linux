@@ -1,5 +1,4 @@
-- name: RPM Build
-  uses: naveenrajm7/rpmbuild@v1.0.0
+name: RPM Build
 on: push
 
 jobs:
