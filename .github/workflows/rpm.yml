@@ -7,5 +7,4 @@ jobs:
   Build_rpm:
     runs-on: ubuntu-latest
     steps:
-      - run: pwd
       - run: make rpm
