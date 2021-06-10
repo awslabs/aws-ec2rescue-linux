@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check directory
-	run: pwd
+	 run: pwd
       - name: make rpm
-        run: make rpm
+         run: make rpm
