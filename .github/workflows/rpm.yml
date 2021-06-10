@@ -9,8 +9,8 @@ jobs:
         - name: make rpm
           run: make rpm 
         - name: upload rpm
-	- uses: actions/upload-artifact@v2
-	- with:
-	   name: ec2rl_rpm
-	   path: ./rpmbuild/*.rpm
+        - uses: actions/upload-artifact@v2
+        - with:
+           name: ec2rl_rpm
+           path: ./rpmbuild/*.rpm
 
