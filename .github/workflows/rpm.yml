@@ -6,11 +6,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v2
+
         - name: make rpm
-          run: make rpm 
+          run: make rpm
+ 
         - name: upload rpm
-        - uses: actions/upload-artifact@v2
-        - with:
+          uses: actions/upload-artifact@v2
+          with:
            name: ec2rl_rpm
            path: ./rpmbuild/*.rpm
 
