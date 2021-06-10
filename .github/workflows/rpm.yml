@@ -9,4 +9,5 @@ jobs:
       - name: List directory
         run: ls ${{ github.workspace }}
       - name: make rpm
-        run: make -makefile="${{ github.workspace.Makefile }}" rpm
+	working-directory: ${{ github.workspace }}
+        run: make rpm
