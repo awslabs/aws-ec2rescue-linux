@@ -2,7 +2,7 @@ name: Build_rpm
 on: [push]
 defaults:
    run:
-     working-directory: ~/
+     working-directory: ./
 jobs:
   Build_rpm:
     runs-on: ubuntu-latest
