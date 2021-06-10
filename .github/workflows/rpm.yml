@@ -1,7 +1,7 @@
-name: Build rpm
+name: Build_rpm
 on: [push]
 jobs:
-  Build rpm:
+  Build_rpm:
     runs-on: ubuntu-latest
     steps:
       - run: make rpm
