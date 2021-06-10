@@ -7,16 +7,16 @@ jobs:
       - run: pwd
       - run: ls
       - run: cd ..
-- run: pwd 
+      - run: pwd 
       - run: ls
       - run: cd ..
-- run: pwd 
+      - run: pwd 
       - run: ls
       - run: cd ..
-- run: pwd 
+      - run: pwd 
       - run: ls
       - run: cd ..
-- run: pwd 
+      - run: pwd 
       - run: ls
       - run: cd ..
       - run: make --makefile="~/work/aws-ec2rescue-linux/Makefile" rpm
