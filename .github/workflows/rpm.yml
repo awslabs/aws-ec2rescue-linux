@@ -3,5 +3,7 @@ on: [push]
 jobs:
   Build_rpm:
     runs-on: ubuntu-latest
+    uses: actions/checkout@v2
     steps:
+      - run: ls ${{ github.workspace }}
       - run: make --makefile="${{ github.workspace.Makefile }}" rpm
