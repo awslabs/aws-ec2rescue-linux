@@ -1,5 +1,8 @@
 name: Build_rpm
 on: [push]
+defaults:
+   run:
+     working-directory: ~/
 jobs:
   Build_rpm:
     runs-on: ubuntu-latest
@@ -9,5 +12,4 @@ jobs:
       - name: List directory
         run: ls ${{ github.workspace }}
       - name: make rpm
-	working-directory: ${{ github.workspace }}
         run: make rpm
