@@ -6,5 +6,7 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Switch directory
+	working-directory: ${{ github.workspace }} 
       - run: ls ${{ github.workspace }}
-      - run: make --makefile="${{ github.workspace.Makefile }}" rpm
+      - run: make rpm
