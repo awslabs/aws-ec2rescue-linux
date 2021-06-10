@@ -7,9 +7,7 @@ jobs:
   Build_rpm:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: List directory
-        run: ls ${{ github.workspace }}
+      - name: Check directory
+	run: pwd
       - name: make rpm
         run: make rpm
