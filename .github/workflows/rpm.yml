@@ -2,7 +2,7 @@ name: Build_rpm
 on:
   push: 
     tags:
-      - 'v*'
+      - 'ec2rl-v*'
 
 jobs:
   Build_rpm:
