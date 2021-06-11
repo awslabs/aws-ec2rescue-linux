@@ -13,7 +13,7 @@ jobs:
         - name: Make rpm
           run: |
             make rpm
-	    PATHNAME=$(ls rpmbuild/*.rpm | head -n 1)
+            PATHNAME=$(ls rpmbuild/*.rpm | head -n 1)
             echo ::set-env name=PATHNAME::${PATHNAME} 
         - name: Create_release
           id: create_release
