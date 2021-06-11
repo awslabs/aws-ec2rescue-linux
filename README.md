@@ -41,6 +41,11 @@ gpg: Good signature from "ec2autodiag@amazon.com <EC2 Rescue for Linux>"
 ...
 ```
 
+To download the latest version of EC2 Rescue for Linux as an RPM run the following command:
+```
+yum-install "$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/awslabs/aws-ec2rescue-linux/releases/latest/ | sed 's/tag/download/g')/ec2rl.rpm"
+```
+
 ## Documentation
 Available in docs/ subdirectory
 
