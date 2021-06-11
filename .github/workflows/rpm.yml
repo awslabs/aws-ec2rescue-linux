@@ -31,4 +31,5 @@ jobs:
           with:
             upload_url: ${{ steps.create_release.outputs.upload_url }}
             asset_path: ./rpmbuild/*rpm
+            asset_name: ec2rl.rpm
             asset_content_type: application/rpm
