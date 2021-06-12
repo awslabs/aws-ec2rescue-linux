@@ -45,7 +45,7 @@ bundledpython: prep pythonbase
 pythonandbundled: python bundledpython
 pythonandbundlednightly: nightly nightlybundledpython
 pythonandbundledandrpm: python bundledpython rpm
-pythonandbundlednightlyandrpm: nightly nightlybundledpython rpm
+pythonandbundlednightlyandrpm: nightly nightlybundledpython nightlyrpm
 
 pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -153,6 +153,14 @@ rpm: prep python
 	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
+
+nightlyrpm: prep python
+        @cd "$$(dirname "$(readlink -f "$0")")" || exit 1
+        @echo "Building RPM..."
+        @rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
+        mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
+        @rm -rf rpmbuild/noarch/
+        @echo "Done!"
 
 .PHONY: test
 test:
