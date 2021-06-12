@@ -155,12 +155,12 @@ rpm: prep python
 	@echo "Done!"
 
 nightlyrpm: prep python
-        @cd "$$(dirname "$(readlink -f "$0")")" || exit 1
-        @echo "Building RPM..."
-        @rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
-        mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
-        @rm -rf rpmbuild/noarch/
-        @echo "Done!"
+	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
+	@echo "Building RPM..."
+	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
+	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
+	@rm -rf rpmbuild/noarch/
+	@echo "Done!"
 
 .PHONY: test
 test:
