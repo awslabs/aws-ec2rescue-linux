@@ -18,3 +18,4 @@ artifacts:
   files:
     - ec2rl*tgz
     - ec2rl*sha256
+    - ec2rl*rpm

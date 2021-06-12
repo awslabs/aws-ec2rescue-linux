@@ -44,6 +44,8 @@ bundledpython: prep pythonbase
 
 pythonandbundled: python bundledpython
 pythonandbundlednightly: nightly nightlybundledpython
+pythonandbundledandrpm: python bundledpython rpm
+pythonandbundlednightlyandrpm: nightly nightlybundledpython rpm
 
 pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1

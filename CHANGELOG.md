@@ -1,6 +1,7 @@
 # EC2 Rescue for Linux v1.1.6
 
 #### General
+[Enhancement] Add rpm output to build process
 
 #### Framework
 
