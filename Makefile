@@ -44,6 +44,8 @@ bundledpython: prep pythonbase
 
 pythonandbundled: python bundledpython
 pythonandbundlednightly: nightly nightlybundledpython
+pythonandbundledandrpm: python bundledpython rpm
+pythonandbundlednightlyandrpm: nightly nightlybundledpython nightlyrpm
 
 pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -147,8 +149,20 @@ clean: prep
 rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."
+	mv ec2rl.tgz ec2rl-$(VERSION).tgz
 	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl.spec
-	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
+	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl.rpm
+	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
+	@rm -rf rpmbuild/noarch/
+	@echo "Done!"
+
+nightlyrpm: prep python
+	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
+	@echo "Building RPM..."
+	mv ec2rl.tgz ec2rl-nightly-$(VERSION).tgz
+	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
+	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl-nightly.rpm
+	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
 

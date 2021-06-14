@@ -2,6 +2,8 @@
 
 #### General
 * [Misc] Added a workflow which creates a new rpm on every new release.
+* [Enhancement] Add rpm output to build process
+
 #### Framework
 
 #### Modules
