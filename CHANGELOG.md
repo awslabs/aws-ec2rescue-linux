@@ -1,7 +1,7 @@
 # EC2 Rescue for Linux v1.1.6
 
 #### General
-
+* [Misc] Added a workflow which creates a new rpm on every new release.
 #### Framework
 
 #### Modules
