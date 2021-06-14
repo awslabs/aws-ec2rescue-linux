@@ -3,7 +3,7 @@ on:
   push: 
     
 jobs:
-  old_version_rpm_build
+  old_version_rpm_build:
     runs-on: ubuntu-latest
     steps: 
        - uses: actions/checkout@v2
