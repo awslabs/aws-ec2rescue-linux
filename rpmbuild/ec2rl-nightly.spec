@@ -1,6 +1,6 @@
 %define debug_package %{nil}
 
-Name:           ec2rl
+Name:           ec2rl-nightly
 Version:	    1.1.6
 Release:        1
 Summary:        Automatic diagnostic tool for Linux
@@ -9,7 +9,7 @@ Group:          Diagnostics
 License:        Apache 2
 URL:            https://github.com/awslabs/aws-ec2rescue-linux
 BuildArch:	    noarch
-Source:         ec2rl.tgz
+Source:         ec2rl-nightly.tgz
 BuildRoot:	    %{_tmppath}/%name-root-%(%{__id_u} -n)
 
 %description
