@@ -54,8 +54,12 @@ import ec2rlcore.programversion
 import ec2rlcore.s3upload
 
 import requests
-import yaml
 
+if sys.hexversion >= 0x3060000:
+    # yaml.load behavior changes in 3.6 and requires full/safe_load or using a loader construct
+    from yaml import full_load as yaml_load
+else:
+    from yaml import load as yaml_load
 
 class Main(object):
     """
@@ -379,7 +383,7 @@ class Main(object):
             (str): the help message for the specified subcommand
         """
         with open(self.directories["CALLPATH"] + "/ec2rlcore/help.yaml") as helpfile:
-            helpmessages = yaml.load(helpfile)
+            helpmessages = yaml_load(helpfile)
 
         help_dict = {
             "list": helpmessages["list_help"],

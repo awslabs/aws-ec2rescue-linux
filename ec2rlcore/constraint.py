@@ -26,8 +26,15 @@ Exceptions:
 """
 
 from __future__ import print_function
-import collections
 import copy
+import sys
+
+
+if sys.hexversion >= 0x3030000:
+    # import syntax for collections.abc changes in Python3.3 and the old method is deprecated in 3.9
+    import collections.abc as collections
+else:
+    import collections
 
 from ec2rlcore.logutil import LogUtil
 
