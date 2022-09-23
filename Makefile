@@ -45,7 +45,7 @@ bundledpython: prep pythonbase
 pythonandbundled: python bundledpython
 pythonandbundlednightly: nightly nightlybundledpython
 pythonandbundledandrpm: python bundledpython rpm
-pythonandbundlednightlyandrpm: nightly nightlybundledpython rpm
+pythonandbundlednightlyandrpm: nightly nightlybundledpython nightlyrpm
 
 pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -68,14 +68,14 @@ pythonbase:
 	@cp -ap NOTICE /tmp/$(BASENAME)
 
 nightly: python
-	cp ec2rl.tgz ec2rl-nightly.tgz
-	cp ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
+	mv ec2rl.tgz ec2rl-nightly.tgz
+	mv ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
 	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
 
 
 nightlybundledpython: bundledpython
-	cp ec2rl-bundled.tgz ec2rl-bundled-nightly.tgz
-	cp ec2rl-bundled.tgz.sha256 ec2rl-bundled-nightly.tgz.sha256
+	mv ec2rl-bundled.tgz ec2rl-bundled-nightly.tgz
+	mv ec2rl-bundled.tgz.sha256 ec2rl-bundled-nightly.tgz.sha256
 	sed -i 's/ec2rl-bundled.tgz/ec2rl-bundled-nightly.tgz/' ec2rl-bundled-nightly.tgz.sha256
 
 menuconfig:
@@ -111,11 +111,9 @@ rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."
 	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl.spec
-<<<<<<< HEAD
 	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
-=======
 	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl.rpm
-	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
+	sha256sum ec2rl.rpm > ec2rl.rpm.sha256
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
 
@@ -126,7 +124,6 @@ nightlyrpm: prep python
 	rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
 	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl-nightly.rpm
 	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
->>>>>>> ea0f890 (Fix makefile bug preventing RPM from being generated)
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
 
