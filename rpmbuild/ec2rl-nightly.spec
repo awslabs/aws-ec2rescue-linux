@@ -18,9 +18,13 @@ A framework and collection of modules for diagnosing and resolving issues and co
 %define _rpmdir %(pwd)/rpmbuild/
 %define _sourcedir %(pwd)
 
+
+%global _python_bytecompile_errors_terminate_build 0
+
 %prep
 
-%setup -q
+%setup -q -n ec2rl-%{version}
+
 
 %build
 

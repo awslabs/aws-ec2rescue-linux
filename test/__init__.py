@@ -37,3 +37,10 @@ if not os.path.isabs(_callp):
     _callp = os.path.abspath(_callp)
 callpath = os.path.split(_callp)[0]
 sys.path.append("{}/lib".format(callpath))
+
+
+# Modules whose implementation differs between Python2/3
+if sys.hexversion >= 0x3000000:
+    sys.path.insert(0, "{}/lib/python3".format(os.path.split(_callp)[0]))
+else:
+    sys.path.insert(0, "{}/lib/python2".format(os.path.split(_callp)[0]))

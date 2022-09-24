@@ -1,7 +1,9 @@
 # EC2 Rescue for Linux v1.1.6
 
 #### General
-[Enhancement] Add rpm output to build process
+* [Enhancement] Add rpm output to build process
+* [Enhancement] Add support for RHEL 8.x and Ubuntu 22.10
+* [Enhancement] Add support for Python 3.7 to 3.10+
 
 #### Framework
 
