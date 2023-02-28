@@ -92,6 +92,15 @@ def get_distro():
                 distro = ec2rlcore.constants.DISTRO_SUSE
             else:
                 distro = "unknown for /etc/SuSE-release"
+
+    elif os.path.isfile("/etc/SUSE-brand"):
+        with open("/etc/SUSE-brand", "r") as fp:
+            distro_str = fp.readline()
+            regex = re.compile(r"SLE")
+            if re.match(regex,distro_str):
+                distro = ec2rlcore.constants.DISTRO_SUSE
+            else:
+                distro = "unknown for /etc/SUSE-brand"
     # Ubuntu
     elif os.path.isfile("/etc/lsb-release"):
         with open("/etc/lsb-release", "r") as fp:

@@ -336,6 +336,12 @@ class TestPrediag(unittest.TestCase):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
         self.assertTrue(mock_isfile.called)
 
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="SLE"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, True))
+    def test_prediag_os_suse_brand(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
+        self.assertTrue(mock_isfile.called)
+
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, True))
     def test_prediag_os_suse_unknown(self, mock_isfile):
