@@ -2,7 +2,7 @@
 
 #### General
 * [Enhancement] Add rpm output to build process
-* [Enhancement] Add support for RHEL 8.x and Ubuntu 22.10
+* [Enhancement] Add support for RHEL 8.x, Ubuntu 22.10, SLES 15
 * [Enhancement] Add support for Python 3.7 to 3.10+
 
 #### Framework
@@ -10,6 +10,8 @@
 #### Modules
 * [Misc] Create Ubuntu specific copies of bcc modules to reflect the Debian package adding -bpfcc to the binary file names.
 * [New Module] Add enadiag net diagnostic module.
+* [New Module] Add sosreport os gather module.
+* [New Module] Add supportconfig os gather module.
 
 #### Testing
 * [Bugfix] Update requirements_test.txt to lock versions of transient dependencies causing issues for py2.7 builds
