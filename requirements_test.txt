@@ -19,7 +19,7 @@ werkzeug == 1.0.1 ; python_version == '2.7'
 jinja2 == 2.11.3 ; python_version == '2.7'
 markupsafe == 1.1.1 ; python_version == '2.7'
 setuptools-scm==5.0.0 ; python_version == '2.7'
-wheel==0.36.1 ; python_version == '2.7'
+wheel==0.38.1 ; python_version == '2.7'
 moto == 0.4.31
 responses >= 0.5.1, < 0.10.3
 setuptools >= 44, < 45 ; python_version == '2.7'
