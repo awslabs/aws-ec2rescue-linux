@@ -2,7 +2,7 @@
 
 #### General
 * [Enhancement] Add rpm output to build process
-* [Enhancement] Add support for RHEL 8.x, Ubuntu 22.10, SLES 15
+* [Enhancement] Add support for RHEL 8.x, Ubuntu 22.10, SLES 15, Amazon Linux 2023
 * [Enhancement] Add support for Python 3.7 to 3.10+
 
 #### Framework

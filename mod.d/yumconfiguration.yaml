@@ -46,7 +46,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str collect
-  distro: !!str alami alami2 rhel
+  distro: !!str alami alami2 al2023 rhel
   required: !!str
   optional: !!str
   software: !!str yum

@@ -49,7 +49,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str performance
   class: !!str collect
-  distro: !!str alami alami2 ubuntu rhel suse
+  distro: !!str alami alami2 al2023 ubuntu rhel suse
   required: !!str period times
   optional: !!str
   software: !!str

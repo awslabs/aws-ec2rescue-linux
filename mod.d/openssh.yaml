@@ -1852,7 +1852,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami alami2 ubuntu rhel suse centos
+  distro: !!str alami alami2 al2023 ubuntu rhel suse centos
   required: !!str
   optional: !!str
   software: !!str

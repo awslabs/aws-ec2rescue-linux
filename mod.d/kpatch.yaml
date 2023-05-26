@@ -44,7 +44,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str collect
-  distro: !!str alami2
+  distro: !!str alami2 al2023
   required: !!str
   optional: !!str
   software: !!str kpatch
