@@ -19,7 +19,7 @@ path: !!str
 version: !!str 1.0
 title: !!str Gather a supportconfig
 helptext: !!str |
-  Gather an sosreport
+  Gather a supportcopnfig
 placement: !!str run
 package: 
   - !!str
@@ -37,11 +37,11 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will gather the output of an sosreport"
+  echo "I will gather the output of a supportconfig"
           
   mkdir $EC2RL_GATHEREDDIR/supportconfig
   supportconfig -R $EC2RL_GATHEREDDIR/supportconfig
-  echo "I have attempted to gather unsanitized sosreport output to $EC2RL_GATHEREDDIR/sosreport"
+  echo "I have attempted to gather unsanitized supportconfig output to $EC2RL_GATHEREDDIR/supportconfig"
 constraint:
   requires_ec2: !!str False
   domain: !!str os
