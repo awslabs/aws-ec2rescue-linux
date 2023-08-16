@@ -10,7 +10,7 @@
 #### Modules
 * [Misc] Create Ubuntu specific copies of bcc modules to reflect the Debian package adding -bpfcc to the binary file names.
 * [New Module] Add enadiag net diagnostic module.
-
+* [Enhancement] Re-enable journal module with safer defaults and additional options for selecting time range, logs gathered, and output format.
 #### Testing
 * [Bugfix] Update requirements_test.txt to lock versions of transient dependencies causing issues for py2.7 builds
 
