@@ -24,7 +24,13 @@ module run/hungtasks       [FAILURE] Hung task found
 
 ## Detecting Manually
 
-Hung tasks can be detected via grepping through your messages or syslog file, depending on distribution.
+Hung tasks can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "blocked for more than"
+```
+
+or
 
 ```commandline
 $ grep -A60 "blocked for more than" /var/log/messages

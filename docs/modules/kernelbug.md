@@ -28,7 +28,13 @@ module run/kernelbug       [FAILURE] No kernel bug occurrences found
 
 ## Detecting Manually
 
-Kernel bugs can be detected via grepping through your messages or syslog file, depending on distribution.
+Kernel bugs can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "kernel BUG at"
+```
+
+or
 
 ```commandline
 $ grep -A60 "kernel BUG at" /var/log/messages
