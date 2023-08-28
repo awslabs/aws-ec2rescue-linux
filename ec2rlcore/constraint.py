@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -26,8 +26,15 @@ Exceptions:
 """
 
 from __future__ import print_function
-import collections
 import copy
+import sys
+
+
+if sys.hexversion >= 0x3030000:
+    # import syntax for collections.abc changes in Python3.3 and the old method is deprecated in 3.9
+    import collections.abc as collections
+else:
+    import collections
 
 from ec2rlcore.logutil import LogUtil
 

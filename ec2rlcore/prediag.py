@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -65,7 +65,8 @@ def get_distro():
     distro = "unknown"
     alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
     alami2_regex = re.compile(r"^Amazon Linux (release \d \(Karoo\)|release \d.* \(\d{4}\.\d{2}\)|2)")
-    rhel_regex = re.compile(r"^Red Hat Enterprise Linux Server release \d\.\d")
+    al2023_regex = re.compile(r"^Amazon Linux release 2023 \(Amazon Linux\)")
+    rhel_regex = re.compile(r"^Red Hat Enterprise Linux*")
 
     # Amazon Linux & RHEL
     if os.path.isfile("/etc/system-release"):
@@ -76,6 +77,8 @@ def get_distro():
                 distro = ec2rlcore.constants.DISTRO_ALAMI
             elif re.match(alami2_regex, distro_str):
                 distro = ec2rlcore.constants.DISTRO_ALAMI2
+            elif re.match(al2023_regex, distro_str):
+                distro = ec2rlcore.constants.DISTRO_AL2023
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
                 distro = ec2rlcore.constants.DISTRO_RHEL
@@ -92,6 +95,15 @@ def get_distro():
                 distro = ec2rlcore.constants.DISTRO_SUSE
             else:
                 distro = "unknown for /etc/SuSE-release"
+
+    elif os.path.isfile("/etc/SUSE-brand"):
+        with open("/etc/SUSE-brand", "r") as fp:
+            distro_str = fp.readline()
+            regex = re.compile(r"SLE")
+            if re.match(regex,distro_str):
+                distro = ec2rlcore.constants.DISTRO_SUSE
+            else:
+                distro = "unknown for /etc/SUSE-brand"
     # Ubuntu
     elif os.path.isfile("/etc/lsb-release"):
         with open("/etc/lsb-release", "r") as fp:

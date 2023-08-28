@@ -28,7 +28,13 @@ module run/kernelpanic       [FAILURE] Kernel panic occurrences found
 
 ## Detecting Manually
 
-Kernel panic can be detected via grepping through your messages or syslog file, depending on distribution.
+Kernel panic can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "kernel panic"
+```
+
+or
 
 ```commandline
 $ grep -A60 "kernel panic" /var/log/messages
