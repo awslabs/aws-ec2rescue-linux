@@ -116,7 +116,7 @@ constraint:
   class: !!str diagnose
   distro: !!str alami alami2 al2023 ubuntu rhel suse
   required: !!str
-  optional: !!str
+  optional: !!str since until
   software: !!str
   sudo: !!str True
   perfimpact: !!str False
