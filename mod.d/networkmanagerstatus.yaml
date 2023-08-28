@@ -44,7 +44,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str net
   class: !!str collect
-  distro: !!str alami2 ubuntu rhel suse
+  distro: !!str alami2 ubuntu al2023 rhel suse
   required: !!str
   optional: !!str
   software: !!str NetworkManager

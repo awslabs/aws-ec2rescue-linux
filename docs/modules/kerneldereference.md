@@ -28,7 +28,13 @@ module run/kerneldereference       [FAILURE] No kernel null pointer dereference 
 
 ## Detecting Manually
 
-Kernel null pointer dereferences can be detected via grepping through your messages or syslog file, depending on distribution.
+Kernel null pointer dereferences can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "kernel NULL pointer dereference"
+```
+
+or
 
 ```commandline
 $ grep -A60 "kernel NULL pointer dereference" /var/log/messages

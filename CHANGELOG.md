@@ -2,14 +2,19 @@
 
 #### General
 * [Enhancement] Add rpm output to build process
-* [Enhancement] Add support for RHEL 8.x and Ubuntu 22.10
+* [Enhancement] Add support for RHEL 8.x, Ubuntu 22.10, SLES 15, Amazon Linux 2023
 * [Enhancement] Add support for Python 3.7 to 3.10+
+* [Enhancement] Re-enable journal logsearch bash function as logsearch_with_journal
 
 #### Framework
 
 #### Modules
 * [Misc] Create Ubuntu specific copies of bcc modules to reflect the Debian package adding -bpfcc to the binary file names.
 * [New Module] Add enadiag net diagnostic module.
+* [Enhancement] Re-enable journal module with safer defaults and additional options for selecting time range, logs gathered, and output format.
+* [Enhancement] Add logsearch_with_journal support for hungtasks, kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
+* [Bugfix] Fix alami2 search messages in kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
+=======
 * [New Module] Add sosreport os gather module.
 * [New Module] Add supportconfig os gather module.
 

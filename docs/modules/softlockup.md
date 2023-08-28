@@ -26,7 +26,13 @@ module run/softlockup       [FAILURE] Soft lockup occurrence found
 
 ## Detecting Manually
 
-CPU soft lockups can be detected via grepping through your messages or syslog file, depending on distribution.
+CPU soft lockups can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "soft lockup"
+```
+
+or
 
 ```commandline
 $ grep -A60 "soft lockup" /var/log/messages

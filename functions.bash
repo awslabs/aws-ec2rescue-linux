@@ -99,14 +99,40 @@ function logsearch {
             
         fi
     done
+}
 
-    # Disabled journal searching due to performance impact
-    # if which journalctl >/dev/null 2>&1; then
-    #     if journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern" >/dev/null 2>&1; then
-    #         echo -e "Match found in systemd journal"
-    #         journalctl -ql | grep -v \/grep\ | grep $grepargs "$pattern"
-    #     fi
-    # fi
+##
+## logsearch_with_journal
+##
+## Searches files in given location, and the systemd journal, for a pattern.
+## Automatically detects compression and decompresses as needed
+## Returns nothing if no results found
+##
+## See Also: logsearch
+##
+## Usage:
+## logsearch_with_journal <locations> <search string> [grep opts] [journal opts]
+##
+## Example:
+## logsearch_with_journal "panic" "-A30" "--since='-2 months'"
+##
+## arg1 = search pattern (required)
+## arg2 = grep arguments (optional)
+## arg3 = journalctl arguments (required)
+
+function logsearch_with_journal {
+    local pattern=$1
+    local grepargs="$2"
+    local journalargs="$3"
+
+    logsearch $*
+
+    if [[ -x "$(command -v journalctl)" ]]; then
+        if journalctl $journalargs | grep -v \/grep\ | grep $grepargs "$pattern" >/dev/null 2>&1; then
+            echo -e "Match found in systemd journal"
+            journalctl $journalargs | grep -v \/grep\ | grep $grepargs "$pattern"
+        fi
+    fi
 }
 
 ##

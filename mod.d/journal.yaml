@@ -17,9 +17,16 @@
 name: !!str journal
 path: !!str
 version: !!str 1.0
-title: !!str Gather journal output
+title: !!str Collect journalctl output
 helptext: !!str |
-  Gather journal output - Temporarily disabled due to performance impact
+  Collect journalctl output for log gathering. Defaults to prior 48 hours.
+  Please note that extended timeframes or very verbose logging may result in this module having performance
+  impact to the system when run.
+  Optional --since= shows entries on or newer than a specified date. Takes systemd.time format. Defaults to 48hr.
+  Optional --until= shows entries on or older than a specified date. Takes systemd.time format.
+  Optional --system=true shows messages from system services and the kernel.
+  Optional --user=true shows messages from from service of the current user.
+  Optional --output= outputs the logs in specific format, e.g. json. See man journalctl
 placement: !!str run
 package: 
   - !!str
@@ -37,19 +44,43 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will gather the journal from this machine"
+  echo "I will gather the journalctl output from this machine"
+  
+  CMD="journalctl --no-pager"
+  
+  if [ ! -z "$since" ]; 
+      then
+          CMD="$CMD --since=$since"
+      else
+          CMD="$CMD --since=-48hr"
+  fi
+  
+  if [ ! -z "$until" ]; then
+      CMD="$CMD --until=$until"
+  fi
+  
+   if [ ! -z "$output" ]; then
+      CMD="$CMD --output=$output"
+  fi
+  
+  if [ "$system" = true ]; then
+      CMD="$CMD --system"
+  fi
 
-  mkdir $EC2RL_GATHEREDDIR/journal
-  journalctl -qxl > $EC2RL_GATHEREDDIR/journal/journal.out
-
+  if [ "$user" = true ]; then
+      CMD="$CMD --user"
+  fi
+  
+  $CMD
+  
   exit 0
 constraint:
   requires_ec2: !!str False
   domain: !!str os
-  class: !!str gather
-  distro: !!str none
+  class: !!str collect
+  distro: !!str alami2 al2023 suse ubuntu rhel
   required: !!str
-  optional: !!str
+  optional: !!str output system user since until
   software: !!str journalctl
   sudo: !!str False
   perfimpact: !!str False

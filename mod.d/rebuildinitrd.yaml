@@ -180,7 +180,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami alami2 ubuntu rhel suse
+  distro: !!str alami alami2 al2023 ubuntu rhel suse
   required: !!str rebuildinitrd remediate
   optional: !!str
   software: !!str
