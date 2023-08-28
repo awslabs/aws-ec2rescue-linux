@@ -30,7 +30,23 @@ module run/oomkiller    [FAILURE] oom-killer invocations found:
 
 ## Detecting Manually
 
-Manual detection can be accomplished by grepping the distribution-specific system logs. The logfile location will vary, depending on your specific distribution configuration.
+CPU soft lockups can be detected via grepping through your system journal or messages/syslog file, depending on distribution.
+
+```commandline
+$ journalctl --no-pager | grep -A60 "invoked oom-killer"
+```
+
+or
+
+```commandline
+$ grep -A60 "invoked oom-killer" /var/log/messages
+```
+
+or
+
+```commandline
+$ grep -A60 "invoked oom-killer" /var/log/syslog
+```
 
 ## Resolution
 

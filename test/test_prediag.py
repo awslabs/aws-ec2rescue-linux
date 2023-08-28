@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -287,6 +287,12 @@ class TestPrediag(unittest.TestCase):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI2)
         self.assertTrue(mock_isfile.called)
 
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux release 2023 (Amazon Linux)"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
+    def test_prediag_os_al2023(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_AL2023)
+        self.assertTrue(mock_isfile.called)
+
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux 2"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami2_lts_release(self, mock_isfile):
@@ -303,6 +309,12 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Red Hat Enterprise Linux Server release 7.0"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_rhel(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Red Hat Enterprise Linux 8"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
+    def test_prediag_os_rhel8(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
@@ -327,6 +339,12 @@ class TestPrediag(unittest.TestCase):
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="SUSE Linux Enterprise Server 10 (x86_64)"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, True))
     def test_prediag_os_suse(self, mock_isfile):
+        self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
+        self.assertTrue(mock_isfile.called)
+
+    @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="SLE"))
+    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, True))
+    def test_prediag_os_suse_brand(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_SUSE)
         self.assertTrue(mock_isfile.called)
 

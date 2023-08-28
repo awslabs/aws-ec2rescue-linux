@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -54,8 +54,12 @@ import ec2rlcore.programversion
 import ec2rlcore.s3upload
 
 import requests
-import yaml
 
+if sys.hexversion >= 0x3060000:
+    # yaml.load behavior changes in 3.6 and requires full/safe_load or using a loader construct
+    from yaml import full_load as yaml_load
+else:
+    from yaml import load as yaml_load
 
 class Main(object):
     """
@@ -108,7 +112,7 @@ class Main(object):
     # Implemented meta options (long args)
     __meta_options = ["--config-file", "--url", "--upload-directory"]
     # Version number
-    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.5")
+    PROGRAM_VERSION = ec2rlcore.programversion.ProgramVersion("1.1.6")
     VERSION_ENDPOINT = "https://s3.amazonaws.com/ec2rescuelinux/VERSION"
 
     def __init__(self, debug=False, full_init=False):
@@ -379,7 +383,7 @@ class Main(object):
             (str): the help message for the specified subcommand
         """
         with open(self.directories["CALLPATH"] + "/ec2rlcore/help.yaml") as helpfile:
-            helpmessages = yaml.load(helpfile)
+            helpmessages = yaml_load(helpfile)
 
         help_dict = {
             "list": helpmessages["list_help"],

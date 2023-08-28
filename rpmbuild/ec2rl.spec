@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           ec2rl
-Version:	    1.1.5
+Version:	    1.1.6
 Release:        1
 Summary:        Automatic diagnostic tool for Linux
 
@@ -18,9 +18,11 @@ A framework and collection of modules for diagnosing and resolving issues and co
 %define _rpmdir %(pwd)/rpmbuild/
 %define _sourcedir %(pwd)
 
+%global _python_bytecompile_errors_terminate_build 0
+
 %prep
 
-%setup -q
+%setup -q -n ec2rl-%{version}
 
 %build
 
@@ -44,15 +46,17 @@ rm -rf /usr/bin/ec2rl
 %dir
 
 %changelog
-* Wed December 12 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.5
+* Mon Aug 28 2023 Greg Dunn <gregdunn@amazon.com> - 1.1.6
+ - Update EC2 Rescue for Linux to version 1.1.6
+* Wed Dec 12 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.5
  - Update EC2 Rescue for Linux to version 1.1.5
-* Wed August 22 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.4
+* Wed Aug 22 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.4
  - Update EC2 Rescue for Linux to version 1.1.4
-* Mon April 30 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.3
+* Mon Apr 30 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.3
  - Update EC2 Rescue for Linux to version 1.1.3
-* Thur April 05 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.2
+* Thu Apr 05 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.2
  - Update EC2 Rescue for Linux to version 1.1.2
-* Thur Feb 22 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.1
+* Thu Feb 22 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.1
  - Update EC2 Rescue for Linux to version 1.1.1
 * Mon Jan 29 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.0
  - Update EC2 Rescue for Linux to version 1.1.0

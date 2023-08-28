@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -20,6 +20,9 @@ version: !!str 1.0
 title: !!str Detects CPU soft lockups
 helptext: !!str |
   Detects CPU soft lockups that have occurred and gathers output
+  For systems using journald instead of traditional syslog, the following optional flags are available.
+  Optional --since= shows entries on or newer than a specified date. Takes systemd.time format. Defaults to 48hr.
+  Optional --until= shows entries on or older than a specified date. Takes systemd.time format.
 placement: !!str run
 package: 
   - !!str
@@ -42,47 +45,78 @@ content: !!str |
   #set defaults, override by distro
   SOFTLOCKUP_LOGLOCATIONS="/var/log/messages* /var/log/syslog*"
   SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+  
+  JOURNAL_ARGS="--no-pager"
+  if [ ! -z "$since" ]; 
+      then
+          JOURNAL_ARGS="$JOURNAL_ARGS --since=$since"
+      else
+          JOURNAL_ARGS="$JOURNAL_ARGS --since=-48hr"
+  fi
+  
+  if [ ! -z "$until" ]; then
+      JOURNAL_ARGS="$JOURNAL_ARGS --until=$until"
+  fi
 
   case $EC2RL_DISTRO in
       alami)
           SOFTLOCKUP_MESSAGE="BUG: soft lockup"
           SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+          SOFTLOCKUP_BASE_LOG="/var/log/messages"
       ;;
       alami2)
-          HUNGTASK_MESSAGE="blocked for more than"
-          HUNGTASK_LOGLOCATIONS="/var/log/messages*"
+          SOFTLOCKUP_MESSAGE="BUG: soft lockup"
+          SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+          SOFTLOCKUP_BASE_LOG="/var/log/messages"
       ;;
       ubuntu)
           SOFTLOCKUP_MESSAGE="BUG: soft lockup"
           SOFTLOCKUP_LOGLOCATIONS="/var/log/syslog*"
+          SOFTLOCKUP_BASE_LOG="/var/log/syslog"
       ;;
       rhel)
           SOFTLOCKUP_MESSAGE="BUG: soft lockup"
           SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+          SOFTLOCKUP_BASE_LOG="/var/log/messages"
       ;;
       suse)
           SOFTLOCKUP_MESSAGE="BUG: soft lockup"
           SOFTLOCKUP_LOGLOCATIONS="/var/log/messages*"
+          SOFTLOCKUP_BASE_LOG="/var/log/messages"
       ;;
   esac
-
-  logsearch_result=$(logsearch "$SOFTLOCKUP_LOGLOCATIONS" "$SOFTLOCKUP_MESSAGE" "-A60")
-  if [[ -z $logsearch_result ]]; then
-      echo "[SUCCESS] No CPU soft lockup ocurrences found"
+  
+  if [[ -x "$(command -v journalctl)" ]]; then
+      journalctl_result=$(logsearch_with_journal "$SOFTLOCKUP_MESSAGE" "-iA60" "$JOURNAL_ARGS")
+      if [[ -z $journalctl_result ]]; then
+          echo "[SUCCESS] No CPU soft lockup occurrences found"
+      else
+          echo "[FAILURE] CPU Soft Lockup found"
+          echo "-- This indicates potentially being CPU bound in your application usage or applications not relinquishing spinlocks."
+          echo "$journalctl_result"
+          echo -e "-------------------------------------------------\n"
+      fi
+  elif [[ -r $SOFTLOCKUP_BASE_LOG ]]; then
+      logsearch_result=$(logsearch "$SOFTLOCKUP_LOGLOCATIONS" "$SOFTLOCKUP_MESSAGE" "-iA60")
+      if [[ -z $logsearch_result ]]; then
+          echo "[SUCCESS] No CPU soft lockup occurrences found"
+      else
+          echo "[FAILURE] CPU Soft Lockup found"
+          echo "-- This indicates potentially being CPU bound in your application usage or applications not relinquishing spinlocks."
+          echo "$logsearch_result"
+          echo -e "-------------------------------------------------\n"
+      fi
   else
-      echo "[FAILURE] CPU Soft Lockup found"
-      echo "-- This indicates potentially being CPU bound in your application usage or applications not relinquishing spinlocks."
-      echo "$logsearch_result"
-      echo -e "-------------------------------------------------\n"
+      echo "[WARN] No suitable method to search logs found."
   fi
   echo "Please see https://github.com/awslabs/aws-ec2rescue-linux/blob/master/docs/modules/softlockup.md for further details"
 constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str diagnose
-  distro: !!str alami alami2 ubuntu rhel suse
+  distro: !!str alami alami2 al2023 ubuntu rhel suse
   required: !!str
-  optional: !!str
+  optional: !!str since until
   software: !!str
   sudo: !!str True
   perfimpact: !!str False

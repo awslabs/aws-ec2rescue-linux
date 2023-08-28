@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -15,7 +15,7 @@
 PYTHON2:=$(shell command -v python2 --version 2> /dev/null)
 PYTHON3:=$(shell command -v python3 --version 2> /dev/null)
 SHELL:=/bin/bash
-VERSION:=1.1.5
+VERSION:=1.1.6
 BASENAME=ec2rl-$(VERSION)
 
 ifdef PYTHON3
@@ -44,6 +44,8 @@ bundledpython: prep pythonbase
 
 pythonandbundled: python bundledpython
 pythonandbundlednightly: nightly nightlybundledpython
+pythonandbundledandrpm: python bundledpython rpm
+pythonandbundlednightlyandrpm: nightly nightlybundledpython nightlyrpm
 
 pythonbase:
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
@@ -65,46 +67,11 @@ pythonbase:
 	@cp -ap LICENSE /tmp/$(BASENAME)
 	@cp -ap NOTICE /tmp/$(BASENAME)
 
-binary: prep
-	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
-	$(PYTHON) make_bin_modules.py
-	@pyinstaller -y \
-	-p lib \
-	--add-data "functions.bash:." \
-	--add-data "LICENSE:." \
-	--add-data "NOTICE:." \
-	--add-data "README.md:." \
-	--add-data "ec2rlcore/help.yaml:ec2rlcore/" \
-	--add-data "bin:bin" \
-	--add-data "docs:docs" \
-	--add-data "example_configs:example_configs" \
-	--add-data "example_modules:example_modules" \
-	--add-data "ssmdocs:ssmdocs" \
-	--add-data "pre.d:pre.d" \
-	--add-data "mod.d:mod.d" \
-	--add-data "post.d:post.d" \
-	--add-data "lib/requests/cacert.pem:requests" \
-	--hidden-import botocore \
-	ec2rl.py
-
-	$(PYTHON) make_symlinks.py
-
-	@# Build the one-directory binary tarball
-	mv dist/ec2rl dist/$(BASENAME)
-	@echo "Creating ec2rl-binary.tgz ..."
-	tar -czf ec2rl-binary.tgz -C dist $(BASENAME)
-	sha256sum ec2rl-binary.tgz > ec2rl-binary.tgz.sha256
-	@echo "Done!"
-
 nightly: python
 	mv ec2rl.tgz ec2rl-nightly.tgz
 	mv ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
 	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
 
-nightlybinary: binary
-	mv ec2rl-binary.tgz ec2rl-nightly-binary.tgz
-	mv ec2rl-binary.tgz.sha256 ec2rl-nightly-binary.tgz.sha256
-	sed -i 's/ec2rl-binary.tgz/ec2rl-nightly-binary.tgz/' ec2rl-nightly-binary.tgz.sha256
 
 nightlybundledpython: bundledpython
 	mv ec2rl-bundled.tgz ec2rl-bundled-nightly.tgz
@@ -133,22 +100,31 @@ prep:
 clean: prep
 	rm -f ec2rl.tgz
 	rm -f ec2rl.tgz.sha256
-	rm -f ec2rl-binary.tgz
-	rm -f ec2rl-binary.tgz.sha256
 	rm -f ec2rl-bundled.tgz
 	rm -f ec2rl-bundled.tgz.sha256
 	rm -f ec2rl-nightly.tgz
 	rm -f ec2rl-nightly.tgz.sha256
-	rm -f ec2rl-nightly-binary.tgz
-	rm -f ec2rl-nightly-binary.tgz.sha256
 	rm -f ec2rl-bundled-nightly.tgz
 	rm -f ec2rl-bundled-nightly.tgz.sha256
 
 rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."
+	mv ec2rl.tgz ec2rl-$(VERSION).tgz
 	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl.spec
 	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
+	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl.rpm
+	sha256sum ec2rl.rpm > ec2rl.rpm.sha256
+	@rm -rf rpmbuild/noarch/
+	@echo "Done!"
+
+nightlyrpm: prep python
+	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
+	@echo "Building RPM..."
+	mv ec2rl.tgz ec2rl-nightly-$(VERSION).tgz
+	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
+	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl-nightly.rpm
+	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
 	@rm -rf rpmbuild/noarch/
 	@echo "Done!"
 

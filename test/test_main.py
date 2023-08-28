@@ -1,4 +1,4 @@
-# Copyright 2016-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -52,6 +52,12 @@ if sys.hexversion >= 0x3040000:
 else:
     # contextlib2 is a backport of contextlib from Python 3.5 and is compatible with Python2/3
     import contextlib2 as contextlib
+
+if sys.hexversion >= 0x3070000:
+    # os.errno is moved to errno in Python 3.7
+    import errno
+else:
+    from os import errno as errno
 
 # builtins was named __builtin__ in Python 2 so accommodate the change for the purposes of mocking the open call
 if sys.version_info >= (3,):
@@ -190,7 +196,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(chmod_mock.called)
         self.assertTrue(mkdir_mock.called)
 
-    @mock.patch("os.mkdir", side_effect=[OSError(os.errno.EEXIST, "message"),
+    @mock.patch("os.mkdir", side_effect=[OSError(errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return,
                                          simple_return,
@@ -205,7 +211,7 @@ class TestMain(unittest.TestCase):
         self.assertTrue(mkdir_mock.called)
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
-                                         OSError(os.errno.EEXIST, "message"),
+                                         OSError(errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return,
                                          simple_return,
@@ -222,7 +228,7 @@ class TestMain(unittest.TestCase):
 
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
-                                         OSError(os.errno.EEXIST, "message"),
+                                         OSError(errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return,
                                          simple_return,
@@ -239,7 +245,7 @@ class TestMain(unittest.TestCase):
     @mock.patch("os.mkdir", side_effect=[simple_return,
                                          simple_return,
                                          simple_return,
-                                         OSError(os.errno.EEXIST, "message"),
+                                         OSError(errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return,
                                          simple_return])
@@ -256,7 +262,7 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return,
-                                         OSError(os.errno.EEXIST, "message"),
+                                         OSError(errno.EEXIST, "message"),
                                          simple_return,
                                          simple_return])
     @mock.patch("os.chmod", side_effect=simple_return)
@@ -273,7 +279,7 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return,
-                                         OSError(os.errno.EEXIST, "message"),
+                                         OSError(errno.EEXIST, "message"),
                                          simple_return])
     @mock.patch("os.chmod", side_effect=simple_return)
     def test_main__setup_paths_post_oserror_eexist(self, chmod_mock, mkdir_mock):
@@ -290,7 +296,7 @@ class TestMain(unittest.TestCase):
                                          simple_return,
                                          simple_return,
                                          simple_return,
-                                         OSError(os.errno.EEXIST, "message")])
+                                         OSError(errno.EEXIST, "message")])
     @mock.patch("os.chmod", side_effect=simple_return)
     def test_main__setup_paths_gather_oserror_eexist(self, chmod_mock, mkdir_mock):
         """"Test behavior when attempting to create GATHEREDDIR when it already exists."""
