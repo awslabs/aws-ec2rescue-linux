@@ -14,6 +14,9 @@
 * [Enhancement] Re-enable journal module with safer defaults and additional options for selecting time range, logs gathered, and output format.
 * [Enhancement] Add logsearch_with_journal support for hungtasks, kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
 * [Bugfix] Fix alami2 search messages in kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
+=======
+* [New Module] Add sosreport os gather module.
+* [New Module] Add supportconfig os gather module.
 
 #### Testing
 * [Bugfix] Update requirements_test.txt to lock versions of transient dependencies causing issues for py2.7 builds
