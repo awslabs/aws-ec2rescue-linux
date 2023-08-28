@@ -48,7 +48,7 @@ rm -rf /usr/bin/ec2rl
 %dir
 
 %changelog
-* Tue Dec 8 2020 Greg Dunn <gregdunn@amazon.com> - 1.1.6
+* Mon Aug 28 2023 Greg Dunn <gregdunn@amazon.com> - 1.1.6
  - Update EC2 Rescue for Linux to version 1.1.6
 * Wed Dec 12 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.5
  - Update EC2 Rescue for Linux to version 1.1.5
