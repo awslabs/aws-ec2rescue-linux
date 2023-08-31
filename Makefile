@@ -33,6 +33,7 @@ python: prep pythonbase
 	@echo "Creating ec2rl.tgz..."
 	tar -czf ec2rl.tgz --exclude="python" -C /tmp $(BASENAME)
 	sha256sum ec2rl.tgz > ec2rl.tgz.sha256
+	cp ec2rl.tgz /tmp/$(BASENAME)/ec2rl.tgz
 	@echo "Done!"
 
 bundledpython: prep pythonbase
@@ -71,6 +72,7 @@ nightly: python
 	mv ec2rl.tgz ec2rl-nightly.tgz
 	mv ec2rl.tgz.sha256 ec2rl-nightly.tgz.sha256
 	sed -i 's/ec2rl.tgz/ec2rl-nightly.tgz/' ec2rl-nightly.tgz.sha256
+	cp ec2rl-nightly.tgz /tmp/$(BASENAME)/ec2rl-nightly.tgz
 
 
 nightlybundledpython: bundledpython
@@ -110,9 +112,9 @@ clean: prep
 rpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."
-	mv ec2rl.tgz ec2rl-$(VERSION).tgz
+	mkdir -p ~/rpmbuild/SOURCES
+	mv /tmp/$(BASENAME)/ec2rl.tgz ~/rpmbuild/SOURCES/ec2rl.tgz
 	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl.spec
-	mv rpmbuild/noarch/$(BASENAME)-*.noarch.rpm rpmbuild/
 	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl.rpm
 	sha256sum ec2rl.rpm > ec2rl.rpm.sha256
 	@rm -rf rpmbuild/noarch/
@@ -121,7 +123,7 @@ rpm: prep python
 nightlyrpm: prep python
 	@cd "$$(dirname "$(readlink -f "$0")")" || exit 1
 	@echo "Building RPM..."
-	mv ec2rl.tgz ec2rl-nightly-$(VERSION).tgz
+	mv /tmp/$(BASENAME)/ec2rl-nightly.tgz ec2rl-nightly-$(VERSION).tgz
 	@rpmbuild -bb --clean --quiet rpmbuild/ec2rl-nightly.spec
 	mv rpmbuild/noarch/ec2rl-*.noarch.rpm ec2rl-nightly.rpm
 	sha256sum ec2rl-nightly.rpm > ec2rl-nightly.rpm.sha256
