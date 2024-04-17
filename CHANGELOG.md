@@ -1,6 +1,7 @@
 # EC2 Rescue for Linux v1.1.7
 
 #### General
+* [Enhancement] Alter method to determine if the Operating Systems is Amazon Linux 2023 to catch all versions.
 
 #### Framework
 
@@ -22,7 +23,7 @@
 * [Enhancement] Re-enable journal module with safer defaults and additional options for selecting time range, logs gathered, and output format.
 * [Enhancement] Add logsearch_with_journal support for hungtasks, kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
 * [Bugfix] Fix alami2 search messages in kernelbug, kerneldereference, kernelpanic, oomkiller, softlockup diagnostic modules.
-=======
+  =======
 * [New Module] Add sosreport os gather module.
 * [New Module] Add supportconfig os gather module.
 
@@ -105,7 +106,7 @@
 * [Enhancement] Updated the ec2rl script to use a local copy of Python, if present. The local path for the local copy must be python/bin/python. This change is primarily intended to support the bundled build.
 
 #### Modules
-* [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel. 
+* [Enhancement] arpcache, arpignore, tcprecycle: standardized detection method to not assume the parameter exists in the running kernel.
 * [Enhancement] Rewrote kernelconfig to gather the three most recently modified kernel configuration files from /boot plus the running kernel configuration if it is not amongst the initial three gathered configurations.
 * [New Module] Added dhclientleases module with remediation support.
 * [New Module] Added dpkgpackages module.
