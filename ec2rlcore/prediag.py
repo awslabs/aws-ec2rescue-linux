@@ -65,7 +65,7 @@ def get_distro():
     distro = "unknown"
     alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
     alami2_regex = re.compile(r"^Amazon Linux (release \d \(Karoo\)|release \d.* \(\d{4}\.\d{2}\)|2)")
-    al2023_regex = re.compile(r"^Amazon Linux release 2023 \(Amazon Linux\)")
+    al2023_regex = re.compile(r"^Amazon Linux release 2023")
     rhel_regex = re.compile(r"^Red Hat Enterprise Linux*")
 
     # Amazon Linux & RHEL
@@ -316,13 +316,13 @@ def get_virt_type():
             elif profile_request.status_code == 401:
                 token=(
                     requests.put(
-                        "http://169.254.169.254/latest/api/token", 
-                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}, 
+                        "http://169.254.169.254/latest/api/token",
+                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
                         verify=False
                     )
                 ).text
                 profile = requests.get(
-                    "http://169.254.169.254/latest/meta-data/profile", 
+                    "http://169.254.169.254/latest/meta-data/profile",
                     headers={'X-aws-ec2-metadata-token': token}
                 ).text
             else:

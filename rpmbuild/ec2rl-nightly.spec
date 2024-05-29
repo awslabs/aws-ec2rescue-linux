@@ -1,7 +1,7 @@
 %define debug_package %{nil}
 
 Name:           ec2rl-nightly
-Version:	    1.1.6
+Version:	    1.1.7
 Release:        1
 Summary:        Automatic diagnostic tool for Linux
 
@@ -48,6 +48,8 @@ rm -rf /usr/bin/ec2rl
 %dir
 
 %changelog
+* Wed Apr 17 2024 Greg Dunn <gregdunn@amazon.com> - 1.1.7
+ - Update EC2 Rescue for Linux to version 1.1.7
 * Mon Aug 28 2023 Greg Dunn <gregdunn@amazon.com> - 1.1.6
  - Update EC2 Rescue for Linux to version 1.1.6
 * Wed Dec 12 2018 Sean Poynter <seanpoyn@amazon.com - 1.1.5
