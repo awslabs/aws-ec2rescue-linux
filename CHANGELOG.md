@@ -1,5 +1,12 @@
-<<<<<<< HEAD
 =======
+# EC2 Rescue for Linux v1.1.8
+
+#### General
+
+#### Framework
+
+#### Module
+
 # EC2 Rescue for Linux v1.1.7
 
 #### General
