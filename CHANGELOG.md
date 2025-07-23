@@ -2,11 +2,12 @@
 # EC2 Rescue for Linux v1.1.8
 
 #### General
-
+* [Enhancement] Update werkzeug to 3.0.6 and jinja2 to 3.1.5 in requirements_test.txt.
+* [Enhancement] Disabled setuptools in requirements_test.txt due to known vulnerabilities with no updates available.
 #### Framework
 
 #### Module
-
+* [Enhancement] Add Amazon Linux 2023 support for rebuildinitrd module
 # EC2 Rescue for Linux v1.1.7
 
 #### General
