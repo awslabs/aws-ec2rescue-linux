@@ -39,24 +39,24 @@ urllib3 on Google App Engine:
 """
 
 from __future__ import absolute_import
+
 import io
 import logging
 import warnings
-from ..packages.six.moves.urllib.parse import urljoin
 
 from ..exceptions import (
     HTTPError,
     HTTPWarning,
     MaxRetryError,
     ProtocolError,
-    TimeoutError,
     SSLError,
+    TimeoutError,
 )
-
+from ..packages.six.moves.urllib.parse import urljoin
 from ..request import RequestMethods
 from ..response import HTTPResponse
-from ..util.timeout import Timeout
 from ..util.retry import Retry
+from ..util.timeout import Timeout
 from . import _appengine_environ
 
 try:
@@ -111,7 +111,7 @@ class AppEngineManager(RequestMethods):
         warnings.warn(
             "urllib3 is using URLFetch on Google App Engine sandbox instead "
             "of sockets. To use sockets directly instead of URLFetch see "
-            "https://urllib3.readthedocs.io/en/latest/reference/urllib3.contrib.html.",
+            "https://urllib3.readthedocs.io/en/1.26.x/reference/urllib3.contrib.html.",
             AppEnginePlatformWarning,
         )
 
@@ -224,7 +224,7 @@ class AppEngineManager(RequestMethods):
                 )
 
         # Check if we should retry the HTTP response.
-        has_retry_after = bool(http_response.getheader("Retry-After"))
+        has_retry_after = bool(http_response.headers.get("Retry-After"))
         if retries.is_retry(method, http_response.status, has_retry_after):
             retries = retries.increment(method, url, response=http_response, _pool=self)
             log.debug("Retry: %s", url)
