@@ -82,10 +82,15 @@ class TestAwshelpers(unittest.TestCase):
     def test_awshelpers_get_instance_region_token(self):
         """Test that attempting to retrieve the instance region works as expected."""
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=401)
-        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document",
                       json=self.IMDS_DOCUMENT, status=200)
-        resp = ec2rlcore.awshelpers.get_instance_region()
+        with mock.patch("ec2rlcore.awshelpers.requests.put") as put_mock:
+            put_mock.return_value.text = "abc"
+            resp = ec2rlcore.awshelpers.get_instance_region()
+        put_mock.assert_called_once_with(
+            "http://169.254.169.254/latest/api/token",
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
+        )
         self.assertEqual(resp, "us-east-1")
 
     @responses.activate
@@ -100,10 +105,15 @@ class TestAwshelpers(unittest.TestCase):
     def test_awshelpers_get_instance_id_token(self):
         """Test that attempting to retrieve the instance id works as expected."""
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=401)
-        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", body="i-deadbeef",
                       status=200)
-        resp = ec2rlcore.awshelpers.get_instance_id()
+        with mock.patch("ec2rlcore.awshelpers.requests.put") as put_mock:
+            put_mock.return_value.text = "abc"
+            resp = ec2rlcore.awshelpers.get_instance_id()
+        put_mock.assert_called_once_with(
+            "http://169.254.169.254/latest/api/token",
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
+        )
         self.assertEqual(resp, "i-deadbeef")
 
     @mock.patch("ec2rlcore.awshelpers.requests.get", side_effect=requests.exceptions.Timeout())

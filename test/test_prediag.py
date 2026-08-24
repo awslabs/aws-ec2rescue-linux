@@ -60,9 +60,14 @@ class TestPrediag(unittest.TestCase):
     @responses.activate
     def test_prediag_verify_metadata_token(self):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=401)
-        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/instance-id", status=200)
-        resp = ec2rlcore.prediag.verify_metadata()
+        with mock.patch("ec2rlcore.prediag.requests.put") as put_mock:
+            put_mock.return_value.text = "abc"
+            resp = ec2rlcore.prediag.verify_metadata()
+        put_mock.assert_called_once_with(
+            "http://169.254.169.254/latest/api/token",
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
+        )
         self.assertTrue(resp)
 
     @responses.activate
@@ -147,7 +152,6 @@ class TestPrediag(unittest.TestCase):
     @mock.patch('ec2rlcore.prediag.is_nitro')
     def test_prediag_is_an_instance_true_xen_token(self, mock_nitro):
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=401)
-        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/dynamic/instance-identity/document", status=200)
         mock_nitro.return_value = False
         open_mock = mock.mock_open(read_data="ec2SomeUUIDWouldNormallyGoHere\n")
@@ -163,8 +167,14 @@ class TestPrediag(unittest.TestCase):
 
         if sys.hexversion >= 0x3000000:
             open_mock.return_value.__next__ = py3_next_func
-        with mock.patch("ec2rlcore.prediag.open", open_mock):
-            self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        with mock.patch("ec2rlcore.prediag.requests.put") as put_mock:
+            put_mock.return_value.text = "abc"
+            with mock.patch("ec2rlcore.prediag.open", open_mock):
+                self.assertTrue(ec2rlcore.prediag.is_an_instance())
+        put_mock.assert_called_once_with(
+            "http://169.254.169.254/latest/api/token",
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
+        )
         self.assertTrue(open_mock.called)
 
     @responses.activate
@@ -251,11 +261,16 @@ class TestPrediag(unittest.TestCase):
     @mock.patch('ec2rlcore.prediag.is_nitro')
     def test_prediag_get_virt_type_xen_token(self, mock_nitro):
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=401)
-        responses.add(responses.PUT, "http://169.254.169.254/latest/api/token", body="abc", status=200)
         responses.add(responses.GET, "http://169.254.169.254/latest/meta-data/profile", status=200,
                       body="default-hvm")
         mock_nitro.return_value = False
-        resp = ec2rlcore.prediag.get_virt_type()
+        with mock.patch("ec2rlcore.prediag.requests.put") as put_mock:
+            put_mock.return_value.text = "abc"
+            resp = ec2rlcore.prediag.get_virt_type()
+        put_mock.assert_called_once_with(
+            "http://169.254.169.254/latest/api/token",
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
+        )
         self.assertEqual(resp, "default-hvm")
 
     @responses.activate

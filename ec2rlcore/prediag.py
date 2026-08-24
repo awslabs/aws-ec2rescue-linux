@@ -155,8 +155,7 @@ def verify_metadata():
             token = (
                 requests.put(
                     "http://169.254.169.254/latest/api/token",
-                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
-                    verify=False
+                    headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
                 )
             ).text
             return requests.get("http://169.254.169.254/latest/meta-data/instance-id",
@@ -190,8 +189,7 @@ def is_an_instance():
                     requests.put(
                         "http://169.254.169.254/latest/api/token",
                         headers={
-                            'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
-                        verify=False
+                            'X-aws-ec2-metadata-token-ttl-seconds': '300'}
                     )
                 ).text
                 return requests.get("http://169.254.169.254/latest/dynamic/instance-identity/document",
@@ -317,8 +315,7 @@ def get_virt_type():
                 token=(
                     requests.put(
                         "http://169.254.169.254/latest/api/token",
-                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'},
-                        verify=False
+                        headers={'X-aws-ec2-metadata-token-ttl-seconds': '300'}
                     )
                 ).text
                 profile = requests.get(
