@@ -438,14 +438,14 @@ def module_constructor(loader, node):
     new_module.__init__(**values)
 
 
-class ModuleLoader(yaml.SafeLoader):
-    """Safe YAML loader that only allows EC2 Rescue module objects."""
+class ModuleSafeLoader(yaml.SafeLoader):
+    """Safe YAML loader with support for EC2 Rescue module objects."""
     pass
 
 
 def load_module_yaml(stream):
     """
-    Load a Module YAML document using the restricted ModuleLoader.
+    Load a Module YAML document using the restricted ModuleSafeLoader.
 
     Parameters:
         stream (file): the YAML stream to parse
@@ -453,7 +453,7 @@ def load_module_yaml(stream):
     Returns:
         Module: the module defined by the YAML stream
     """
-    loader = ModuleLoader(stream)
+    loader = ModuleSafeLoader(stream)
     try:
         return loader.get_single_data()
     finally:
@@ -483,7 +483,7 @@ def get_module(filename_with_path):
 
 
 # Add the YAML Module constructor so the restricted loader can parse module documents.
-ModuleLoader.add_constructor("!ec2rlcore.module.Module", module_constructor)
+ModuleSafeLoader.add_constructor("!ec2rlcore.module.Module", module_constructor)
 
 
 class SkipReason(object):
