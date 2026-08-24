@@ -55,11 +55,7 @@ import ec2rlcore.s3upload
 
 import requests
 
-if sys.hexversion >= 0x3060000:
-    # yaml.load behavior changes in 3.6 and requires full/safe_load or using a loader construct
-    from yaml import full_load as yaml_load
-else:
-    from yaml import load as yaml_load
+from yaml import safe_load as yaml_load
 
 class Main(object):
     """

@@ -63,6 +63,23 @@ class ModLoader(yaml.SafeLoader):
         return self.construct_mapping(node)
 
 
+def load_module_yaml(stream):
+    """
+    Load module YAML as plain data using the restricted ModLoader.
+
+    Parameters:
+        stream (file): the YAML stream to parse
+
+    Returns:
+        dict: module metadata and content
+    """
+    loader = ModLoader(stream)
+    try:
+        return loader.get_single_data()
+    finally:
+        loader.dispose()
+
+
 def main():
     """
     Convert Python modules from ec2rl/mod.d/ from their yaml form to .py files for unit testing
@@ -83,7 +100,7 @@ def main():
             if mod_file_name == "ex_remediation.yaml":
                 continue
             with open(os.path.join(root_ec2rl_dir, "mod.d", mod_file_name), "r") as yamlfile:
-                module = yaml.load(yamlfile, Loader=ModLoader)
+                module = load_module_yaml(yamlfile)
                 if module["language"] == "python":
                     mod_src_path = os.path.join(mod_src_dir, "{}.py".format(module["name"]))
                     with open(mod_src_path, "w") as pyfile:
