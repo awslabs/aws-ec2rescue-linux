@@ -44,12 +44,6 @@ import yaml.scanner
 from ec2rlcore.logutil import LogUtil
 import ec2rlcore.constraint
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:  # pragma: no cover
-    from yaml import Loader
-
-
 class Module(object):
     """
     Runnable class that represents a module and all its properties.
@@ -444,6 +438,28 @@ def module_constructor(loader, node):
     new_module.__init__(**values)
 
 
+class ModuleSafeLoader(yaml.SafeLoader):
+    """Safe YAML loader with support for EC2 Rescue module objects."""
+    pass
+
+
+def load_module_yaml(stream):
+    """
+    Load a Module YAML document using the restricted ModuleSafeLoader.
+
+    Parameters:
+        stream (file): the YAML stream to parse
+
+    Returns:
+        Module: the module defined by the YAML stream
+    """
+    loader = ModuleSafeLoader(stream)
+    try:
+        return loader.get_single_data()
+    finally:
+        loader.dispose()
+
+
 def get_module(filename_with_path):
     """
     Given a filename with an absolute path, load the contents, instantiate a Module, and set the Module's path
@@ -455,9 +471,10 @@ def get_module(filename_with_path):
     try:
         with open(filename_with_path) as config_file:
             Module.temp_path = filename_with_path
-            this_module = yaml.load(config_file, Loader=Loader)
-            Module.temp_path = ""
-            return this_module
+            try:
+                return load_module_yaml(config_file)
+            finally:
+                Module.temp_path = ""
     except IOError:
         raise ModulePathError(filename_with_path)
     except yaml.scanner.ScannerError:
@@ -465,8 +482,8 @@ def get_module(filename_with_path):
                                          "".format(filename_with_path))
 
 
-# Add the YAML Module constructor so that YAML knows to use it in situations where the tag matches.
-yaml.add_constructor("!ec2rlcore.module.Module", module_constructor, Loader=Loader)
+# Add the YAML Module constructor so the restricted loader can parse module documents.
+ModuleSafeLoader.add_constructor("!ec2rlcore.module.Module", module_constructor)
 
 
 class SkipReason(object):

@@ -25,6 +25,7 @@ import sys
 import unittest
 
 import mock
+import yaml
 
 import ec2rlcore.module
 import ec2rlcore.options
@@ -74,6 +75,12 @@ class TestModule(unittest.TestCase):
         module_path = "nowhere/mod.d/ex.yaml"
         with self.assertRaises(ec2rlcore.module.ModulePathError):
             ec2rlcore.module.get_module(module_path)
+
+    def test_module_loader_rejects_unsafe_yaml_tags(self):
+        """Check that the module loader rejects arbitrary Python object construction."""
+        unsafe_yaml = "!!python/object/apply:os.system ['echo unsafe']"
+        with self.assertRaises(yaml.constructor.ConstructorError):
+            ec2rlcore.module.load_module_yaml(StringIO(unsafe_yaml))
 
     def test_module_logger(self):
         """Check that logger was set."""
