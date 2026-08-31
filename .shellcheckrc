@@ -1,0 +1,22 @@
+# ShellCheck
+
+# Default shell dialect
+shell=bash
+
+# Always allow ShellCheck to open arbitrary files from 'source' statements.
+external-sources=true
+
+# Enable all optional checks
+enable=all
+
+# Optional: Set color settings (auto, always, never)
+color=auto
+
+# Optional: Suggest corrections for common mistakes
+suggest-corrections=true
+
+# Optional: Set maximum line length
+max-line-length=80
+
+# Optional: Require double quotes for strings containing variables
+require-variable-braces=true
