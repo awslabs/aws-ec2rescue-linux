@@ -245,13 +245,13 @@ class Options(object):
                 self.logger.debug("Adding section: {}".format(mod.name))
                 config.add_section(mod.name)
                 for value in mod.constraint["required"]:
-                    key = "# (required) {} = value".format(value)
+                    key = "# (required) {}".format(value)
                     self.logger.debug("Adding [{}] - {}".format(mod.name, key))
-                    config.set(mod.name, key)
+                    config.set(mod.name, key, "value")
                 for value in mod.constraint["optional"]:
-                    key = "# (optional) {} = value".format(value)
+                    key = "# (optional) {}".format(value)
                     self.logger.debug("Adding [{}] - {}".format(mod.name, key))
-                    config.set(mod.name, key)
+                    config.set(mod.name, key, "value")
                 # Some modules do not require any arguments so leave a note stating such
                 if not config.options(mod.name):
                     self.logger.debug("Adding [{}] - # none".format(mod.name))

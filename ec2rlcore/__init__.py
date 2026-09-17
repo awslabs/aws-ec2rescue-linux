@@ -37,8 +37,8 @@ __all__ = ["awshelpers", "backup", "console_out",
            "options", "paralleldiagnostics", "prediag",
            "programversion", "s3upload"]
 
-if sys.hexversion < 0x2070000:
-    print("ec2rl requires Python 2.7+, but running version is {0}.".format(
+if sys.hexversion < 0x2070000 or 0x3000000 <= sys.hexversion < 0x3060000:
+    print("ec2rl requires Python 2.7+ or Python 3.6+, but running version is {0}.".format(
         platform.python_version()))
     sys.exit(201)
 
