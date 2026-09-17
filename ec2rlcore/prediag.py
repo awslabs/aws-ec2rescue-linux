@@ -54,6 +54,26 @@ except ImportError as ie:  # pragma: no cover
     sys.exit(1)
 
 
+def _get_os_release_distro(lines):
+    """Return a supported distribution from os-release lines."""
+    os_release = {}
+    for line in lines:
+        key, separator, value = line.strip().partition("=")
+        if separator:
+            os_release[key] = value.strip("'\"")
+
+    if os_release.get("ID") == "amzn" and os_release.get("VERSION_ID") == "2027":
+        return ec2rlcore.constants.DISTRO_AL2027
+
+    for line in lines:
+        if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server \d{2}", line):
+            return ec2rlcore.constants.DISTRO_SUSE
+        elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
+            return ec2rlcore.constants.DISTRO_ALAMI
+
+    return "unknown for /etc/os-release"
+
+
 def get_distro():
     """
     Return the running Linux distribution.
@@ -66,6 +86,7 @@ def get_distro():
     alami_regex = re.compile(r"^Amazon Linux AMI release \d{4}\.\d{2}")
     alami2_regex = re.compile(r"^Amazon Linux (release \d \(Karoo\)|release \d.* \(\d{4}\.\d{2}\)|2)")
     al2023_regex = re.compile(r"^Amazon Linux release 2023")
+    al2027_regex = re.compile(r"^Amazon Linux release 2027(?:\.|\s)")
     rhel_regex = re.compile(r"^Red Hat Enterprise Linux*")
 
     # Amazon Linux & RHEL
@@ -79,11 +100,18 @@ def get_distro():
                 distro = ec2rlcore.constants.DISTRO_ALAMI2
             elif re.match(al2023_regex, distro_str):
                 distro = ec2rlcore.constants.DISTRO_AL2023
+            elif re.match(al2027_regex, distro_str):
+                distro = ec2rlcore.constants.DISTRO_AL2027
             elif re.match(rhel_regex, distro_str) or \
                     re.match(r"^CentOS.*release (\d+)\.(\d+)", distro_str):
                 distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/system-release"
+                if os.path.isfile("/etc/os-release"):
+                    with open("/etc/os-release", "r") as os_release:
+                        fallback_distro = _get_os_release_distro(os_release.readlines())
+                    if not fallback_distro.startswith("unknown"):
+                        distro = fallback_distro
     # SUSE
     # /etc/SuSE-release is deprecated
     elif os.path.isfile("/etc/SuSE-release"):
@@ -128,15 +156,7 @@ def get_distro():
     # /etc/os-release will be replacing /etc/SuSE-release in the future
     elif os.path.isfile("/etc/os-release"):
         with open("/etc/os-release", "r") as fp:
-            lines = fp.readlines()
-            distro = "unknown for /etc/os-release"
-            for line in lines:
-                if re.match(r"^PRETTY_NAME=\"SUSE Linux Enterprise Server \d{2}", line):
-                    distro = ec2rlcore.constants.DISTRO_SUSE
-                    break
-                elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
-                    distro = ec2rlcore.constants.DISTRO_ALAMI
-                    break
+            distro = _get_os_release_distro(fp.readlines())
     return distro
 
 
