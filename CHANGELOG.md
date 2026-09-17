@@ -4,10 +4,17 @@
 #### General
 * [Enhancement] Update werkzeug to 3.0.6 and jinja2 to 3.1.5 in requirements_test.txt.
 * [Enhancement] Disabled setuptools in requirements_test.txt due to known vulnerabilities with no updates available.
+* [Enhancement] Set the minimum Python 3 version to 3.6 while retaining Python 2.7 support.
 #### Framework
+* [Bugfix] Update vendored six copies to 1.17.0 for modern Python import compatibility.
+* [Bugfix] Replace botocore's removed cgi dependency with standard-library email parsing.
+* [Bugfix] Preserve generated module configuration comments on Python 3.14.
+* [Enhancement] Add explicit Amazon Linux 2027 detection and reject unknown distributions that exclude every selected module.
 
 #### Module
 * [Enhancement] Add Amazon Linux 2023 support for rebuildinitrd module
+* [Enhancement] Add Amazon Linux 2027 eligibility to validated Amazon Linux 2023 modules.
+* [Enhancement] Collect YUM/DNF5 package manager logs and rotations.
 # EC2 Rescue for Linux v1.1.7
 
 #### General

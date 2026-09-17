@@ -20,7 +20,7 @@ helptext: !!str |
 #### placement
 The stage in which the module should be run. Valid values include "prediagnostic", "run", and "postdiagnostic".
 #### language
-The language in which the module code is written. BASH and Python are supported. Python code must be compatible with both Python 2.7.9+ and Python 3.2+.
+The language in which the module code is written. BASH and Python are supported. Python code must be compatible with both Python 2.7.9+ and Python 3.6+.
 #### remediation
 Indicates whether the module supports remediation. Set to either True or False. The module will default to False if this is absent, making it an optional attribute for those modules that do not support remediation.
 #### content
@@ -170,7 +170,7 @@ arg3 = Grep arguments (optional)
 1. Prefer copying a file rather than reading it.
 2. Create a dir in $EC2RL_GATHEREDIR/modulename - e.g. $EC2RL_GATHEREDDIR/messages and copy the files into it.
 ### Python Module Requirements
-1. Code must be compatible with and tested with both Python 2.7.9+ and 3.2+.
+1. Code must be compatible with and tested with both Python 2.7.9+ and 3.6+.
 2. Code must be limited to the standard library and modules vendored inside the lib directory. Modules can build a path to the lib directory using the EC2RL_CALLPATH environment variable.
 The following modules can be found in the lib directory:
    * boto3 1.4.4
@@ -179,7 +179,7 @@ The following modules can be found in the lib directory:
    * jmespath 0.9.1
    * requests 2.14.2
    * s3transfer 0.1.10
-   * six 1.10.0
+   * six 1.17.0
    * yaml 3.12
 
 ## Module Run Order
