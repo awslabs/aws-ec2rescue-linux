@@ -9,12 +9,14 @@
 * [Bugfix] Update vendored six copies to 1.17.0 for modern Python import compatibility.
 * [Bugfix] Replace botocore's removed cgi dependency with standard-library email parsing.
 * [Bugfix] Preserve generated module configuration comments on Python 3.14.
-* [Enhancement] Add explicit Amazon Linux 2027 detection and reject unknown distributions that exclude every selected module.
+* [Enhancement] Add explicit Amazon Linux 2027 detection with os-release fallbacks.
 
 #### Module
 * [Enhancement] Add Amazon Linux 2023 support for rebuildinitrd module
 * [Enhancement] Add Amazon Linux 2027 eligibility to validated Amazon Linux 2023 modules.
-* [Enhancement] Collect YUM/DNF5 package manager logs and rotations.
+* [Enhancement] Collect YUM, DNF4, and DNF5 package manager logs and configuration.
+* [Bugfix] Remove the enadiag dependency on the deprecated distutils package.
+* [Bugfix] Correct kpatch package metadata.
 # EC2 Rescue for Linux v1.1.7
 
 #### General

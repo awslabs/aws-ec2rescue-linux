@@ -32,7 +32,10 @@ A descriptor of how the module is grouped/classified. The set of included module
 #### class
 A descriptor of the type of task performed by the module. The set of included modules uses the classes "collect" (collects output from programs), "diagnose" (pass/fail based on a set of criteria), and "gather" (copies files and writes to specific file).
 #### distro
-The list of Linux distributions this module supports. The set of included modules use the distributions "alami" (Amazon Linux), "alami2" (Amazon Linux 2), "rhel", "ubuntu", and "suse"
+The list of Linux distributions this module supports. The set of included
+modules use "alami" (Amazon Linux), "alami2" (Amazon Linux 2), "al2023"
+(Amazon Linux 2023), "al2027" (Amazon Linux 2027), "rhel", "ubuntu", "suse",
+and "centos".
 #### required
 The required arguments the test is consuming from the CLI options.
 #### optional
@@ -115,7 +118,8 @@ The virtualization type for the instance. Examples include "default-hvm" for Xen
 An enumerated list of interfaces on the system. String containing names, such as eth0, eth1, etc. This is generated via the functions.bash, 
 and is only available for modules that have sourced it.
 #### EC2RL_DISTRO
-The detected distribution for the Linux system running ec2rl. One of alami, rhel, ubuntu, suse. 
+The detected distribution for the Linux system running ec2rl. One of alami,
+alami2, al2023, al2027, rhel, ubuntu, or suse.
 ## BASH ec2rl Function Library
 ### Inclusion
 Include the following code snippet in BASH scripts to load in the ec2rl BASH function library.

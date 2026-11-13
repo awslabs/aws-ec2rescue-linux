@@ -22,6 +22,7 @@ import random
 import os
 import socket
 import email.message
+import email.utils
 
 import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
@@ -1709,9 +1710,9 @@ def get_encoding_from_headers(headers, default='ISO-8859-1'):
     charset = message.get_param('charset')
 
     if charset is not None:
-        return charset.strip("'\"")
+        return email.utils.collapse_rfc2231_value(charset).strip("'\"")
 
-    if 'text' in content_type:
+    if 'text' in message.get_content_type():
         return default
 
 

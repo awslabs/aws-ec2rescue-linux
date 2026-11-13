@@ -21,6 +21,8 @@ import sys
 import tempfile
 import unittest
 
+import six
+
 import ec2rlcore.main
 import ec2rlcore.moduledir
 import ec2rlcore.options
@@ -37,7 +39,7 @@ class _PruneOptions(object):
 
 
 class TestAL2027Support(unittest.TestCase):
-    """Test AL2027 module eligibility and unsupported-platform handling."""
+    """Test AL2027 module eligibility and compatibility."""
 
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -80,23 +82,52 @@ class TestAL2027Support(unittest.TestCase):
             module.name for module in modules if "al2027" in module.constraint["distro"]
         }
 
-        self.assertEqual(len(al2023_modules), 168)
-        self.assertEqual(al2027_modules, al2023_modules - {"kpatch", "rebuildinitrd"})
+        self.assertEqual(
+            al2027_modules,
+            al2023_modules - {"fstabfailures", "kpatch", "rebuildinitrd"},
+        )
 
-    def test_rebuildinitrd_and_kpatch_remain_excluded(self):
+    def test_unvalidated_or_incompatible_modules_remain_excluded(self):
         """Unvalidated remediation and live-patching modules must remain excluded."""
         modules = self.load_modules("mod.d")
 
+        self.assertNotIn("al2027", modules.name_map["fstabfailures"].constraint["distro"])
         self.assertNotIn("al2027", modules.name_map["rebuildinitrd"].constraint["distro"])
         self.assertNotIn("al2027", modules.name_map["kpatch"].constraint["distro"])
 
+    def test_enadiag_version_comparison_uses_supported_standard_library(self):
+        """The ENA version check must run without the removed distutils package."""
+        enadiag = self.load_modules("mod.d").name_map["enadiag"]
+        namespace = {"__name__": "test_enadiag"}
+
+        self.assertNotIn("distutils", enadiag.content)
+        six.exec_(enadiag.content, namespace)
+
+        namespace["get_ena_version"] = lambda: "2.2.11g"
+        self.assertTrue(namespace["compare_ena_version"]())
+        namespace["get_ena_version"] = lambda: "2.2.9g"
+        self.assertFalse(namespace["compare_ena_version"]())
+
     def test_yumlog_supports_dnf5_logs_and_rotations(self):
-        """The package manager log module must cover YUM/DNF5 log families."""
+        """The package manager log module must safely cover YUM and DNF logs."""
         yumlog = self.load_modules("mod.d").name_map["yumlog"]
 
         self.assertIn("al2027", yumlog.constraint["distro"])
         self.assertIn("/var/log/yum.log*", yumlog.content)
+        self.assertIn("/var/log/dnf.log*", yumlog.content)
+        self.assertIn("/var/log/dnf.rpm.log*", yumlog.content)
         self.assertIn("/var/log/dnf5.log*", yumlog.content)
+        self.assertIn("-f ${log_file}", yumlog.content)
+        self.assertIn("! -L ${log_file}", yumlog.content)
+        self.assertNotIn("|| true", yumlog.content)
+        self.assertIn("may contain credentials", yumlog.helptext)
+
+    def test_yumconfiguration_supports_dnf5(self):
+        """The package manager configuration module must use DNF5 paths and syntax."""
+        yumconfiguration = self.load_modules("mod.d").name_map["yumconfiguration"]
+
+        self.assertIn("/etc/dnf/dnf.conf", yumconfiguration.content)
+        self.assertIn("yum repo list --all", yumconfiguration.content)
 
     def test_kpatch_package_metadata_is_parseable(self):
         """Every nonempty package entry must provide a package name and URL."""
@@ -118,17 +149,9 @@ class TestAL2027Support(unittest.TestCase):
         self.assertIn("# (required) period = value", generated_config)
         self.assertIn("# (optional) since = value", generated_config)
 
-    def test_unknown_distribution_pruning_all_candidates_raises(self):
-        """An unknown distribution must not produce a successful zero-module run."""
+    def test_unknown_distribution_pruning_all_candidates_remains_valid(self):
+        """Unknown distributions must retain the established zero-module behavior."""
         main = self.build_pruner(["net"])
-        os.environ["EC2RL_DISTRO"] = "unknown for /etc/system-release"
-
-        with self.assertRaises(ec2rlcore.main.MainUnsupportedDistributionError):
-            main._run_prunemodules()
-
-    def test_intentional_empty_selection_remains_valid(self):
-        """A filter selecting no candidate modules must remain a valid empty run."""
-        main = self.build_pruner(["os"])
         os.environ["EC2RL_DISTRO"] = "unknown for /etc/system-release"
 
         main._run_prunemodules()

@@ -30,7 +30,6 @@ Exceptions:
     MainDirectoryError: raised when a directory modification or creation fails
     MainMissingRequiredArgument: raised when a subcommand is missing a required argument
     MainVersionCheckTimeout: raised when a timeout occurs when trying to reach the VERSION S3 endpoint
-    MainUnsupportedDistributionError: raised when an unknown distribution excludes every selected module
 """
 from __future__ import print_function
 import datetime
@@ -970,15 +969,12 @@ class Main(object):
         self.logger.debug("mods_to_run={}".format(mods_to_run))
 
         prune_list = []
-        selected_module_count = 0
-        distro_pruned_module_count = 0
         for mod in self.modules:
             prune = False
             # If the module is supposed to run per the user's args, perform the additional prediagnostic checks
             if (mods_to_run == "all" or mod.name in mods_to_run) \
                     and set(mod.constraint["domain"]).intersection(self.options.domains_to_run) \
                     and set(mod.constraint["class"]).intersection(self.options.classes_to_run):
-                selected_module_count += 1
                 # Flag the module for removal if the module requires the system be an EC2 instance and
                 # it is not an instance
                 if next(iter(mod.constraint["requires_ec2"])) == "True" \
@@ -989,7 +985,6 @@ class Main(object):
                 elif os.environ["EC2RL_DISTRO"] not in list(mod.constraint["distro"]):
                     mod.whyskipping = "Not applicable to this distro."
                     prune = True
-                    distro_pruned_module_count += 1
                 # Flag the module for removal if performance impacting but no okay given
                 elif next(iter(mod.constraint["perfimpact"])) == "True" and os.environ["EC2RL_PERFIMPACT"] == "False":
                     mod.whyskipping = "Requires performance impact okay, but not given."
@@ -1040,12 +1035,6 @@ class Main(object):
         # If module is flagged for pruning, add to the pruned list and remove from main module list
         for mod in prune_list:
             self._prune_module(mod)
-
-        distro = os.environ["EC2RL_DISTRO"]
-        if not self.modules and selected_module_count > 0 \
-                and distro_pruned_module_count == selected_module_count \
-                and distro.startswith("unknown"):
-            raise MainUnsupportedDistributionError(distro, selected_module_count)
 
     def _prune_module(self, mod):
         def add_to_prune_stats(reason):
@@ -1335,14 +1324,6 @@ class MainVersionCheckTimeout(MainError):
     def __init__(self):
         message = "Connection timed out trying to obtain the latest version information."
         super(MainVersionCheckTimeout, self).__init__(message)
-
-
-class MainUnsupportedDistributionError(MainError):
-    """An unknown distribution excluded every selected module."""
-    def __init__(self, distro, module_count):
-        message = "Unsupported distribution '{}': distro constraints excluded all {} selected modules.".format(
-            distro, module_count)
-        super(MainUnsupportedDistributionError, self).__init__(message)
 
 
 class MainUploadMissingSNISupport(MainError):

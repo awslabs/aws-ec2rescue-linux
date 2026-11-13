@@ -329,6 +329,65 @@ class TestPrediag(unittest.TestCase):
             self.assertEqual(ec2rlcore.prediag.get_distro(), ec2rlcore.constants.DISTRO_AL2027)
         self.assertTrue(mock_isfile.called)
 
+    def test_prediag_osrelease_decode_error_preserves_system_release_result(self):
+        system_release = mock.mock_open(
+            read_data="Rocky Linux release 8.10 (Green Obsidian)"
+        ).return_value
+        decode_error = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte")
+
+        def isfile(path):
+            return path in ("/etc/system-release", "/etc/os-release")
+
+        def open_file(path, _mode):
+            if path == "/etc/system-release":
+                return system_release
+            raise decode_error
+
+        with mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=isfile):
+            with mock.patch("ec2rlcore.prediag.open", side_effect=open_file):
+                self.assertEqual(
+                    ec2rlcore.prediag.get_distro(),
+                    "unknown for /etc/system-release",
+                )
+
+    def test_prediag_uses_usr_lib_osrelease_fallback(self):
+        os_release = mock.mock_open(
+            read_data='ID="amzn"\nVERSION_ID="2027"\n'
+                      'PRETTY_NAME="Amazon Linux 2027 preview"\n'
+        ).return_value
+
+        def isfile(path):
+            return path == "/usr/lib/os-release"
+
+        with mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=isfile):
+            with mock.patch("ec2rlcore.prediag.open", return_value=os_release):
+                self.assertEqual(
+                    ec2rlcore.prediag.get_distro(),
+                    ec2rlcore.constants.DISTRO_AL2027,
+                )
+
+    def test_prediag_prefers_supported_osrelease_over_unknown_issue(self):
+        issue = mock.mock_open(read_data="Welcome to this system").return_value
+        os_release = mock.mock_open(
+            read_data='ID="amzn"\nVERSION_ID="2027"\n'
+                      'PRETTY_NAME="Amazon Linux 2027 preview"\n'
+        ).return_value
+
+        def isfile(path):
+            return path in ("/etc/issue", "/etc/os-release")
+
+        def open_file(path, _mode):
+            if path == "/etc/os-release":
+                return os_release
+            return issue
+
+        with mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=isfile):
+            with mock.patch("ec2rlcore.prediag.open", side_effect=open_file):
+                self.assertEqual(
+                    ec2rlcore.prediag.get_distro(),
+                    ec2rlcore.constants.DISTRO_AL2027,
+                )
+
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux 2"))
     @mock.patch("ec2rlcore.prediag.os.path.isfile", returns=True)
     def test_prediag_os_alami2_lts_release(self, mock_isfile):
@@ -403,19 +462,28 @@ class TestPrediag(unittest.TestCase):
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Amazon Linux AMI release 2012.09"))
-    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    @mock.patch(
+        "ec2rlcore.prediag.os.path.isfile",
+        side_effect=(False, False, False, False, True, False, False),
+    )
     def test_prediag_os_old_alami(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_ALAMI)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="Red Hat Enterprise Linux Server release 5.11"))
-    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    @mock.patch(
+        "ec2rlcore.prediag.os.path.isfile",
+        side_effect=(False, False, False, False, True, False, False),
+    )
     def test_prediag_os_old_rhel(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(),  ec2rlcore.constants.DISTRO_RHEL)
         self.assertTrue(mock_isfile.called)
 
     @mock.patch("ec2rlcore.prediag.open", mock.mock_open(read_data="junk"))
-    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, True))
+    @mock.patch(
+        "ec2rlcore.prediag.os.path.isfile",
+        side_effect=(False, False, False, False, True, False, False),
+    )
     def test_prediag_os_etc_issue_unknown(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown for /etc/issue")
         self.assertTrue(mock_isfile.called)
@@ -446,7 +514,10 @@ class TestPrediag(unittest.TestCase):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown for /etc/os-release")
         self.assertTrue(mock_isfile.called)
 
-    @mock.patch("ec2rlcore.prediag.os.path.isfile", side_effect=(False, False, False, False, False, False))
+    @mock.patch(
+        "ec2rlcore.prediag.os.path.isfile",
+        side_effect=(False, False, False, False, False, False, False),
+    )
     def test_prediag_os_unknown(self, mock_isfile):
         self.assertEqual(ec2rlcore.prediag.get_distro(), "unknown")
         self.assertTrue(mock_isfile.called)

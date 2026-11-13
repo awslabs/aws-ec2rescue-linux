@@ -85,7 +85,11 @@ class TestVendoredDependencies(unittest.TestCase):
             "assert get_encoding_from_headers("
             "{'content-type': 'text/plain'}) == 'ISO-8859-1'; "
             "assert get_encoding_from_headers("
-            "{'content-type': 'application/json'}) is None"
+            "{'content-type': 'application/json'}) is None; "
+            "assert get_encoding_from_headers("
+            "{\"content-type\": \"text/plain; charset*=utf-8''UTF-8\"}) == 'UTF-8'; "
+            "assert get_encoding_from_headers("
+            "{'content-type': 'application/json; note=\"text\"'}) is None"
         )
         returncode, output = self.run_with_vendored_dependencies(command)
 

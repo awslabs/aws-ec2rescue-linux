@@ -20,16 +20,18 @@ version: !!str 1.1
 title: !!str Gather YUM/DNF5 package manager logs
 helptext: !!str |
   Gather YUM/DNF5 package manager logs, including rotated files
+  DNF5 logs may contain credentials from command-line options
 placement: !!str run
 package: 
   - !!str
 language: !!str bash
 content: !!str |
   #!/bin/bash
-  error_trap()
-  {
+  # shellcheck disable=SC1091,SC2154
+  error_trap() {
       printf "%0.s=" {1..80}
-      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      printf "\nERROR:\t%s exited with an error on line %s\n" \
+          "${BASH_COMMAND}" "${BASH_LINENO[0]}"
       exit 0
   }
   trap error_trap ERR
@@ -40,16 +42,25 @@ content: !!str |
   echo "I will gather YUM/DNF5 package manager logs from this machine"
 
   logs_found=false
-  for log_file in /var/log/yum.log* /var/log/dnf5.log*; do
-      if [ -r "$log_file" ]; then
-          mkdir -p "$EC2RL_GATHEREDDIR/yumlog"
-          cp "$log_file" "$EC2RL_GATHEREDDIR/yumlog" || true
-          logs_found=true
+  copy_failed=false
+  for log_file in /var/log/yum.log* /var/log/dnf.log* /var/log/dnf.rpm.log* /var/log/dnf5.log*; do
+      if [[ -f ${log_file} ]] && [[ ! -L ${log_file} ]] && [[ -r ${log_file} ]]; then
+          if ! mkdir -p "${EC2RL_GATHEREDDIR}/yumlog"; then
+              echo "Unable to create ${EC2RL_GATHEREDDIR}/yumlog"
+              copy_failed=true
+          elif cp -- "${log_file}" "${EC2RL_GATHEREDDIR}/yumlog"; then
+              logs_found=true
+          else
+              echo "Unable to copy ${log_file} to ${EC2RL_GATHEREDDIR}/yumlog"
+              copy_failed=true
+          fi
       fi
   done
 
-  if [ "$logs_found" = true ]; then
+  if [[ ${logs_found} == true ]]; then
       echo "I copied the available package manager logs to ${EC2RL_GATHEREDDIR}/yumlog"
+  elif [[ ${copy_failed} == true ]]; then
+      echo "Package manager logs were found but could not be copied"
   else
       echo "No readable YUM/DNF5 package manager logs were found"
   fi

@@ -54,7 +54,7 @@ except ImportError as ie:  # pragma: no cover
     sys.exit(1)
 
 
-def _get_os_release_distro(lines):
+def _get_os_release_distro(lines, os_release_path="/etc/os-release"):
     """Return a supported distribution from os-release lines."""
     os_release = {}
     for line in lines:
@@ -71,7 +71,22 @@ def _get_os_release_distro(lines):
         elif re.match(r"^PRETTY_NAME=\"Amazon Linux AMI \d{4}\.\d{2}", line):
             return ec2rlcore.constants.DISTRO_ALAMI
 
-    return "unknown for /etc/os-release"
+    return "unknown for {}".format(os_release_path)
+
+
+def _read_os_release_distro():
+    """Return the distribution from the first available os-release file."""
+    for os_release_path in ("/etc/os-release", "/usr/lib/os-release"):
+        if os.path.isfile(os_release_path):
+            try:
+                with open(os_release_path, "r") as os_release:
+                    return _get_os_release_distro(
+                        os_release.readlines(),
+                        os_release_path,
+                    )
+            except (IOError, OSError, UnicodeDecodeError):
+                return "unknown for {}".format(os_release_path)
+    return None
 
 
 def get_distro():
@@ -107,11 +122,9 @@ def get_distro():
                 distro = ec2rlcore.constants.DISTRO_RHEL
             else:
                 distro = "unknown for /etc/system-release"
-                if os.path.isfile("/etc/os-release"):
-                    with open("/etc/os-release", "r") as os_release:
-                        fallback_distro = _get_os_release_distro(os_release.readlines())
-                    if not fallback_distro.startswith("unknown"):
-                        distro = fallback_distro
+                fallback_distro = _read_os_release_distro()
+                if fallback_distro is not None and not fallback_distro.startswith("unknown"):
+                    distro = fallback_distro
     # SUSE
     # /etc/SuSE-release is deprecated
     elif os.path.isfile("/etc/SuSE-release"):
@@ -144,19 +157,24 @@ def get_distro():
                     break
     # Older Amazon Linux & RHEL
     elif os.path.isfile("/etc/issue"):
-        with open("/etc/issue", "r") as fp:
-            distro_str = fp.readline()
-            if re.match(alami_regex, distro_str):
-                distro = ec2rlcore.constants.DISTRO_ALAMI
-            elif re.match(rhel_regex, distro_str) or re.match(r"^CentOS release \d\.\d+", distro_str):
-                distro = ec2rlcore.constants.DISTRO_RHEL
-            else:
-                distro = "unknown for /etc/issue"
+        fallback_distro = _read_os_release_distro()
+        if fallback_distro is not None and not fallback_distro.startswith("unknown"):
+            distro = fallback_distro
+        else:
+            with open("/etc/issue", "r") as fp:
+                distro_str = fp.readline()
+                if re.match(alami_regex, distro_str):
+                    distro = ec2rlcore.constants.DISTRO_ALAMI
+                elif re.match(rhel_regex, distro_str) or re.match(r"^CentOS release \d\.\d+", distro_str):
+                    distro = ec2rlcore.constants.DISTRO_RHEL
+                else:
+                    distro = "unknown for /etc/issue"
     # Amazon Linux & SUSE
     # /etc/os-release will be replacing /etc/SuSE-release in the future
-    elif os.path.isfile("/etc/os-release"):
-        with open("/etc/os-release", "r") as fp:
-            distro = _get_os_release_distro(fp.readlines())
+    else:
+        fallback_distro = _read_os_release_distro()
+        if fallback_distro is not None:
+            distro = fallback_distro
     return distro
 
 

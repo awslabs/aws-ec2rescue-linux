@@ -16,20 +16,21 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str yumconfiguration
 path: !!str
-version: !!str 1.0
-title: !!str Collect yum related configuration file under /etc/yum* output
+version: !!str 1.1
+title: !!str Collect YUM and DNF configuration
 helptext: !!str |
-  Collect yum related configuration file under /etc/yum* output
+  Collect YUM and DNF repository configuration and command output
 placement: !!str run
 package: 
   - !!str 
 language: !!str bash
 content: !!str |
   #!/bin/bash
-  error_trap()
-  {
+  # shellcheck disable=SC1091,SC2154
+  error_trap() {
       printf "%0.s=" {1..80}
-      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      printf "\nERROR:\t%s exited with an error on line %s\n" \
+          "${BASH_COMMAND}" "${BASH_LINENO[0]}"
       exit 0
   }
   trap error_trap ERR
@@ -37,11 +38,20 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will collect all related yum configuration output from this $EC2RL_DISTRO box."
+  echo "I will collect all related yum configuration output from this ${EC2RL_DISTRO} box."
   echo -e "\nYum repository list: \n\n"
-  yum repolist all
+  if [[ ${EC2RL_DISTRO} == "al2027" ]]; then
+      yum repo list --all
+  else
+      yum repolist all
+  fi
   echo -e "\n------------------------------------------------------\n"
-  find /etc/yum* -type f -exec echo "File {} :" \; -exec cat {} \; -exec echo -e "\n------------------------------------------------------\n" \;
+  for config_path in /etc/yum* /etc/dnf/dnf.conf; do
+      if [[ -e ${config_path} ]]; then
+          find "${config_path}" -type f -exec echo "File {} :" \; -exec cat {} \; \
+              -exec echo -e "\n------------------------------------------------------\n" \;
+      fi
+  done
 constraint:
   requires_ec2: !!str False
   domain: !!str os

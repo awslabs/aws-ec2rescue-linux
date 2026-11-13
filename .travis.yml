@@ -1,19 +1,33 @@
 language: python
 python:
   - "2.7"
-  - "3.5"
+  - "3.6"
+jobs:
+  include:
+    - python: "3.12"
+      dist: bionic
 install:
-  - pip install -r requirements.txt
-  - pip install -r requirements_test.txt
-  - pip install unittest-xml-reporting
-  - pip install pylint
+  - |
+    if [[ "${TRAVIS_PYTHON_VERSION}" == "3.12" ]]; then
+      pip install "mock>=5,<6" "responses>=0.25,<0.27"
+    else
+      pip install -r requirements.txt
+      pip install -r requirements_test.txt
+      pip install unittest-xml-reporting
+      pip install pylint
+    fi
 script: |
-  pylint ec2rlcore -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > pylint-report.txt
-  coverage run --branch --source=ec2rlcore/ -m unittest discover
-  coverage xml
-  sed -i 's/filename="/filename=".\/ec2rlcore\//g' coverage.xml
-  python -m xmlrunner discover
-  sonar-scanner -Dproject.settings=github-sonar.properties
+  if [[ "${TRAVIS_PYTHON_VERSION}" == "3.12" ]]; then
+    python -m unittest test.test_python_runtime test.test_al2027_support \
+      test.test_prediag test.test_vendored_dependencies
+  else
+    pylint ec2rlcore -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > pylint-report.txt
+    coverage run --branch --source=ec2rlcore/ -m unittest discover
+    coverage xml
+    sed -i 's/filename="/filename=".\/ec2rlcore\//g' coverage.xml
+    python -m xmlrunner discover
+    sonar-scanner -Dproject.settings=github-sonar.properties
+  fi
 addons:
   sonarcloud:
     organization: "aws-ec2rescue-linux"
