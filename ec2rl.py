@@ -93,11 +93,11 @@ def main():
     Returns:
         (int): 0 if subcommand ran successfully
                1 if subcommand did not successfully run
-               201 if Python < 2.7,
+               201 if Python < 2.7 or 3.0 <= Python < 3.6
     """
 
-    if sys.hexversion < 0x2070000:
-        print("ec2rl requires Python 2.7+, but running version is {0}.".format(
+    if sys.hexversion < 0x2070000 or 0x3000000 <= sys.hexversion < 0x3060000:
+        print("ec2rl requires Python 2.7+ or Python 3.6+, but running version is {0}.".format(
             platform.python_version()))
         return 201
 
@@ -121,7 +121,10 @@ if __name__ == "__main__":
     else:
         # SIGUSR1 is POSIX signal 10
         signal.signal(signal.SIGUSR1, pdb_signal_handler)
-        if main():
+        return_code = main()
+        if return_code == 201:
+            sys.exit(return_code)
+        elif return_code:
             sys.exit(0)
         else:
             sys.exit(1)

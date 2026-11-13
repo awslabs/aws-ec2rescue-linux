@@ -1331,7 +1331,7 @@ class MainUploadMissingSNISupport(MainError):
     def __init__(self):
         message = "Python built-in ssl module is missing Server Name Indication (SNI) support. " \
                   "Uploading will not function properly without support for SNI. " \
-                  "Upgrade Python to 2.7.9+ / 3.2+ or retry with the binary build of ec2rl."
+                  "Upgrade Python to 2.7.9+ / 3.6+ or retry with the binary build of ec2rl."
         super(MainUploadMissingSNISupport, self).__init__(message)
 
 

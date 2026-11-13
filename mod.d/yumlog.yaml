@@ -16,20 +16,22 @@
 # Module document. Translates directly into an almost-complete Module object
 name: !!str yumlog
 path: !!str
-version: !!str 1.0
-title: !!str Gather /var/log/yum.log file
+version: !!str 1.1
+title: !!str Gather YUM/DNF5 package manager logs
 helptext: !!str |
-  Gather /var/log/yum.log file
+  Gather YUM/DNF5 package manager logs, including rotated files
+  DNF5 logs may contain credentials from command-line options
 placement: !!str run
 package: 
   - !!str
 language: !!str bash
 content: !!str |
   #!/bin/bash
-  error_trap()
-  {
+  # shellcheck disable=SC1091,SC2154
+  error_trap() {
       printf "%0.s=" {1..80}
-      echo -e "\nERROR:	"$BASH_COMMAND" exited with an error on line ${BASH_LINENO[0]}"
+      printf "\nERROR:\t%s exited with an error on line %s\n" \
+          "${BASH_COMMAND}" "${BASH_LINENO[0]}"
       exit 0
   }
   trap error_trap ERR
@@ -37,20 +39,36 @@ content: !!str |
   # read-in shared function
   source functions.bash
 
-  echo "I will gather the /var/log/yum.log file from this machine"
+  echo "I will gather YUM/DNF5 package manager logs from this machine"
 
-  if [ -r /var/log/yum.log ]; then
-      mkdir $EC2RL_GATHEREDDIR/yumlog
-      cp /var/log/yum.log $EC2RL_GATHEREDDIR/yumlog || true
-      echo "I have attempted to copy the /var/logyum.log file to ${EC2RL_GATHEREDDIR}/yumlog"
+  logs_found=false
+  copy_failed=false
+  for log_file in /var/log/yum.log* /var/log/dnf.log* /var/log/dnf.rpm.log* /var/log/dnf5.log*; do
+      if [[ -f ${log_file} ]] && [[ ! -L ${log_file} ]] && [[ -r ${log_file} ]]; then
+          if ! mkdir -p "${EC2RL_GATHEREDDIR}/yumlog"; then
+              echo "Unable to create ${EC2RL_GATHEREDDIR}/yumlog"
+              copy_failed=true
+          elif cp -- "${log_file}" "${EC2RL_GATHEREDDIR}/yumlog"; then
+              logs_found=true
+          else
+              echo "Unable to copy ${log_file} to ${EC2RL_GATHEREDDIR}/yumlog"
+              copy_failed=true
+          fi
+      fi
+  done
+
+  if [[ ${logs_found} == true ]]; then
+      echo "I copied the available package manager logs to ${EC2RL_GATHEREDDIR}/yumlog"
+  elif [[ ${copy_failed} == true ]]; then
+      echo "Package manager logs were found but could not be copied"
   else
-      echo "No /var/log/yum.log available or permission denied"
+      echo "No readable YUM/DNF5 package manager logs were found"
   fi
 constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str gather
-  distro: !!str alami alami2 al2023 rhel
+  distro: !!str alami alami2 al2023 al2027 rhel
   required: !!str
   optional: !!str
   software: !!str

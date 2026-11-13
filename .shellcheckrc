@@ -1,0 +1,10 @@
+# ShellCheck
+
+# Default shell dialect
+shell=bash
+
+# Always allow ShellCheck to open arbitrary files from 'source' statements.
+external-sources=true
+
+# Enable all optional checks
+enable=all

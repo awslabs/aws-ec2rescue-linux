@@ -22,7 +22,7 @@ helptext: !!str |
   Collect kpatch list output
 placement: !!str run
 package: 
-  - !!str kpatch-runtime
+  - !!str kpatch-runtime https://github.com/dynup/kpatch
 language: !!str bash
 content: !!str |
   #!/bin/bash
