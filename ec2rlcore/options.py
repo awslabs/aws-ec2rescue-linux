@@ -107,13 +107,15 @@ class Options(object):
                 dynamic_arg = dynamic_arg.split("=")[0]
                 self.parser.add_argument(dynamic_arg, action="store", default=True, nargs="?")
             elif "=" not in dynamic_arg and re.match("[a-zA-Z0-9]", dynamic_arg):
-                self.parser.add_argument(dynamic_arg, action="store_const", const="")
+                # Bare module and subcommand names are collected after parsing the registered options.
+                continue
             else:
                 self.logger.debug("unknown command-line token '{}'".format(dynamic_arg))
                 raise OptionsInvalidOptionError(dynamic_arg)
 
         # Parse and create a dict of the args
-        parsed_arg_dict = vars(self.parser.parse_args())
+        parsed_args, bare_args = self.parser.parse_known_args()
+        parsed_arg_dict = vars(parsed_args)
         self.logger.debug("arguments:  {}".format(parsed_arg_dict))
         resultant_args_dict = {}
 
@@ -139,6 +141,9 @@ class Options(object):
                 parsed_arg_dict[key] = "True"
             # Remove underscores in the dict keys.
             resultant_args_dict[key.replace("_", "")] = parsed_arg_dict[key]
+
+        for bare_arg in bare_args:
+            resultant_args_dict[bare_arg] = ""
 
         # Populate global_args with the resultant key:value pairs
         for key in resultant_args_dict.keys():
@@ -245,13 +250,13 @@ class Options(object):
                 self.logger.debug("Adding section: {}".format(mod.name))
                 config.add_section(mod.name)
                 for value in mod.constraint["required"]:
-                    key = "# (required) {} = value".format(value)
+                    key = "# (required) {}".format(value)
                     self.logger.debug("Adding [{}] - {}".format(mod.name, key))
-                    config.set(mod.name, key)
+                    config.set(mod.name, key, "value")
                 for value in mod.constraint["optional"]:
-                    key = "# (optional) {} = value".format(value)
+                    key = "# (optional) {}".format(value)
                     self.logger.debug("Adding [{}] - {}".format(mod.name, key))
-                    config.set(mod.name, key)
+                    config.set(mod.name, key, "value")
                 # Some modules do not require any arguments so leave a note stating such
                 if not config.options(mod.name):
                     self.logger.debug("Adding [{}] - # none".format(mod.name))

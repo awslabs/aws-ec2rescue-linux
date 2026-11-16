@@ -1,0 +1,50 @@
+# Automatically normalize line endings for all text-based files
+# https://git-scm.com/docs/gitattributes#_end_of_line_conversion
+
+# Set default behavior to automatically normalize line endings.
+* text=auto eol=lf
+
+# Common text files
+*.txt text eol=lf
+*.md text eol=lf diff=markdown
+*.mmd text eol=lf
+*.html text eol=lf diff=html
+*.htm text eol=lf diff=html
+*.css text eol=lf diff=css
+*.json text eol=lf diff=json
+*.xml text eol=lf diff=xml
+*.svg text
+*.yml text eol=lf diff=yaml
+*.yaml text eol=lf diff=yaml
+*.toml text eol=lf diff=toml
+
+# Script files
+*.sh text eol=lf
+*.bash text eol=lf
+*.py text eol=lf diff=python
+*.pyi text eol=lf diff=python
+
+# Windows-specific files that should retain CRLF line endings
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Executables
+*.pyc binary
+*.bin binary
+*.exe binary
+*.msi binary
+
+# Archives
+*.tar binary
+*.gz binary
+*.tgz binary
+*.zip binary
+*.7z binary
+
+# Graphics
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary

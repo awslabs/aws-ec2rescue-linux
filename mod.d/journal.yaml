@@ -78,7 +78,7 @@ constraint:
   requires_ec2: !!str False
   domain: !!str os
   class: !!str collect
-  distro: !!str alami2 al2023 suse ubuntu rhel
+  distro: !!str alami2 al2023 al2027 suse ubuntu rhel
   required: !!str
   optional: !!str output system user since until
   software: !!str journalctl

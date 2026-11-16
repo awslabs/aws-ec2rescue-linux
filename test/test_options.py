@@ -113,6 +113,13 @@ class TestOptions(unittest.TestCase):
         value = self.options.global_args["abc"]
         self.assertEqual(value, "xyz")
 
+    def test_options_argument_key_space_value(self):
+        """Test parsing of an argument with a space-separated value."""
+        sys.argv = ["ec2rl", "run", "--abc", "xyz"]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        value = self.options.global_args["abc"]
+        self.assertEqual(value, "xyz")
+
     def test_options_argument_key_novalue(self):
         """Test parsing of argument with no value."""
         sys.argv = ["ec2rl", "run", "--abc"]
@@ -132,6 +139,19 @@ class TestOptions(unittest.TestCase):
         sys.argv = ["ec2rl", "help", "tcptraceroute"]
         self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
         self.assertTrue("tcptraceroute" in self.options.global_args.keys())
+        self.assertEqual(self.options.global_args["tcptraceroute"], "")
+
+    def test_options_argument_nonhyphenated_run_module(self):
+        """Test parsing a module name after the run subcommand."""
+        sys.argv = ["ec2rl", "run", "yumlog"]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        self.assertEqual(self.options.global_args["yumlog"], "")
+
+    def test_options_argument_multiple_nonhyphenated_values(self):
+        """Test parsing multiple arguments that are not prefixed with double hyphens."""
+        sys.argv = ["ec2rl", "help", "run", "tcptraceroute"]
+        self.options = ec2rlcore.options.Options(subcommands=self.__subcommands)
+        self.assertEqual(self.options.global_args["run"], "")
         self.assertEqual(self.options.global_args["tcptraceroute"], "")
 
     def test_options_invalid_argument(self):

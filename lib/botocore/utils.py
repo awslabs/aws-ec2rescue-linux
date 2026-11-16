@@ -21,7 +21,8 @@ import weakref
 import random
 import os
 import socket
-import cgi
+import email.message
+import email.utils
 
 import dateutil.parser
 from dateutil.tz import tzlocal, tzutc
@@ -1704,12 +1705,14 @@ def get_encoding_from_headers(headers, default='ISO-8859-1'):
     if not content_type:
         return None
 
-    content_type, params = cgi.parse_header(content_type)
+    message = email.message.Message()
+    message['content-type'] = content_type
+    charset = message.get_param('charset')
 
-    if 'charset' in params:
-        return params['charset'].strip("'\"")
+    if charset is not None:
+        return email.utils.collapse_rfc2231_value(charset).strip("'\"")
 
-    if 'text' in content_type:
+    if 'text' in message.get_content_type():
         return default
 
 

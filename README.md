@@ -45,7 +45,7 @@ gpg: Good signature from "ec2autodiag@amazon.com <EC2 Rescue for Linux>"
 Available in docs/ subdirectory
 
 ## Prerequisites
-Python 2.7.9+ / 3.2+
+Python 2.7.9+ / 3.6+
 
 ## Installation
 No ec2rl specific installation required. Unpack the tarball and run the tool.

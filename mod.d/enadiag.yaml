@@ -27,12 +27,14 @@ language: !!str python
 remediation: !!str False
 content: !!str |
   from __future__ import print_function
-  from distutils.version import LooseVersion
 
   import os
   import re
   import subprocess
   import sys
+
+  def _version_tuple(version):
+      return tuple(int(part) for part in re.findall(r"\d+", version))
 
   class Interface:
       def __init__(self,
@@ -124,8 +126,8 @@ content: !!str |
       stats_included = "2.2.10"
       current_version = get_ena_version()
       # Get only the version number and remove trailing letters to make version numbers comparable
-      comprable_version = re.search("(\d+.\d+.\d+)", current_version).group(0)
-      return LooseVersion(comprable_version) > LooseVersion(stats_included)
+      comparable_version = re.search(r"(\d+\.\d+\.\d+)", current_version).group(0)
+      return _version_tuple(comparable_version) > _version_tuple(stats_included)
 
   def get_ena_stats(interface):
       """
@@ -267,7 +269,7 @@ constraint:
   requires_ec2: !!str True
   domain: !!str net
   class: !!str diagnose
-  distro: !!str alami alami2 al2023 ubuntu rhel suse
+  distro: !!str alami alami2 al2023 al2027 ubuntu rhel suse
   required: !!str
   optional: !!str
   software: !!str
